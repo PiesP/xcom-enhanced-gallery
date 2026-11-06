@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-/** Diagnostic-only instrumentation for one task-owned installed Chrome download. */
+/** Diagnostic-only instrumentation for one task-owned installed Chromium download. */
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -10,6 +10,11 @@ import type { BrowserContext, CDPSession, Page, Worker } from '@playwright/test'
 import { COMPACT_FIXTURE_URL } from './install-preparation.ts';
 import { readExactDownloadFile } from './download-memory.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
+import {
+  isLiveFilenameOriginal,
+  PREVIOUS_LIVE_FILENAME_TARGET,
+  type LiveFilenameTarget,
+} from './live-filename-target.ts';
 
 declare const chrome: {
   runtime: {
@@ -56,11 +61,15 @@ const CONTENT_INSTALL_FUNCTION = `function(config) {
   }
   if (typeof config?.marker !== 'string' || config?.maxEvents !== 4 ||
       !['owned-fixture', 'reported-live-post'].includes(config?.target) ||
-      (config.target === 'owned-fixture' && typeof config.expectedUrl !== 'string')) {
+      (config.target === 'owned-fixture' && typeof config.expectedUrl !== 'string') ||
+      (config.target === 'reported-live-post' &&
+       (typeof config.mediaBasename !== 'string' ||
+        !/^[A-Za-z0-9_-]{1,40}$/.test(config.mediaBasename)))) {
     return { installed: false, reason: 'invalid-config' };
   }
   globalThis.__xegFilenameCorrelation482V1 = {
     marker: config.marker, target: config.target, expectedUrl: config.expectedUrl,
+    mediaBasename: config.mediaBasename,
     maxEvents: config.maxEvents, events: []
   };
   return { installed: true };
@@ -75,15 +84,16 @@ const CONTENT_LOGPOINT_CONDITION = `(() => {
   if (state.target === 'reported-live-post') {
     let source;
     try { source = new URL(preferred || media?.originalUrl || media?.url); } catch { return false; }
-    const path = /^\\/media\\/HWXMF0bbcAEnfk6(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(source.pathname);
+    const path = /^\\/media\\/([A-Za-z0-9_-]{1,40})(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(source.pathname);
     const pairs = [...source.searchParams].sort();
     const format = pairs[0]?.[1];
     if (source.href !== preferred || source.origin !== 'https://pbs.twimg.com' ||
         source.username || source.password || source.hash || source.port || !path ||
+        path[1] !== state.mediaBasename ||
         pairs.length !== 2 || pairs[0][0] !== 'format' ||
         !/^(?:jpg|jpeg|png|webp|gif)$/.test(format) ||
         pairs[1][0] !== 'name' || pairs[1][1] !== 'orig' ||
-        (path[1] && path[1] !== format)) return false;
+        (path[2] && path[2] !== format)) return false;
   }
   if (state.events.length < state.maxEvents) state.events.push({
     id: media.id.slice(0, 128), type: media.type, url: String(media.url).slice(0, 256),
@@ -339,56 +349,38 @@ function assertOwnedFixtureUrl(url: string): void {
 }
 
 /** The live diagnostic is restricted to the exact publicly reported page and photo. */
-export function assertReportedLiveFilenameTarget(pageUrl: string, sourceUrl: string): void {
-  assert.equal(pageUrl, 'https://x.com/yukurach/status/2118323627615785399');
+export function assertReportedLiveFilenameTarget(
+  pageUrl: string,
+  sourceUrl: string,
+  target: LiveFilenameTarget = PREVIOUS_LIVE_FILENAME_TARGET
+): void {
+  assert.equal(pageUrl, target.pageUrl);
   assert(
-    isReportedLiveDownloadSource(sourceUrl),
+    isReportedLiveDownloadSource(sourceUrl, target),
     'Selected live original source is not the reported photo'
   );
 }
 
 /** A strict target filter; the observed URL is preserved byte-for-byte. */
-export function isReportedLiveDownloadSource(sourceUrl: unknown): sourceUrl is string {
-  if (typeof sourceUrl !== 'string') {
-    return false;
-  }
-  let source: URL;
-  try {
-    source = new URL(sourceUrl);
-  } catch {
-    return false;
-  }
-  if (source.href !== sourceUrl || source.origin !== 'https://pbs.twimg.com') {
-    return false;
-  }
-  if (source.username || source.password || source.hash || source.port) {
-    return false;
-  }
-  const path = /^\/media\/HWXMF0bbcAEnfk6(?:\.(jpg|jpeg|png|webp|gif))?$/u.exec(source.pathname);
-  if (!path) {
-    return false;
-  }
-  const pairs = [...source.searchParams].sort();
-  const format = pairs[0]?.[1];
-  return (
-    pairs.length === 2 &&
-    pairs[0]?.[0] === 'format' &&
-    /^(?:jpg|jpeg|png|webp|gif)$/u.test(format ?? '') &&
-    pairs[1]?.[0] === 'name' &&
-    pairs[1][1] === 'orig' &&
-    (!path[1] || path[1] === format)
-  );
+export function isReportedLiveDownloadSource(
+  sourceUrl: unknown,
+  target: LiveFilenameTarget = PREVIOUS_LIVE_FILENAME_TARGET
+): sourceUrl is string {
+  return isLiveFilenameOriginal(sourceUrl, target);
 }
 
 /** Prefer the selected product source over the gallery's rendered image URL. */
-export function selectedLivePreferredSource(media: Record<string, unknown>): string {
+export function selectedLivePreferredSource(
+  media: Record<string, unknown>,
+  target: LiveFilenameTarget = PREVIOUS_LIVE_FILENAME_TARGET
+): string {
   const source = media.downloadSource;
   const preferred =
     source && typeof source === 'object' && !Array.isArray(source)
       ? (source as Record<string, unknown>).url
       : (media.originalUrl ?? media.url);
   assert(
-    isReportedLiveDownloadSource(preferred),
+    isReportedLiveDownloadSource(preferred, target),
     'Selected MediaInfo preferred source is not the reported original'
   );
   return preferred;
@@ -429,10 +421,11 @@ async function installWorkerObserver(
   marker: string,
   expectedUrl: string | null,
   extensionId: string,
-  ownerTabId: number
+  ownerTabId: number,
+  mediaBasename: string
 ): Promise<void> {
   await worker.evaluate(
-    ({ marker: key, expectedUrl: target, extensionId: owner, ownerTabId: tabId }) => {
+    ({ marker: key, expectedUrl: target, extensionId: owner, ownerTabId: tabId, mediaBasename }) => {
       type Request = {
         type?: string;
         payload?: { url?: string; filename?: string; requestId?: string; mode?: string };
@@ -473,7 +466,7 @@ async function installWorkerObserver(
           return false;
         }
         const pairs = [...parsed.searchParams].sort();
-        const path = /^\/media\/HWXMF0bbcAEnfk6(?:\.(jpg|jpeg|png|webp|gif))?$/u.exec(
+        const path = /^\/media\/([A-Za-z0-9_-]{1,40})(?:\.(jpg|jpeg|png|webp|gif))?$/u.exec(
           parsed.pathname
         );
         const format = pairs[0]?.[1];
@@ -485,12 +478,13 @@ async function installWorkerObserver(
           !parsed.hash &&
           !parsed.port &&
           !!path &&
+          path[1] === mediaBasename &&
           pairs.length === 2 &&
           pairs[0]?.[0] === 'format' &&
           /^(?:jpg|jpeg|png|webp|gif)$/u.test(format ?? '') &&
           pairs[1]?.[0] === 'name' &&
           pairs[1][1] === 'orig' &&
-          (!path[1] || path[1] === format)
+          (!path[2] || path[2] === format)
         );
       };
       state.listener = (message, sender) => {
@@ -561,7 +555,7 @@ async function installWorkerObserver(
         throw error;
       }
     },
-    { marker, expectedUrl, extensionId, ownerTabId }
+    { marker, expectedUrl, extensionId, ownerTabId, mediaBasename }
   );
 }
 
@@ -653,6 +647,7 @@ type FixtureCorrelation = {
 };
 type LiveCorrelation = {
   target: 'reported-live-post';
+  liveTarget?: LiveFilenameTarget;
   expectedUrl?: never;
   expectedBytes?: never;
   resolveLiveOriginal(
@@ -722,7 +717,7 @@ export async function withFilenameCorrelation<T>(
   const marker = `__xegFilenameCorrelation_${randomUUID()}`;
   try {
     if (options.target === 'reported-live-post') {
-      assert.equal(page.url(), 'https://x.com/yukurach/status/2118323627615785399');
+      assert.equal(page.url(), (options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET).pageUrl);
       assert.equal(options.label, 'live-original');
     } else {
       assertOwnedFixtureUrl(options.expectedUrl);
@@ -829,6 +824,10 @@ export async function withFilenameCorrelation<T>(
             marker,
             target: options.target ?? 'owned-fixture',
             expectedUrl: expectedUrl ?? null,
+            mediaBasename:
+              options.target === 'reported-live-post'
+                ? (options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET).mediaBasename
+                : null,
             maxEvents: MAX_EVENTS,
           },
         },
@@ -880,7 +879,16 @@ export async function withFilenameCorrelation<T>(
     workerInstalled = true;
     cleanup.workerListener = 'failed';
     cleanup.nativeWrapper = 'failed';
-    await installWorkerObserver(worker, marker, expectedUrl ?? null, extensionId, targetTabId);
+    await installWorkerObserver(
+      worker,
+      marker,
+      expectedUrl ?? null,
+      extensionId,
+      targetTabId,
+      options.target === 'reported-live-post'
+        ? (options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET).mediaBasename
+        : PREVIOUS_LIVE_FILENAME_TARGET.mediaBasename
+    );
     receipt.filenameCapabilities = await worker.evaluate(() => {
       type Api = typeof chrome & {
         downloads: typeof chrome.downloads & {
@@ -1020,9 +1028,16 @@ export async function withFilenameCorrelation<T>(
         const selectedMedia = receipt.selectedMedia;
         assert(selectedMedia && typeof selectedMedia === 'object' && !Array.isArray(selectedMedia));
         const selected = selectedMedia as Record<string, unknown>;
-        const preferred = selectedLivePreferredSource(selected);
+        const preferred = selectedLivePreferredSource(
+          selected,
+          options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET
+        );
         const resolved = await options.resolveLiveOriginal(selected);
-        assertReportedLiveFilenameTarget(targetPageUrl!, resolved.url);
+        assertReportedLiveFilenameTarget(
+          targetPageUrl!,
+          resolved.url,
+          options.liveTarget ?? PREVIOUS_LIVE_FILENAME_TARGET
+        );
         assert.equal(
           resolved.url,
           preferred,

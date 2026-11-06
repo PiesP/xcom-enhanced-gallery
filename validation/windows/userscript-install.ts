@@ -24,6 +24,12 @@ import {
   readExactDownloadFile,
   verifyStoredZip,
 } from './download-memory.ts';
+import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
+import {
+  isLiveFilenameOriginal,
+  type LiveFilenameTarget,
+} from './live-filename-target.ts';
+import { resolveFilenameCaptureLine } from './filename-correlation.ts';
 import {
   createImageFixtures,
   enableDeveloperMode,
@@ -2121,10 +2127,12 @@ export function createBrowserDownloadObserver(cdp: CDPSession) {
           }
           const candidate = created[0];
           assert(candidate);
-          assert(
-            expectedNames.includes(candidate.suggestedFilename),
-            'Browser download request used an unexpected filename'
-          );
+          if (expectedNames.length) {
+            assert(
+              expectedNames.includes(candidate.suggestedFilename),
+              'Browser download request used an unexpected filename'
+            );
+          }
           const status = progress.get(candidate.guid);
           if (status?.state === 'canceled') {
             throw new Error('Browser canceled the native download');
@@ -4247,7 +4255,10 @@ export async function runUserscriptInstallation({
   headless: boolean;
   attachmentFilenameProbe?: boolean;
 }) {
-  assert.equal(browserName, 'chrome', 'HTTPS userscript fixture currently supports Chrome only');
+  assert(
+    ['chrome', 'msedge'].includes(browserName),
+    'HTTPS userscript fixture supports installed Chrome and Edge only'
+  );
   const upgradeInput = await readUpgradeInput(root);
   assert(
     !attachmentFilenameProbe || !upgradeInput,
@@ -4475,4 +4486,573 @@ export async function runUserscriptInstallation({
     throw primaryError;
   }
   return result;
+}
+
+type LiveNativeItem = {
+  id: number;
+  state: string;
+  filename: string;
+  url: string;
+  finalUrl?: string;
+  error?: string;
+  fileSize?: number;
+  byExtensionId?: string;
+};
+
+async function liveNativeInventory(page: Page): Promise<LiveNativeItem[]> {
+  return page.evaluate(async () => {
+    const rows = await chrome.downloads.search({ limit: 32 });
+    if (!Array.isArray(rows) || rows.length >= 32) {
+      throw new Error('Live manager download inventory exceeded its bound');
+    }
+    return rows.map((item) => ({
+      id: item.id,
+      state: item.state,
+      filename: item.filename,
+      url: item.url,
+      finalUrl: Reflect.get(item, 'finalUrl'),
+      error: item.error,
+      fileSize: item.fileSize,
+      byExtensionId: Reflect.get(item, 'byExtensionId'),
+    }));
+  });
+}
+
+const LIVE_SANDBOX_PROBE = `(() => {
+  if (typeof GM_info !== 'object' || GM_info?.script?.name !== 'X.com Enhanced Gallery')
+    return null;
+  return {
+    scriptName: GM_info.script.name,
+    scriptVersion: GM_info.script.version ?? null,
+    scriptHandler: GM_info.scriptHandler ?? null,
+    handlerVersion: GM_info.version ?? null,
+    grants: Array.isArray(GM_info.script.grant) ? GM_info.script.grant.slice(0, 24) : null,
+    legacyDownloadType: typeof GM_download,
+    modernDownloadType: typeof GM === 'object' ? typeof GM.download : 'undefined',
+    managerMode: GM_info.downloadMode ?? null
+  };
+})()`;
+const LIVE_CAPTURE_CONDITION = `(() => {
+  const slot = globalThis.__xegLiveFilename495;
+  if (!slot || slot.events.length >= 1 || !media || typeof filename !== 'string') return false;
+  const source = media.downloadSource?.url ?? media.originalUrl ?? media.url;
+  let url;
+  try { url = new URL(source); } catch { return false; }
+  const path = /^\\/media\\/([A-Za-z0-9_-]{1,40})(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(url.pathname);
+  if (!path || path[1] !== slot.mediaBasename || url.origin !== 'https://pbs.twimg.com') return false;
+  slot.events.push({
+    generatedFilename: filename.slice(0, 256),
+    id: String(media.id ?? '').slice(0, 128),
+    type: media.type,
+    url: String(media.url ?? '').slice(0, 256),
+    originalUrl: String(media.originalUrl ?? '').slice(0, 256),
+    downloadSource: media.downloadSource ? {
+      url: String(media.downloadSource.url ?? '').slice(0, 256),
+      quality: media.downloadSource.quality,
+      provenance: media.downloadSource.provenance
+    } : null,
+    filename: media.filename ?? null,
+    tweetUsername: media.tweetUsername ?? null,
+    tweetId: media.tweetId ?? null,
+    quotedUsername: media.quotedUsername ?? null,
+    quotedTweetId: media.quotedTweetId ?? null,
+    sourceLocation: media.sourceLocation ?? null,
+    attachmentOrdinal: media.attachmentOrdinal ?? null,
+    attachmentSourceKey: media.attachmentSourceKey ?? null,
+    gm: {
+      legacyDownloadType: typeof GM_download,
+      modernDownloadType: typeof GM === 'object' ? typeof GM.download : 'undefined',
+      handler: typeof GM_info === 'object' ? GM_info.scriptHandler : null,
+      version: typeof GM_info === 'object' ? GM_info.version : null,
+      scriptName: typeof GM_info === 'object' ? GM_info.script?.name : null,
+      scriptVersion: typeof GM_info === 'object' ? GM_info.script?.version : null,
+      grants: typeof GM_info === 'object' && Array.isArray(GM_info.script?.grant)
+        ? GM_info.script.grant.slice(0, 24) : null,
+      mode: typeof GM_info === 'object' ? GM_info.downloadMode : null
+    }
+  });
+  return false;
+})()`;
+const LIVE_GM_CALL_CONDITION = `(() => {
+  const slot = globalThis.__xegLiveFilename495;
+  if (!slot || slot.calls.length >= 1) return false;
+  slot.calls.push({
+    apiName,
+    args: { url, name: filename, saveAs: false, timeout: GM_DOWNLOAD_TIMEOUT_MS },
+    returnType: typeof handle,
+    abortType: typeof handle?.abort,
+    thenType: typeof handle?.then
+  });
+  return false;
+})()`;
+
+export function resolveUserscriptGMCallLine(source: string): number | null {
+  const lines = source.split(/\r?\n/u);
+  const start = lines.findIndex((line) => /^\s*function downloadViaGM\(/u.test(line));
+  if (start < 0) return null;
+  const end = lines.findIndex((line, index) =>
+    index > start && /^\s*function \w+\(/u.test(line));
+  const range = lines.slice(start, end < 0 ? undefined : end);
+  const calls = range.flatMap((line, index) =>
+    /^\s*Promise\.resolve\(handle\)\.then\(/u.test(line) ? [start + index] : []);
+  assert.equal(calls.length, 1, 'Expected one installed GM call return site');
+  assert(range.some((line) => /^\s*handle = gmDownload\(\{/u.test(line)),
+    'GM call source changed before return capture');
+  return calls[0]!;
+}
+
+/** Fresh manager profile: one observed live save and one repeat after diagnostics are removed. */
+export async function runUserscriptLiveInstallation(options: {
+  chromium: BrowserType;
+  root: string;
+  output: string;
+  browserName: string;
+  headless: boolean;
+  target: LiveFilenameTarget;
+}) {
+  const { chromium, root, output, browserName, headless, target } = options;
+  assert(['chrome', 'msedge'].includes(browserName));
+  assert.equal(target.pageUrl, new URL(target.pageUrl).href);
+  await mkdir(output, { recursive: true });
+  const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+  const profile = await mkdtemp(join(root, PROFILE_PREFIX));
+  assertOwned(root, profile);
+  const downloads = join(profile, 'downloads');
+  await mkdir(downloads);
+  await mkdir(join(profile, 'Default'));
+  await writeFile(join(profile, 'Default', 'Preferences'), JSON.stringify({
+    download: {
+      default_directory: downloads,
+      prompt_for_download: false,
+      directory_upgrade: true,
+    },
+  }));
+  const receipt: Record<string, unknown> = {
+    schemaVersion: 1,
+    status: 'incomplete',
+    target,
+    sourceSha256: sha256(source),
+    browserName,
+    scope: 'fresh installed manager and public X photo; original user profile unverified',
+    saves: [],
+    nativeAttempts: [],
+    cleanup: {},
+  };
+  let context: BrowserContext | undefined;
+  let cdp: CDPSession | undefined;
+  let debuggerSession: CDPSession | undefined;
+  let page: Page | undefined;
+  let managerPage: Page | undefined;
+  let managerId: string | undefined;
+  let observer: ReturnType<typeof createBrowserDownloadObserver> | undefined;
+  let breakpointId: string | undefined;
+  let gmBreakpointId: string | undefined;
+  let sandboxId: number | undefined;
+  let primaryError: unknown;
+  const cleanupErrors: unknown[] = [];
+  try {
+    context = await chromium.launchPersistentContext(profile, {
+      channel: browserName,
+      headless,
+      acceptDownloads: true,
+      downloadsPath: downloads,
+      locale: 'en-US',
+      viewport: { width: 1280, height: 800 },
+      ignoreDefaultArgs: ['--disable-extensions'],
+      args: ['--enable-unsafe-extension-debugging'],
+    });
+    const browser = context.browser();
+    assert(browser);
+    receipt.browserVersion = browser.version();
+    receipt.profileTransport = 'public network without fixture host mappings or SPKI exception';
+    await enableDeveloperMode(context, browserName);
+    await verifyDownloadDirectory(context, downloads);
+    cdp = await browser.newBrowserCDPSession();
+    await cdp.send('Browser.setDownloadBehavior', { behavior: 'default', eventsEnabled: true });
+    ({ id: managerId } = await cdp.send('Extensions.loadUnpacked', {
+      path: join(root, 'test-tools/userscript-manager'),
+    }));
+    assert(typeof managerId === 'string');
+    const manager = await installUserscript(
+      context, managerId, root, output, browserName, sha256(source), profile,
+      (ask, id, ownedContext) => inspectAndAllowNativeManagerPermission(
+        cdp!, root, output, profile, browserName, ask, id, ownedContext
+      )
+    );
+    receipt.manager = manager;
+    observer = createBrowserDownloadObserver(cdp);
+    managerPage = await context.newPage();
+    await managerPage.goto('chrome-extension://' + managerId + '/options.html');
+    assert(isOwnedManagerOptionsUrl(managerPage.url(), managerId));
+    page = await context.newPage();
+    debuggerSession = await context.newCDPSession(page);
+    const scripts: Array<{ scriptId: string; url: string; executionContextId: number }> = [];
+    debuggerSession.on('Debugger.scriptParsed', (item: {
+      scriptId: string;
+      url: string;
+      executionContextId: number;
+    }) => {
+      if (scripts.length < 256) scripts.push(item);
+    });
+    await debuggerSession.send('Runtime.enable');
+    await debuggerSession.send('Debugger.enable');
+    await page.goto(target.pageUrl, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    assert.equal(page.url(), target.pageUrl, 'Live status navigated away');
+    const statusPath = new URL(target.pageUrl).pathname;
+    const action = page.locator('article a[href$="' + statusPath + '/photo/1"]')
+      .filter({ has: page.locator('img[src*="' + target.mediaBasename + '"]') });
+    await action.first().waitFor({ state: 'visible', timeout: 30_000 });
+    assert.equal(await action.count(), 1, 'Live photo action is ambiguous');
+    const actionBinding = await action.evaluate((element, expected) => {
+      const image = element.querySelector('img');
+      const article = element.closest('article');
+      if (!(element instanceof HTMLAnchorElement) ||
+          !(image instanceof HTMLImageElement) || !article ||
+          !image.complete || image.naturalWidth <= 0) return null;
+      const source = new URL(image.currentSrc || image.src);
+      const owner = [...article.querySelectorAll('a[href]')].some((candidate) =>
+        new URL((candidate as HTMLAnchorElement).href).pathname === expected.statusPath);
+      if (!owner || source.origin !== 'https://pbs.twimg.com' ||
+          !source.pathname.startsWith('/media/' + expected.mediaBasename)) return null;
+      return { imageSource: image.currentSrc || image.src, actionUrl: element.href,
+        width: image.naturalWidth, height: image.naturalHeight };
+    }, { statusPath, mediaBasename: target.mediaBasename });
+    assert(actionBinding, 'Live displayed photo and owner were not bound');
+    receipt.actionBinding = actionBinding;
+    await action.click();
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible', timeout: 20_000 });
+    assert.equal(await gallery.getAttribute('role'), 'dialog');
+    assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+    const selected = await gallery.evaluate((element, mediaBasename) => {
+      const toolbar = element.querySelector('[data-gallery-element="toolbar"]');
+      const index = toolbar?.getAttribute('data-focused-index');
+      const item = element.querySelector('[data-gallery-element="item"][data-index="' + index + '"]');
+      const image = item?.querySelector('img');
+      if (!(image instanceof HTMLImageElement) || !image.complete ||
+          image.naturalWidth <= 0 || toolbar?.getAttribute('data-current-index') !== index)
+        return null;
+      const source = new URL(image.currentSrc || image.src);
+      return source.origin === 'https://pbs.twimg.com' &&
+        source.pathname.startsWith('/media/' + mediaBasename)
+        ? { index, source: image.currentSrc || image.src } : null;
+    }, target.mediaBasename);
+    assert(selected, 'Live gallery selection differs from reported photo');
+    receipt.gallerySelection = selected;
+    let script: {
+      scriptId: string;
+      url: string;
+      executionContextId: number;
+      lineNumber: number;
+      gmCallLine: number | null;
+      sha256: string;
+    } | undefined;
+    for (const item of scripts) {
+      const result = await debuggerSession.send('Debugger.getScriptSource', {
+        scriptId: item.scriptId,
+      }).catch(() => null);
+      const text = result?.scriptSource;
+      if (!text || text.length > 5_000_000 || !text.includes('function downloadSingleFile('))
+        continue;
+      const location = resolveFilenameCaptureLine(text);
+      assert(!script, 'Multiple installed XCOM download scripts');
+      script = {
+        ...item,
+        lineNumber: location.lineNumber,
+        gmCallLine: resolveUserscriptGMCallLine(text),
+        sha256: location.expectedSourceSha256,
+      };
+    }
+    assert(script, 'Installed XCOM download source was not uniquely identified');
+    assert(Number.isSafeInteger(script.executionContextId) && script.executionContextId > 0,
+      'Installed XCOM script has no execution realm');
+    sandboxId = script.executionContextId;
+    receipt.executedScript = script;
+    const sandboxProbe = await debuggerSession.send('Runtime.evaluate', {
+      contextId: sandboxId, expression: LIVE_SANDBOX_PROBE, returnByValue: true,
+    }).catch(() => null);
+    receipt.sandboxGlobalProbe = sandboxProbe?.result?.value ?? null;
+    const slot = await debuggerSession.send('Runtime.callFunctionOn', {
+      executionContextId: sandboxId,
+      functionDeclaration: 'function(mediaBasename) { if (this.__xegLiveFilename495) return false; this.__xegLiveFilename495 = { mediaBasename, events: [], calls: [] }; return true; }',
+      arguments: [{ value: target.mediaBasename }],
+      returnByValue: true,
+    });
+    assert.equal(slot.result?.value, true, 'Userscript diagnostic slot was occupied');
+    const breakpoint = await debuggerSession.send('Debugger.setBreakpoint', {
+      location: { scriptId: script.scriptId, lineNumber: script.lineNumber },
+      condition: LIVE_CAPTURE_CONDITION,
+    });
+    breakpointId = breakpoint.breakpointId;
+    if (script.gmCallLine !== null) {
+      const gmBreakpoint = await debuggerSession.send('Debugger.setBreakpoint', {
+        location: { scriptId: script.scriptId, lineNumber: script.gmCallLine },
+        condition: LIVE_GM_CALL_CONDITION,
+      });
+      gmBreakpointId = gmBreakpoint.breakpointId;
+    }
+    const button = gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]');
+    const saves = receipt.saves as Record<string, unknown>[];
+    let original: Buffer | undefined;
+    let requestedName: string | undefined;
+    let sentinelBytes: Buffer | undefined;
+    let firstNativeName: string | undefined;
+    for (let number = 1; number <= 2; number += 1) {
+      assert.equal(await gallery.locator('[data-gallery-element="toolbar"]')
+        .getAttribute('data-focused-index'), selected.index);
+      const before = new Set((await liveNativeInventory(managerPage)).map((item) => item.id));
+      const beforeFiles = new Set(await readdir(downloads));
+      const since = observer.snapshot();
+      await button.click();
+      if (number === 1) {
+        const captured = await waitFor(async () => {
+          const result = await debuggerSession!.send('Runtime.evaluate', {
+            contextId: sandboxId!, expression: 'globalThis.__xegLiveFilename495?.events ?? []',
+            returnByValue: true,
+          });
+          const events = result.result?.value;
+          return Array.isArray(events) && events.length === 1
+            ? events[0] as Record<string, unknown> : undefined;
+        }, 'selected installed MediaInfo', 10_000);
+        receipt.selectedMedia = captured;
+        receipt.sandbox = captured.gm ?? null;
+        const sourceUrl = (captured.downloadSource as { url?: unknown } | null)?.url ??
+          captured.originalUrl ?? captured.url;
+        assert(isLiveFilenameOriginal(sourceUrl, target), 'Selected original source differs');
+        const sourceUrlText = sourceUrl as string;
+        const format = new URL(sourceUrlText).searchParams.get('format');
+        assert(format);
+        requestedName = expectedLiveFilename(captured, format);
+        receipt.expectedFilename = requestedName;
+        receipt.generatedFilename = captured.generatedFilename;
+        receipt.selectedSource = sourceUrlText;
+        const head = await page.request.head(sourceUrlText, { timeout: 15_000, maxRedirects: 0 });
+        let length: number;
+        try {
+          assert.equal(head.status(), 200);
+          length = Number(head.headers()['content-length']);
+          assert(Number.isSafeInteger(length) && length > 0 && length <= 4 * 1024 * 1024);
+        } finally {
+          await head.dispose();
+        }
+        const response = await page.request.get(sourceUrlText, {
+          timeout: 20_000, maxRedirects: 0,
+        });
+        try {
+          assert.equal(response.status(), 200);
+          assert.equal(
+            (response.headers()['content-type'] ?? '').split(';')[0]?.toLowerCase(),
+            'image/' + (format === 'jpg' ? 'jpeg' : format),
+            'Independent original MIME differs from selected format'
+          );
+          assert.equal(Number(response.headers()['content-length']), length,
+            'Independent original GET length differs from HEAD');
+          original = await response.body();
+          assert.equal(original.length, length);
+          receipt.independentOriginal = {
+            bytes: length, sha256: sha256(original), contentType: response.headers()['content-type'],
+          };
+        } finally {
+          await response.dispose();
+        }
+      }
+      const native = await waitFor(async () => {
+        const added = (await liveNativeInventory(managerPage!)).filter((item) => !before.has(item.id));
+        assert(added.length <= 1, 'One live click created multiple native IDs');
+        const attempts = receipt.nativeAttempts as Record<string, unknown>[];
+        const current = added[0];
+        if (current && !attempts.some((item) =>
+          item.number === number && item.id === current.id && item.state === current.state)) {
+          assert(attempts.length < 16, 'Live native observation bound exceeded');
+          attempts.push({
+            number, id: current.id, state: current.state, url: current.url,
+            finalUrl: current.finalUrl ?? null, filename: current.filename,
+            byExtensionId: current.byExtensionId ?? null, error: current.error ?? null,
+          });
+        }
+        if (added[0]?.state === 'interrupted') throw new Error('Native download interrupted: ' + added[0].error);
+        return added[0]?.state === 'complete' ? added[0] : undefined;
+      }, 'unique live native completion', 30_000);
+      assert.equal(native.byExtensionId, managerId,
+        'New native ID is not owned by the installed manager');
+      assert(original && requestedName);
+      const newNames = (await readdir(downloads)).filter((name) =>
+        !beforeFiles.has(name) && !name.endsWith('.crdownload'));
+      assert.equal(newNames.length, 1, 'One live click must save one new original file');
+      const observedName = newNames[0]!;
+      assert.equal(resolve(native.filename), resolve(downloads, observedName),
+        'Native ID did not own the sole new file');
+      const { bytes } = await readExactDownloadFile(join(downloads, observedName), original.length);
+      assert.equal(sha256(bytes), sha256(original), 'Native original bytes differ from independent GET');
+      await observer.flush();
+      const eventCount = observer.snapshot() - since;
+      assert(eventCount <= 1, 'One live click created multiple CDP downloads');
+      const cdpItem = eventCount ? await observer.waitForCompletion(since) : null;
+      if (cdpItem) {
+        assert.equal(cdpItem.url, native.url, 'CDP GUID and native ID identify different URLs');
+        assert.equal(cdpItem.receivedBytes, bytes.length);
+      }
+      const sourceUrl = receipt.selectedSource as string;
+      assert(
+        native.url === sourceUrl ||
+          native.url.startsWith('blob:https://x.com/') ||
+          native.url.startsWith('blob:chrome-extension://' + managerId + '/'),
+        'Native URL is not the selected original or an owned Blob'
+      );
+      const nameConforms = liveFilenameConforms(observedName, requestedName);
+      const retained = 'live-original-' + number + '.' +
+        (new URL(sourceUrl).searchParams.get('format') ?? 'bin');
+      await writeFile(join(output, retained), bytes, { flag: 'wx' });
+      saves.push({
+        number, nativeId: native.id, nativeUrl: native.url, nativeState: native.state,
+        nativeFinalUrl: native.finalUrl ?? null, nativeOriginalPath: native.filename,
+        byExtensionId: native.byExtensionId,
+        cdpGuid: cdpItem?.guid ?? null, cdpSuggestedFilename: cdpItem?.suggestedFilename ?? null,
+        requestedFilename: requestedName, observedFilename: observedName,
+        productObservedName: null, nameConforms, bytes: bytes.length,
+        sha256: sha256(bytes), retained,
+      });
+      if (number === 1) {
+        const callResult = await debuggerSession.send('Runtime.evaluate', {
+          contextId: sandboxId,
+          expression: 'globalThis.__xegLiveFilename495?.calls ?? []',
+          returnByValue: true,
+        });
+        const calls = callResult.result?.value;
+        assert(Array.isArray(calls) && calls.length <= 1, 'GM call capture exceeded bound');
+        receipt.gmCalls = calls;
+        if (calls.length === 1) {
+          assert.equal(calls[0]?.args?.url, sourceUrl);
+          assert.equal(calls[0]?.args?.name, requestedName);
+          receipt.route = { kind: 'GM', apiName: calls[0]?.apiName };
+        } else {
+          receipt.route = { kind: 'unverified', reason: 'GM call and fallback dispatch not observed' };
+        }
+        assert(breakpointId);
+        await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId });
+        breakpointId = undefined;
+        if (gmBreakpointId) {
+          await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId: gmBreakpointId });
+          gmBreakpointId = undefined;
+        }
+        await debuggerSession.send('Runtime.evaluate', {
+          contextId: sandboxId,
+          expression: 'delete globalThis.__xegLiveFilename495',
+          returnByValue: true,
+        });
+        await debuggerSession.send('Debugger.disable');
+        receipt.diagnosticsRemovedBeforeRepeat = true;
+        const gm = receipt.sandbox as Record<string, unknown> | null;
+        assert(gm && gm.scriptName === SCRIPT_NAME,
+          'Executed userscript GM_info script identity was not observed');
+        assert.equal(gm.handler, 'Tampermonkey');
+        assert.equal(gm.version, manager.managerVersion);
+        assert(Array.isArray(gm.grants) && gm.grants.includes('GM_download'),
+          'Installed GM_info grants omit declared download permission');
+        assert(gm.legacyDownloadType === 'function' || gm.modernDownloadType === 'function',
+          'Installed userscript exposes no GM download API');
+        assert.equal(receipt.generatedFilename, requestedName,
+          'Executed product filename differs from independent MediaInfo policy');
+        assert.equal(calls.length, 1, 'No observed GM call; fallback route is unverified');
+        assert(nameConforms, 'First native filename differs from selected attachment policy');
+        firstNativeName = observedName;
+        const sentinelName = browserFilename(requestedName, 1);
+        assert(!(await readdir(downloads)).includes(sentinelName), 'Sentinel candidate already exists');
+        sentinelBytes = Buffer.from('xeg-owned-distinct-same-name-sentinel-495');
+        assert.notEqual(sha256(sentinelBytes), sha256(original));
+        await writeFile(join(downloads, sentinelName), sentinelBytes, { flag: 'wx' });
+        receipt.sameNameSentinel = {
+          filename: sentinelName, sha256: sha256(sentinelBytes), firstOriginal: observedName,
+        };
+      } else {
+        assert(sentinelBytes && firstNativeName);
+        assert.equal(observedName, browserFilename(requestedName, 2),
+          'Repeat did not use the expected conflict suffix');
+        const sentinel = await readExactDownloadFile(
+          join(downloads, browserFilename(requestedName, 1)), sentinelBytes.length
+        );
+        assert.equal(sha256(sentinel.bytes), sha256(sentinelBytes),
+          'Distinct same-name sentinel was overwritten');
+        const first = await readExactDownloadFile(join(downloads, firstNativeName), original.length);
+        assert.equal(sha256(first.bytes), sha256(original), 'First native original was overwritten');
+        receipt.sameNameSentinelPreserved = true;
+      }
+      assert(nameConforms, 'Observed native filename differs from selected attachment policy');
+    }
+    receipt.status = 'observed';
+  } catch (error) {
+    primaryError = error;
+    receipt.status = 'failed';
+    receipt.error = safeRouteError(error);
+  } finally {
+    const cleanup = receipt.cleanup as Record<string, unknown>;
+    if (observer) receipt.browserDownloadEvents = observer.events();
+    if (debuggerSession && breakpointId) {
+      await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId }).then(
+        () => { cleanup.breakpointRemoved = true; },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (debuggerSession && gmBreakpointId) {
+      await debuggerSession.send('Debugger.removeBreakpoint', { breakpointId: gmBreakpointId }).then(
+        () => { cleanup.gmBreakpointRemoved = true; },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (debuggerSession && sandboxId) {
+      await debuggerSession.send('Runtime.evaluate', {
+        contextId: sandboxId,
+        expression: 'delete globalThis.__xegLiveFilename495',
+        returnByValue: true,
+      }).then(
+        () => { cleanup.sandboxDiagnosticRemoved = true; },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (debuggerSession) {
+      await debuggerSession.detach().then(
+        () => { cleanup.debuggerDetached = true; },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    observer?.dispose();
+    cleanup.downloadObserverRemoved = Boolean(observer);
+    if (managerPage) await managerPage.close().then(
+      () => { cleanup.managerPageClosed = true; },
+      (error) => cleanupErrors.push(error)
+    );
+    if (page) await page.close().then(
+      () => { cleanup.livePageClosed = true; },
+      (error) => cleanupErrors.push(error)
+    );
+    if (cdp && managerId) await cdp.send('Extensions.uninstall', { id: managerId }).then(
+      () => { cleanup.managerUninstalled = true; },
+      (error) => cleanupErrors.push(error)
+    );
+    if (context) await context.close().then(
+      () => { cleanup.browserClosed = true; },
+      (error) => cleanupErrors.push(error)
+    );
+    if (cleanup.browserClosed || !context) {
+      try {
+        assertOwned(root, profile);
+        await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+        cleanup.profileRemoved = true;
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    } else {
+      cleanup.profilePreserved = true;
+    }
+    cleanup.errors = cleanupErrors.map(safeRouteError);
+    if (cleanupErrors.length) receipt.status = 'failed';
+    await writeFile(join(output, 'userscript-live-result.json'), JSON.stringify(receipt, null, 2));
+  }
+  if (primaryError || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(primaryError ? [primaryError] : []), ...cleanupErrors],
+      'Installed userscript live qualification failed'
+    );
+  }
+  return receipt;
 }

@@ -25,6 +25,19 @@ function next() {}
 `;
 
 describe('filename correlation diagnostic', () => {
+  it('uses an explicit Jeppi target without admitting the historical attachment', () => {
+    const target = {
+      pageUrl: 'https://x.com/Jeppi_tan/status/2118423501095030841',
+      mediaBasename: 'HWYmWugaUAAi_4m',
+    };
+    const source = 'https://pbs.twimg.com/media/HWYmWugaUAAi_4m?format=jpg&name=orig';
+    expect(() => assertReportedLiveFilenameTarget(target.pageUrl, source, target)).not.toThrow();
+    expect(isReportedLiveDownloadSource(source, target)).toBe(true);
+    expect(isReportedLiveDownloadSource(source)).toBe(false);
+    expect(() => assertReportedLiveFilenameTarget(target.pageUrl, source)).toThrow();
+    expect(selectedLivePreferredSource({ downloadSource: { url: source } }, target)).toBe(source);
+  });
+
   it('confines live correlation to the reported public page and original photo', () => {
     const page = 'https://x.com/yukurach/status/2118323627615785399';
     const source = 'https://pbs.twimg.com/media/HWXMF0bbcAEnfk6?format=webp&name=orig';
