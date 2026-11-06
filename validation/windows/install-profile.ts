@@ -48,7 +48,8 @@ import {
   type FilenameDecisionControl,
 } from './filename-decision-control.ts';
 import { withFilenameCorrelation } from './filename-correlation.ts';
-import { parseLiveFilenameSelector } from './live-filename-target.ts';
+import { admitReportedLiveFilenameInstall } from './live-filename-target.ts';
+import { flattenUserscriptLiveEvidence } from './userscript-live-output.ts';
 import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
 import {
   createControlledVideoSettings,
@@ -20369,12 +20370,12 @@ export async function run({
   const reportedFilenameTarget =
     reportedFilenameText === null
       ? null
-      : parseLiveFilenameSelector(JSON.parse(reportedFilenameText));
-  if (reportedFilenameTarget !== null) {
-    assert(['chrome', 'msedge'].includes(browserName));
-    assert.equal(installation, 'extension');
-    assert.deepEqual(liveUrls, [reportedFilenameTarget.pageUrl]);
-  }
+      : admitReportedLiveFilenameInstall({
+          selector: JSON.parse(reportedFilenameText),
+          browserName,
+          installation,
+          liveUrls,
+        });
   const reportedFilenameProbe = reportedFilenameText !== null;
   const acceptanceSelectorText = await readFile(
     join(root, 'validation/windows/inputs/live-acceptance.json'),
@@ -20489,6 +20490,13 @@ export async function run({
           liveUrls[0] === reportedFilenameTarget.pageUrl),
       'Installed userscript public URL requires the exact reported photo selector'
     );
+    if (reportedFilenameTarget !== null) {
+      const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+        .filter((name) => name.endsWith('.json'))
+        .sort();
+      assert.deepEqual(selectors, ['reported-live-filename.json'],
+        'Live userscript qualification requires an exclusive photo selector');
+    }
     assert.equal(
       liveObservation,
       null,
@@ -20507,15 +20515,48 @@ export async function run({
     if (reportedFilenameTarget === null) {
       return fixture;
     }
-    const live = await runUserscriptLiveInstallation({
-      chromium,
-      root,
-      output: join(output, 'userscript-live'),
-      browserName,
-      headless,
-      target: reportedFilenameTarget,
-    });
-    return { ...fixture, live, liveUrls: [reportedFilenameTarget.pageUrl] };
+    const stage = await mkdtemp(join(root, 'xeg-userscript-live-stage-'));
+    let live: Awaited<ReturnType<typeof runUserscriptLiveInstallation>> | undefined;
+    let liveError: unknown;
+    let liveFailed = false;
+    try {
+      live = await runUserscriptLiveInstallation({
+        chromium,
+        root,
+        output: stage,
+        browserName,
+        headless,
+        target: reportedFilenameTarget,
+      });
+    } catch (error) {
+      liveFailed = true;
+      liveError = error;
+    }
+    let liveEvidence: Awaited<ReturnType<typeof flattenUserscriptLiveEvidence>>;
+    try {
+      liveEvidence = await flattenUserscriptLiveEvidence({
+        root,
+        stage,
+        output,
+        phaseStatus: liveFailed ? 'failed' : 'observed',
+      });
+    } catch (error) {
+      throw new AggregateError(
+        [...(liveFailed ? [liveError] : []), error],
+        'Live userscript evidence could not be flattened; task-owned stage preserved'
+      );
+    }
+    try {
+      await rm(stage, { recursive: true });
+    } catch (error) {
+      throw new AggregateError(
+        [...(liveFailed ? [liveError] : []), error],
+        'Flattened live userscript stage could not be removed'
+      );
+    }
+    if (liveFailed) throw liveError;
+    assert(live, 'Live userscript phase produced no result');
+    return { ...fixture, live, liveEvidence, liveUrls: [reportedFilenameTarget.pageUrl] };
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
