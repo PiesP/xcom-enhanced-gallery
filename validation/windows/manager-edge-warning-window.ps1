@@ -5,18 +5,22 @@ param(
     [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$BrowserPid,
     [Parameter(Mandatory=$true)][string]$Profile,
     [Parameter(Mandatory=$true)][string]$Output,
-    [Parameter(Mandatory=$true)][string]$OriginalPermissionHandle,
+    [Parameter(Mandatory=$true)][ValidateSet('after-permission','warning-first')][string]$Mode,
+    [string]$OriginalPermissionHandle,
     [Parameter(Mandatory=$true)][string]$ExpectedCreationUtcTicks,
     [Parameter(Mandatory=$true)][ValidateRange(1,2147483647)][int]$ExpectedSessionId,
     [switch]$InvokeLater,
-    [string]$ExpectedWarningHandle
+    [Parameter(Mandatory=$true)][string]$ExpectedWarningHandle
 )
 $ErrorActionPreference = 'Stop'
 $receiptPath = Join-Path $Output $(if ($InvokeLater) {
     'userscript-manager-edge-warning-action.json'
 } else { 'userscript-manager-edge-warning.json' })
 $receipt = @{ status = 'skipped'; reason = 'ownership-unverified'; capture = 'uia-only';
-    screenshot = 'not-captured'; laterAttempted = $false }
+    screenshot = 'not-captured'; laterAttempted = $false; mode = $Mode;
+    originalPermissionHandle = $(if ($Mode -ceq 'after-permission') {
+        $OriginalPermissionHandle
+    } else { $null }) }
 
 # Windows PowerShell 5.1 -File reads ASCII labels reliably without a BOM.
 $script:WarningTitle = [string]::Concat([char[]]@(0xAC1C,0xBC1C,0xC790,0x0020,0xBAA8,0xB4DC,0xC5D0,0xC11C,0x0020,0xD655,0xC7A5,0x0020,0xC0AC,0xC6A9,0x0020,0xD574,0xC81C))
@@ -107,7 +111,13 @@ function Get-CompleteTree {
                 } catch {}
                 try {
                     $name = [string]$current.Name
-                    $rejectedControl.name = $name.Substring(0, [Math]::Min(120, $name.Length))
+                    $knownNames = @($script:WarningTitle, $script:CloseLabel,
+                        $script:DisableLabel, $script:LaterLabel, $script:BodyLabel,
+                        $script:LinkLabel, '')
+                    $rejectedControl.name = $(if ($name -cin $knownNames) {
+                        $name
+                    } else { '[redacted]' })
+                    $rejectedControl.nameLength = $name.Length
                 } catch {}
                 try {
                     $value = $element.GetCurrentPropertyValue(
@@ -221,19 +231,26 @@ function Test-SameWarningScope {
 }
 
 try {
-    if ($ExpectedCreationUtcTicks -cnotmatch '^\d{15,20}$' -or
-        $OriginalPermissionHandle -cnotmatch '^[1-9]\d{0,19}$' -or
-        ($InvokeLater -and $ExpectedWarningHandle -cnotmatch '^[1-9]\d{0,19}$')) {
+    if ($Mode -cnotin @('after-permission','warning-first') -or
+        $ExpectedCreationUtcTicks -cnotmatch '^\d{15,20}$' -or
+        $ExpectedWarningHandle -cnotmatch '^[1-9]\d{0,19}$' -or
+        ($Mode -ceq 'after-permission' -and
+            $OriginalPermissionHandle -cnotmatch '^[1-9]\d{0,19}$') -or
+        ($Mode -ceq 'warning-first' -and $OriginalPermissionHandle)) {
         throw 'expected-identity-invalid'
     }
     $before = Get-OwnedBrowser
-    $oldHandle = [IntPtr]::new([int64]::Parse($OriginalPermissionHandle))
+    $oldHandle = $null
+    if ($Mode -ceq 'after-permission') {
+        $oldHandle = [IntPtr]::new([int64]::Parse($OriginalPermissionHandle))
+    }
     $warning = [XegEdgeWarningWindow]::GetForegroundWindow()
-    if (-not [XegEdgeWarningWindow]::IsOwned($oldHandle, [uint32]$BrowserPid) -or
-        -not [XegEdgeWarningWindow]::IsOwned($warning, [uint32]$BrowserPid) -or
-        $oldHandle -eq $warning) { throw 'window-identity-changed' }
+    if (-not [XegEdgeWarningWindow]::IsOwned($warning, [uint32]$BrowserPid) -or
+        ($Mode -ceq 'after-permission' -and
+            (-not [XegEdgeWarningWindow]::IsOwned($oldHandle, [uint32]$BrowserPid) -or
+                $oldHandle -eq $warning))) { throw 'window-identity-changed' }
     $warningHandle = $warning.ToInt64().ToString()
-    if ($InvokeLater -and $ExpectedWarningHandle -cne $warningHandle) {
+    if ($ExpectedWarningHandle -cne $warningHandle) {
         throw 'warning-handle-changed'
     }
     Add-Type -AssemblyName UIAutomationClient
@@ -269,7 +286,6 @@ try {
     $receipt.browserPid = $BrowserPid
     $receipt.creationUtcTicks = $ExpectedCreationUtcTicks
     $receipt.browserSessionId = $ExpectedSessionId
-    $receipt.originalPermissionHandle = $OriginalPermissionHandle
     $receipt.warningHandle = $warningHandle
     if (-not (Test-ExactWarning -Inspection $inspection) -or
         $inspection.laterElements.Count -ne 1) { throw 'warning-not-exact' }
@@ -280,7 +296,8 @@ try {
             $capture.browserPid -ne $BrowserPid -or
             $capture.creationUtcTicks -cne $ExpectedCreationUtcTicks -or
             $capture.browserSessionId -ne $ExpectedSessionId -or
-            $capture.originalPermissionHandle -cne $OriginalPermissionHandle -or
+            $capture.mode -cne $Mode -or
+            $capture.originalPermissionHandle -cne $receipt.originalPermissionHandle -or
             $capture.warningHandle -cne $warningHandle -or
             -not (Test-SameWarningScope -Expected $capture.warningScope -Actual $inspection)) {
             throw 'warning-signature-changed'
@@ -289,7 +306,8 @@ try {
     $after = Get-OwnedBrowser
     if ($after.CreationDate -ne $before.CreationDate -or
         [XegEdgeWarningWindow]::GetForegroundWindow() -ne $warning -or
-        -not [XegEdgeWarningWindow]::IsOwned($oldHandle, [uint32]$BrowserPid) -or
+        ($Mode -ceq 'after-permission' -and
+            -not [XegEdgeWarningWindow]::IsOwned($oldHandle, [uint32]$BrowserPid)) -or
         -not [XegEdgeWarningWindow]::IsOwned($warning, [uint32]$BrowserPid)) {
         throw 'window-identity-changed'
     }
@@ -302,7 +320,8 @@ try {
         if ($laterCurrent.ProcessId -ne $BrowserPid -or -not $laterCurrent.IsEnabled -or
             $laterCurrent.IsOffscreen -or $finalProcess.CreationDate -ne $before.CreationDate -or
             [XegEdgeWarningWindow]::GetForegroundWindow() -ne $warning -or
-            -not [XegEdgeWarningWindow]::IsOwned($oldHandle, [uint32]$BrowserPid) -or
+            ($Mode -ceq 'after-permission' -and
+                -not [XegEdgeWarningWindow]::IsOwned($oldHandle, [uint32]$BrowserPid)) -or
             -not [XegEdgeWarningWindow]::IsOwned($warning, [uint32]$BrowserPid)) {
             throw 'action-identity-changed-before-invoke'
         }

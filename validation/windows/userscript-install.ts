@@ -131,6 +131,7 @@ type ProcessInfo = { processInfo?: { type: string; id: number }[] };
 type NativeControl = {
   controlType?: string;
   name?: string;
+  depth?: number;
   isEnabled?: boolean;
   isOffscreen?: boolean;
 };
@@ -139,6 +140,8 @@ type NativePromptReceipt = {
   capture?: string;
   screenshot?: string;
   permissionGrantAttempted?: boolean;
+  truncated?: boolean;
+  visitedControls?: number;
   foregroundOwnedAndVisible?: boolean;
   browserPid?: number;
   uiaRootProcessId?: number;
@@ -146,6 +149,29 @@ type NativePromptReceipt = {
   observerSessionId?: number;
   creationUtcTicks?: string;
   foregroundHandle?: string;
+  windowOwnership?: {
+    browserPid?: number;
+    foregroundIsOwned?: boolean;
+    foregroundPid?: number;
+    foregroundHandle?: string;
+    creationUtcTicks?: string;
+    browserSessionId?: number;
+    observerSessionId?: number;
+    ownedVisibleWindowCount?: number;
+    ownedVisibleHandles?: string[];
+  };
+  identityRecheck?: {
+    sameCreation?: boolean;
+    sameForeground?: boolean;
+    afterForegroundOwned?: boolean;
+    originalForegroundOwnedAndVisible?: boolean;
+    ownedVisibleWindowEnumeration?: string;
+    beforeForegroundHandle?: string;
+    afterForegroundHandle?: string;
+    beforeCreationUtcTicks?: string;
+    afterCreationUtcTicks?: string;
+    afterForegroundPid?: number;
+  };
   controls?: NativeControl[];
   promptScope?: {
     complete?: boolean;
@@ -161,6 +187,7 @@ type NativePromptReceipt = {
 };
 type EdgeWarningReceipt = {
   status?: string;
+  mode?: 'after-permission' | 'warning-first';
   capture?: string;
   screenshot?: string;
   laterAttempted?: boolean;
@@ -168,7 +195,7 @@ type EdgeWarningReceipt = {
   browserPid?: number;
   creationUtcTicks?: string;
   browserSessionId?: number;
-  originalPermissionHandle?: string;
+  originalPermissionHandle?: string | null;
   warningHandle?: string;
   warningScope?: {
     complete?: boolean;
@@ -574,24 +601,122 @@ export function isObservedChromeNativeDownloadPrompt(receipt: NativePromptReceip
   return isObservedNativeDownloadPrompt(receipt, 'chrome');
 }
 
+/** A stable owned Edge foreground warning may precede the permission prompt. */
+export function isObservedInitialEdgeWarning(receipt: NativePromptReceipt | null) {
+  const ownership = receipt?.windowOwnership;
+  const recheck = receipt?.identityRecheck;
+  if (
+    receipt?.status !== 'captured' ||
+    receipt.capture !== 'uia-only' ||
+    receipt.screenshot !== 'not-captured' ||
+    receipt.permissionGrantAttempted !== false ||
+    receipt.truncated !== false ||
+    receipt.foregroundOwnedAndVisible !== true ||
+    !Number.isSafeInteger(receipt.browserPid) ||
+    receipt.browserPid! <= 0 ||
+    receipt.uiaRootProcessId !== receipt.browserPid ||
+    !Number.isSafeInteger(receipt.browserSessionId) ||
+    receipt.browserSessionId! <= 0 ||
+    receipt.observerSessionId !== receipt.browserSessionId ||
+    typeof receipt.creationUtcTicks !== 'string' ||
+    !/^\d{15,20}$/u.test(receipt.creationUtcTicks) ||
+    typeof receipt.foregroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(receipt.foregroundHandle) ||
+    !ownership ||
+    ownership.browserPid !== receipt.browserPid ||
+    ownership.foregroundIsOwned !== true ||
+    ownership.foregroundPid !== receipt.browserPid ||
+    ownership.foregroundHandle !== receipt.foregroundHandle ||
+    ownership.creationUtcTicks !== receipt.creationUtcTicks ||
+    ownership.browserSessionId !== receipt.browserSessionId ||
+    ownership.observerSessionId !== receipt.browserSessionId ||
+    !Number.isSafeInteger(ownership.ownedVisibleWindowCount) ||
+    ownership.ownedVisibleWindowCount! <= 0 ||
+    ownership.ownedVisibleWindowCount! > 8 ||
+    !Array.isArray(ownership.ownedVisibleHandles) ||
+    ownership.ownedVisibleHandles.length !== ownership.ownedVisibleWindowCount ||
+    !ownership.ownedVisibleHandles.includes(receipt.foregroundHandle) ||
+    recheck?.sameCreation !== true ||
+    recheck.sameForeground !== true ||
+    recheck.afterForegroundOwned !== true ||
+    recheck.originalForegroundOwnedAndVisible !== true ||
+    recheck.ownedVisibleWindowEnumeration !== 'complete' ||
+    recheck.beforeForegroundHandle !== receipt.foregroundHandle ||
+    recheck.afterForegroundHandle !== receipt.foregroundHandle ||
+    recheck.beforeCreationUtcTicks !== receipt.creationUtcTicks ||
+    recheck.afterCreationUtcTicks !== receipt.creationUtcTicks ||
+    recheck.afterForegroundPid !== receipt.browserPid ||
+    receipt.promptScope?.complete !== false ||
+    receipt.promptScope.visitedControls !== 0 ||
+    receipt.promptScope.attemptedNodes !== 0 ||
+    receipt.promptScope.reason !== 'prompt-window-not-unique' ||
+    !Array.isArray(receipt.controls) ||
+    receipt.controls.length !== 14 ||
+    !Number.isSafeInteger(receipt.visitedControls) ||
+    receipt.visitedControls! < 14 ||
+    receipt.visitedControls! > 256
+  ) {
+    return false;
+  }
+  const counts = new Map<string, number>();
+  for (const control of receipt.controls) {
+    if (!Number.isSafeInteger(control.depth) || control.depth! < 0 || control.depth! > 16) {
+      return false;
+    }
+    if (control.name === '' && control.controlType === 'ControlType.Pane') {
+      continue;
+    }
+    const key = `${control.controlType}:${control.name}`;
+    if (
+      ![
+        `ControlType.Pane:${EDGE_WARNING_TITLE}`,
+        `ControlType.Text:${EDGE_WARNING_TITLE}`,
+        'ControlType.Button:닫기',
+        'ControlType.Button:확장 사용 해제',
+        'ControlType.Button:나중에',
+        `ControlType.Text:${EDGE_WARNING_BODY}`,
+        'ControlType.Hyperlink:자세히 알아보기',
+      ].includes(key) ||
+      (key === `ControlType.Pane:${EDGE_WARNING_TITLE}` && control.depth !== 0)
+    ) {
+      return false;
+    }
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return (
+    counts.get(`ControlType.Pane:${EDGE_WARNING_TITLE}`) === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_TITLE}`) === 2 &&
+    counts.get('ControlType.Button:닫기') === 1 &&
+    counts.get('ControlType.Button:확장 사용 해제') === 1 &&
+    counts.get('ControlType.Button:나중에') === 1 &&
+    counts.get(`ControlType.Text:${EDGE_WARNING_BODY}`) === 1 &&
+    counts.get('ControlType.Hyperlink:자세히 알아보기') === 1
+  );
+}
+
 export function isObservedEdgeWarning(
   receipt: EdgeWarningReceipt | null,
-  original: NativePromptReceipt
+  original: NativePromptReceipt,
+  mode: 'after-permission' | 'warning-first' = 'after-permission'
 ) {
   const scope = receipt?.warningScope;
   if (
     !(
       receipt?.status === 'captured' &&
+      receipt.mode === mode &&
       receipt.capture === 'uia-only' &&
       receipt.screenshot === 'not-captured' &&
       receipt.laterAttempted === false &&
       receipt.browserPid === original.browserPid &&
       receipt.creationUtcTicks === original.creationUtcTicks &&
       receipt.browserSessionId === original.browserSessionId &&
-      receipt.originalPermissionHandle === original.foregroundHandle &&
+      receipt.originalPermissionHandle ===
+        (mode === 'after-permission' ? original.foregroundHandle : null) &&
       typeof receipt.warningHandle === 'string' &&
       /^[1-9]\d{0,19}$/u.test(receipt.warningHandle) &&
-      receipt.warningHandle !== original.foregroundHandle &&
+      (mode === 'after-permission'
+        ? receipt.warningHandle !== original.foregroundHandle
+        : receipt.warningHandle === original.foregroundHandle) &&
       scope?.complete === true &&
       scope.reason === null &&
       typeof scope.visitedControls === 'number' &&
@@ -676,10 +801,73 @@ export async function dismissObservedEdgeWarningOnce(
     originalAction.browserPid !== original.browserPid ||
     originalAction.creationUtcTicks !== original.creationUtcTicks ||
     originalAction.browserSessionId !== original.browserSessionId ||
-    originalAction.foregroundHandle === original.foregroundHandle
+    originalAction.foregroundHandle === original.foregroundHandle ||
+    typeof originalAction.foregroundHandle !== 'string' ||
+    !/^[1-9]\d{0,19}$/u.test(originalAction.foregroundHandle)
   ) {
     return skipped('predecessor-not-safe');
   }
+  return captureAndDismissEdgeWarningOnce(
+    cdp,
+    root,
+    output,
+    profile,
+    ask,
+    managerId,
+    context,
+    original,
+    'after-permission',
+    originalAction.foregroundHandle,
+    originalAction,
+    run
+  );
+}
+
+async function dismissObservedEdgeWarningFirstOnce(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  initial: NativePromptReceipt,
+  run: typeof execFileAsync
+) {
+  if (!isObservedInitialEdgeWarning(initial)) {
+    return { status: 'skipped', reason: 'initial-warning-not-exact' };
+  }
+  return captureAndDismissEdgeWarningOnce(
+    cdp,
+    root,
+    output,
+    profile,
+    ask,
+    managerId,
+    context,
+    initial,
+    'warning-first',
+    initial.foregroundHandle!,
+    null,
+    run
+  );
+}
+
+async function captureAndDismissEdgeWarningOnce(
+  cdp: CDPSession,
+  root: string,
+  output: string,
+  profile: string,
+  ask: Page,
+  managerId: string,
+  context: BrowserContext,
+  original: NativePromptReceipt,
+  mode: 'after-permission' | 'warning-first',
+  expectedWarningHandle: string,
+  originalAction: NativePromptReceipt | null,
+  run: typeof execFileAsync
+) {
+  const skipped = (reason: string) => ({ status: 'skipped', reason });
   const askCurrent = () =>
     !ask.isClosed() &&
     ask.context() === context &&
@@ -705,17 +893,19 @@ export async function dismissObservedEdgeWarningOnce(
       'browser-pid-changed'
     );
     const initialBytes = await readFile(join(output, NATIVE_PERMISSION_RECEIPT));
-    const actionBytes = await readFile(join(output, NATIVE_PERMISSION_ACTION_RECEIPT));
     assert.deepEqual(JSON.parse(initialBytes.toString('utf8')), original);
-    assert.deepEqual(JSON.parse(actionBytes.toString('utf8')), originalAction);
     await writeFile(
       join(output, 'userscript-manager-native-permission-initial.json'),
       initialBytes
     );
-    await writeFile(
-      join(output, 'userscript-manager-native-permission-initial-action.json'),
-      actionBytes
-    );
+    if (originalAction) {
+      const actionBytes = await readFile(join(output, NATIVE_PERMISSION_ACTION_RECEIPT));
+      assert.deepEqual(JSON.parse(actionBytes.toString('utf8')), originalAction);
+      await writeFile(
+        join(output, 'userscript-manager-native-permission-initial-action.json'),
+        actionBytes
+      );
+    }
     const args = [
       '-NoProfile',
       '-NonInteractive',
@@ -727,18 +917,23 @@ export async function dismissObservedEdgeWarningOnce(
       profile,
       '-Output',
       output,
-      '-OriginalPermissionHandle',
-      original.foregroundHandle!,
+      '-Mode',
+      mode,
       '-ExpectedCreationUtcTicks',
       original.creationUtcTicks!,
       '-ExpectedSessionId',
       String(original.browserSessionId),
+      '-ExpectedWarningHandle',
+      expectedWarningHandle,
     ];
+    if (mode === 'after-permission') {
+      args.push('-OriginalPermissionHandle', original.foregroundHandle!);
+    }
     await run('powershell.exe', args, { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 });
     const warning: EdgeWarningReceipt = JSON.parse(
       await readFile(join(output, EDGE_WARNING_RECEIPT), 'utf8')
     );
-    if (!isObservedEdgeWarning(warning, original)) {
+    if (!isObservedEdgeWarning(warning, original, mode)) {
       return skipped('warning-not-exact');
     }
     await pending();
@@ -747,11 +942,11 @@ export async function dismissObservedEdgeWarningOnce(
       original.browserPid,
       'browser-pid-changed'
     );
-    await run(
-      'powershell.exe',
-      [...args, '-InvokeLater', '-ExpectedWarningHandle', warning.warningHandle!],
-      { timeout: 12_000, windowsHide: true, maxBuffer: 4_096 }
-    );
+    await run('powershell.exe', [...args, '-InvokeLater'], {
+      timeout: 12_000,
+      windowsHide: true,
+      maxBuffer: 4_096,
+    });
     const action: EdgeWarningReceipt = JSON.parse(
       await readFile(join(output, EDGE_WARNING_ACTION_RECEIPT), 'utf8')
     );
@@ -761,6 +956,7 @@ export async function dismissObservedEdgeWarningOnce(
     if (
       action.capture !== 'uia-only' ||
       action.screenshot !== 'not-captured' ||
+      action.mode !== warning.mode ||
       action.browserPid !== warning.browserPid ||
       action.creationUtcTicks !== warning.creationUtcTicks ||
       action.browserSessionId !== warning.browserSessionId ||
@@ -768,7 +964,11 @@ export async function dismissObservedEdgeWarningOnce(
       action.warningHandle !== warning.warningHandle ||
       !action.warningScope ||
       !warning.warningScope ||
-      !isObservedEdgeWarning({ ...action, status: 'captured', laterAttempted: false }, original)
+      !isObservedEdgeWarning(
+        { ...action, status: 'captured', laterAttempted: false },
+        original,
+        mode
+      )
     ) {
       return { status: 'unavailable', reason: 'warning-action-identity-changed' };
     }
@@ -899,6 +1099,50 @@ export async function inspectAndAllowNativeManagerPermission(
   }
   try {
     const receipt = JSON.parse(await readFile(join(output, NATIVE_PERMISSION_RECEIPT), 'utf8'));
+    if (browserName === 'msedge' && isObservedInitialEdgeWarning(receipt)) {
+      const warning = await dismissObservedEdgeWarningFirstOnce(
+        cdp,
+        root,
+        output,
+        profile,
+        ask,
+        managerId,
+        context,
+        receipt,
+        run
+      );
+      const outcome = {
+        ...diagnostic,
+        action: {
+          status: 'skipped',
+          reason: 'warning-before-permission-action',
+          permissionGrantAttempted: false,
+        },
+        warning,
+      };
+      if (warning.status !== 'invoked') {
+        return outcome;
+      }
+      let retry;
+      try {
+        retry = await retryNativePermissionAfterWarning(
+          cdp,
+          root,
+          output,
+          profile,
+          ask,
+          managerId,
+          context,
+          run
+        );
+      } catch (error) {
+        retry = {
+          status: 'unavailable',
+          reason: error instanceof Error ? error.name : typeof error,
+        };
+      }
+      return { ...outcome, retry };
+    }
     if (receipt.promptScope?.complete === false) {
       const reason = PROMPT_SCOPE_REASONS.has(receipt.promptScope.reason)
         ? receipt.promptScope.reason

@@ -259,7 +259,12 @@ const userscriptInstall = (await import(
   browserProcessId(value: unknown): number | null;
   isObservedChromeNativeDownloadPrompt(value: unknown): boolean;
   isObservedNativeDownloadPrompt(value: unknown, browserName: string): boolean;
-  isObservedEdgeWarning(value: unknown, original: unknown): boolean;
+  isObservedInitialEdgeWarning(value: unknown): boolean;
+  isObservedEdgeWarning(
+    value: unknown,
+    original: unknown,
+    mode?: 'after-permission' | 'warning-first'
+  ): boolean;
   dismissObservedEdgeWarningOnce(
     cdp: unknown,
     root: string,
@@ -727,6 +732,7 @@ describe('Windows X live page validation', () => {
 
   const edgeWarning = () => ({
     status: 'captured',
+    mode: 'after-permission' as 'after-permission' | 'warning-first',
     capture: 'uia-only',
     screenshot: 'not-captured',
     laterAttempted: false,
@@ -767,6 +773,84 @@ describe('Windows X live page validation', () => {
         isOffscreen: false,
       })),
     },
+  });
+
+  const initialEdgeWarning = () => {
+    const warning = edgeWarning();
+    const foregroundHandle = warning.warningHandle;
+    const creationUtcTicks = warning.creationUtcTicks;
+    return {
+      status: 'captured',
+      capture: 'uia-only',
+      screenshot: 'not-captured',
+      permissionGrantAttempted: false,
+      truncated: false,
+      visitedControls: 15,
+      browserPid: 42,
+      uiaRootProcessId: 42,
+      browserSessionId: 2,
+      observerSessionId: 2,
+      creationUtcTicks,
+      foregroundHandle,
+      foregroundOwnedAndVisible: true,
+      controls: warning.warningScope.controls,
+      promptScope: {
+        complete: false,
+        reason: 'prompt-window-not-unique',
+        visitedControls: 0,
+        attemptedNodes: 0,
+      },
+      windowOwnership: {
+        browserPid: 42,
+        foregroundIsOwned: true,
+        foregroundPid: 42,
+        foregroundHandle,
+        creationUtcTicks,
+        browserSessionId: 2,
+        observerSessionId: 2,
+        ownedVisibleWindowCount: 1,
+        ownedVisibleHandles: [foregroundHandle],
+      },
+      identityRecheck: {
+        sameCreation: true,
+        sameForeground: true,
+        afterForegroundOwned: true,
+        originalForegroundOwnedAndVisible: true,
+        ownedVisibleWindowEnumeration: 'complete',
+        beforeForegroundHandle: foregroundHandle,
+        afterForegroundHandle: foregroundHandle,
+        beforeCreationUtcTicks: creationUtcTicks,
+        afterCreationUtcTicks: creationUtcTicks,
+        afterForegroundPid: 42,
+      },
+    };
+  };
+
+  it('admits only a stable owned initial Edge warning before any permission action', () => {
+    const initial = initialEdgeWarning();
+    expect(userscriptInstall.isObservedInitialEdgeWarning(initial)).toBe(true);
+    const warning = edgeWarning();
+    warning.mode = 'warning-first';
+    Object.assign(warning, {
+      originalPermissionHandle: null,
+      warningHandle: initial.foregroundHandle,
+    });
+    expect(userscriptInstall.isObservedEdgeWarning(warning, initial, 'warning-first')).toBe(true);
+    warning.originalPermissionHandle = '8259362';
+    expect(userscriptInstall.isObservedEdgeWarning(warning, initial, 'warning-first')).toBe(false);
+
+    const changedOwnership = initialEdgeWarning();
+    changedOwnership.windowOwnership.foregroundIsOwned = false;
+    expect(userscriptInstall.isObservedInitialEdgeWarning(changedOwnership)).toBe(false);
+    const changedRecheck = initialEdgeWarning();
+    changedRecheck.identityRecheck.sameForeground = false;
+    expect(userscriptInstall.isObservedInitialEdgeWarning(changedRecheck)).toBe(false);
+    const attempted = initialEdgeWarning();
+    attempted.permissionGrantAttempted = true;
+    expect(userscriptInstall.isObservedInitialEdgeWarning(attempted)).toBe(false);
+    const unknownControl = initialEdgeWarning();
+    unknownControl.controls[11]!.name = 'Unknown';
+    expect(userscriptInstall.isObservedInitialEdgeWarning(unknownControl)).toBe(false);
   });
 
   it('admits only a complete owned Edge warning with one visible Later control', () => {
@@ -842,15 +926,16 @@ describe('Windows X live page validation', () => {
     expect(script).toContain('function Test-ExactWarning {');
     expect(script).toContain('function Test-SameWarningScope {');
     expect(script).toContain('function Get-CompleteTree {');
-    expect(script).toContain(
-      '$oldHandle = [IntPtr]::new([int64]::Parse($OriginalPermissionHandle))'
-    );
+    expect(script).toContain('[IntPtr]::new([int64]::Parse($OriginalPermissionHandle))');
     expect(script.match(/IsOwned\(\$oldHandle, \[uint32\]\$BrowserPid\)/gu)).toHaveLength(3);
     expect(script).not.toContain('GetFirstChild($oldRoot)');
     expect(script).not.toContain('prior-permission-cross-process');
-    expect(script).toContain(
-      '$rejectedControl.name = $name.Substring(0, [Math]::Min(120, $name.Length))'
-    );
+    expect(script).toContain("[ValidateSet('after-permission','warning-first')]");
+    expect(script).toContain("$Mode -ceq 'warning-first' -and $OriginalPermissionHandle");
+    expect(script).toContain('$ExpectedWarningHandle -cne $warningHandle');
+    expect(script).toContain('$capture.mode -cne $Mode');
+    expect(script).toContain("} else { '[redacted]' }");
+    expect(script).toContain('$rejectedControl.nameLength = $name.Length');
     expect(script).toContain(
       '$rejectedControl.controlType = $type.Substring(0, [Math]::Min(80, $type.Length))'
     );
@@ -950,6 +1035,10 @@ describe('Windows X live page validation', () => {
       expect(result.status).toBe('invoked');
       expect(run).toHaveBeenCalledTimes(2);
       expect(run.mock.calls[1]?.[1]).toContain('-InvokeLater');
+      expect(run.mock.calls[0]?.[1]).toContain('after-permission');
+      expect(run.mock.calls[0]?.[1]).toContain('-OriginalPermissionHandle');
+      expect(run.mock.calls[0]?.[1]).toContain(original.foregroundHandle);
+      expect(run.mock.calls[0]?.[1]).toContain(originalAction.foregroundHandle);
       expect(
         readFileSync(join(output, 'userscript-manager-native-permission-initial.json'), 'utf8')
       ).toBe(JSON.stringify(original));
@@ -1047,6 +1136,7 @@ describe('Windows X live page validation', () => {
     };
     const cdp = { send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: 42 }] })) };
     let firstActionUnverified = false;
+    let firstActionReason = 'action-identity-or-prompt-mismatch';
     let nativeActions = 0;
     const run = vi.fn(async (_file: string, args: string[]) => {
       const warningHelper = args.some((arg) => arg.endsWith('manager-edge-warning-window.ps1'));
@@ -1071,9 +1161,7 @@ describe('Windows X live page validation', () => {
           nativeActions === 1
             ? {
                 status: firstActionUnverified ? 'unverified-after-invoke' : 'skipped',
-                reason: firstActionUnverified
-                  ? 'native-capture-unavailable'
-                  : 'action-identity-or-prompt-mismatch',
+                reason: firstActionUnverified ? 'native-capture-unavailable' : firstActionReason,
                 capture: 'uia-only',
                 screenshot: 'not-captured',
                 permissionGrantAttempted: firstActionUnverified,
@@ -1127,6 +1215,169 @@ describe('Windows X live page validation', () => {
       expect(unverified.action.status).toBe('unverified-after-invoke');
       expect(unverified.warning).toBeUndefined();
       expect(run).toHaveBeenCalledTimes(2);
+      run.mockClear();
+      nativeActions = 0;
+      firstActionUnverified = false;
+      firstActionReason = 'prior-permission-cross-process';
+      const unsafe = await userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+      expect(unsafe.action.status).toBe('skipped');
+      expect(unsafe.warning).toEqual({ status: 'skipped', reason: 'predecessor-not-safe' });
+      expect(run).toHaveBeenCalledTimes(2);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('handles an owned Edge warning before any permission action, then captures permission anew', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'xeg-edge-warning-first-'));
+    const profile = join(root, 'xeg-userscript-install-owned');
+    const output = join(root, 'output');
+    mkdirSync(profile);
+    mkdirSync(output);
+    let askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+    let permissionGranted = false;
+    let optionsCount = 1;
+    let currentPid = 42;
+    let nativeCaptures = 0;
+    let nativeActions = 0;
+    let initial = initialEdgeWarning();
+    let retryPrompt = edgeNativePrompt();
+    let warningCapture = {
+      ...edgeWarning(),
+      mode: 'warning-first' as const,
+      originalPermissionHandle: null,
+      warningHandle: initial.foregroundHandle,
+    };
+    let warningAction = { ...warningCapture, status: 'invoked', laterAttempted: true };
+    const options = {
+      isClosed: () => false,
+      url: () => 'chrome-extension://owned/options.html',
+      evaluate: vi.fn(async () => permissionGranted),
+    };
+    const context = { pages: () => Array.from({ length: optionsCount }, () => options) };
+    const ask = { isClosed: () => false, context: () => context, url: () => askUrl };
+    const cdp = {
+      send: vi.fn(async () => ({ processInfo: [{ type: 'browser', id: currentPid }] })),
+    };
+    const run = vi.fn(async (_file: string, args: string[]) => {
+      const isWarning = args.some((arg) => arg.endsWith('manager-edge-warning-window.ps1'));
+      const isAction = args.includes('-InvokeLater') || args.includes('-InvokeAllow');
+      if (isWarning) {
+        expect(args).toContain('warning-first');
+        expect(args).not.toContain('-OriginalPermissionHandle');
+        expect(args[args.indexOf('-ExpectedWarningHandle') + 1]).toBe(initial.foregroundHandle);
+        writeFileSync(
+          join(
+            output,
+            isAction
+              ? 'userscript-manager-edge-warning-action.json'
+              : 'userscript-manager-edge-warning.json'
+          ),
+          JSON.stringify(isAction ? warningAction : warningCapture)
+        );
+      } else if (isAction) {
+        nativeActions++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission-action.json'),
+          JSON.stringify({
+            status: 'invoked',
+            capture: 'uia-only',
+            screenshot: 'not-captured',
+            permissionGrantAttempted: true,
+            postProcessStable: true,
+            postForegroundOwned: true,
+          })
+        );
+      } else {
+        nativeCaptures++;
+        writeFileSync(
+          join(output, 'userscript-manager-native-permission.json'),
+          JSON.stringify(nativeCaptures === 1 ? initial : retryPrompt)
+        );
+      }
+    });
+    const execute = async () => {
+      nativeCaptures = 0;
+      nativeActions = 0;
+      run.mockClear();
+      return userscriptInstall.inspectAndAllowNativeManagerPermission(
+        cdp,
+        root,
+        output,
+        profile,
+        'msedge',
+        ask,
+        'owned',
+        context,
+        run
+      );
+    };
+    try {
+      const result = await execute();
+      expect(result.action).toEqual({
+        status: 'skipped',
+        reason: 'warning-before-permission-action',
+        permissionGrantAttempted: false,
+      });
+      expect(result.warning?.status).toBe('invoked');
+      expect(result.retry?.status).toBe('invoked');
+      expect(run).toHaveBeenCalledTimes(5);
+      expect(nativeActions).toBe(1);
+      expect(
+        readFileSync(join(output, 'userscript-manager-native-permission-initial.json'), 'utf8')
+      ).toBe(JSON.stringify(initial));
+
+      askUrl = 'chrome-extension://other/ask.html?aid=opaque';
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      askUrl = 'chrome-extension://owned/ask.html?aid=opaque';
+      optionsCount = 2;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      optionsCount = 1;
+      permissionGranted = true;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      permissionGranted = false;
+      currentPid = 43;
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledOnce();
+      currentPid = 42;
+
+      warningCapture = { ...warningCapture, warningHandle: '8259365' };
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      warningCapture = { ...warningCapture, warningHandle: initial.foregroundHandle };
+      warningCapture.warningScope.complete = false;
+      warningCapture.warningScope.reason = 'cross-process';
+      expect((await execute()).warning?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(2);
+      warningCapture.warningScope.complete = true;
+      warningCapture.warningScope.reason = null;
+      warningAction = { ...warningAction, warningHandle: '8259365' };
+      expect((await execute()).warning?.status).toBe('unavailable');
+      expect(run).toHaveBeenCalledTimes(3);
+      warningAction = { ...warningAction, warningHandle: initial.foregroundHandle };
+
+      retryPrompt = edgeNativePrompt();
+      retryPrompt.promptScope.complete = false;
+      expect((await execute()).retry?.status).toBe('skipped');
+      expect(run).toHaveBeenCalledTimes(4);
+      expect(nativeActions).toBe(0);
+      initial = initialEdgeWarning();
+      initial.identityRecheck.sameCreation = false;
+      expect((await execute()).warning).toBeUndefined();
+      expect(run).toHaveBeenCalledOnce();
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
