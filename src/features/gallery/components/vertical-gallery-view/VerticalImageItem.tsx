@@ -1,3 +1,4 @@
+import { traceGalleryScroll } from '@features/gallery/hooks/scroll-diagnostic';
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
@@ -230,6 +231,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleMediaLoad = () => {
+    traceGalleryScroll('media-load', () => ({
+      mediaId: local.media.id,
+      index: local.index,
+      complete: imageRef()?.complete,
+      naturalWidth: imageRef()?.naturalWidth,
+    }));
     if (!isLoaded()) {
       setIsLoaded(true);
       setIsError(false);
@@ -241,6 +248,12 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
   };
 
   const handleMediaError = () => {
+    traceGalleryScroll('media-error', () => ({
+      mediaId: local.media.id,
+      index: local.index,
+      complete: imageRef()?.complete,
+      naturalWidth: imageRef()?.naturalWidth,
+    }));
     if (isError()) {
       return;
     }

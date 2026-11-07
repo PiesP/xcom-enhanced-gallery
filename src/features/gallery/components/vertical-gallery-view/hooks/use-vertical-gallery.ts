@@ -1,3 +1,4 @@
+import { traceGalleryScroll } from '@features/gallery/hooks/scroll-diagnostic';
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
@@ -193,6 +194,13 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     toolbarWrapperEl,
     isVisible,
     onViewportApplied: (): void => {
+      traceGalleryScroll('viewport-realign-guard', () => ({
+        visible: isVisible(),
+        userAt: lastScrollTime(),
+        programmaticAt: navigationState.programmaticScrollTimestamp(),
+        focusedIndex: focusedIndex(),
+        currentIndex: currentIndex(),
+      }));
       if (!isVisible() || lastScrollTime() > navigationState.programmaticScrollTimestamp()) {
         return;
       }

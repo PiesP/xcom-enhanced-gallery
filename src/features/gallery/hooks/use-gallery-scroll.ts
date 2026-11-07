@@ -1,3 +1,4 @@
+import { traceGalleryScroll } from '@features/gallery/hooks/scroll-diagnostic';
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
@@ -76,12 +77,16 @@ export function useGalleryScroll({
   const scrollIdleTimer = createTimeout();
 
   const markScrolling = (): void => {
+    traceGalleryScroll('mark-scrolling', () => ({
+      programmaticAt: programmaticTimestampAccessor(),
+    }));
     setIsScrolling(true);
     setLastScrollTime(performance.now());
   };
 
   const scheduleScrollEnd = (): void => {
     scrollIdleTimer.set(() => {
+      traceGalleryScroll('scroll-idle');
       setIsScrolling(false);
       if (__DEV__) {
         logger.debug('useGalleryScroll: Scroll ended');
@@ -137,6 +142,12 @@ export function useGalleryScroll({
   };
 
   const handleScroll = (): void => {
+    traceGalleryScroll('scroll-event-guard', () => ({
+      open: isGalleryOpen(),
+      ignore: shouldIgnoreScroll(),
+      programmaticAt: programmaticTimestampAccessor(),
+      scrollTop: scrollTargetAccessor()?.scrollTop,
+    }));
     if (!isGalleryOpen() || shouldIgnoreScroll()) {
       return;
     }
