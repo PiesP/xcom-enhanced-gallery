@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, test, vi } from 'vite-plus/test';
 import { validateFirefoxSelectors } from './firefox-install.ts';
 import { run } from './install-profile.ts';
+import { observedSelectedAlignment } from './source-image-trace.ts';
 
 const mocks = vi.hoisted(() => ({
   startLoopback: vi.fn(),
@@ -134,6 +135,13 @@ test('focused selector reaches the existing three-fault helper and retains faile
 
 test('selector rejects extra fields, other selectors, other modes and upgrade inputs before launch', async () => {
   const { chromium } = installedBrowser();
+  await writeFile(selector, '{"scenario":"source-image-failures","faultRelease":"unknown"}\n');
+  await assert.rejects(run(options(chromium)), /fault release selector is unsupported/u);
+  await writeFile(
+    selector,
+    '{"scenario":"source-image-failures","faultRelease":"after-initial-alignment"}\n'
+  );
+  await assert.rejects(run(options(chromium)), /requires the bounded source image trace/u);
   await writeFile(selector, '{"scenario":"source-image-failures","skip404":true}\n');
   await assert.rejects(run(options(chromium)));
   await writeFile(selector, '{"scenario":"source-image-failures","trace":true}\n');
@@ -156,6 +164,73 @@ test('selector rejects extra fields, other selectors, other modes and upgrade in
   await assert.rejects(validateFirefoxSelectors(root), /does not implement this selector/u);
   assert.equal(chromium.launchPersistentContext.mock.calls.length, 0);
   assert.equal(mocks.startLoopback.mock.calls.length, 0);
+});
+
+test('diagnostic selector admits the bounded alignment gate without weakening the three cases', async () => {
+  const { chromium } = installedBrowser();
+  await writeFile(
+    selector,
+    '{"scenario":"source-image-failures","trace":true,"faultRelease":"after-initial-alignment"}\n'
+  );
+  await assert.rejects(run(options(chromium)), /Selected image failure validation/u);
+  const evidence = JSON.parse(
+    await readFile(join(output, 'focused-source-image-failures.json'), 'utf8')
+  );
+  assert.deepEqual(
+    evidence.cases.map((item: { kind: string }) => item.kind),
+    ['404', 'empty', 'corrupt']
+  );
+});
+
+test('alignment gate needs second accepted viewport guard and two settled selected frames', () => {
+  const originalUrl = 'https://pbs.twimg.com/media/selected?format=jpg&name=orig';
+  const guard = (at: number) => ({
+    event: 'viewport-realign-guard',
+    at,
+    visible: true,
+    currentIndex: 1,
+    focusedIndex: 1,
+    userAt: 0,
+    programmaticAt: at - 1,
+  });
+  const aligned = { event: 'align-done', at: 120, index: 1 };
+  const frame = (atMs: number, top = 128, scrollTop = 354) => ({
+    atMs,
+    selectedIndex: '1',
+    currentIndex: '1',
+    focusedIndex: '1',
+    imageSrc: originalUrl,
+    itemTop: top,
+    portTop: 0,
+    portBottom: 800,
+    scrollTop,
+    clearance: 128,
+  });
+  const events = [guard(100), guard(110), aligned];
+  const frames = [frame(130), frame(146)];
+  assert.deepEqual(observedSelectedAlignment(events, frames, originalUrl), {
+    secondGuardAtMs: 110,
+    alignDoneAtMs: 120,
+    frames,
+  });
+  assert.equal(observedSelectedAlignment([guard(100), aligned], frames, originalUrl), null);
+  assert.equal(observedSelectedAlignment(events, [frame(119), frame(146)], originalUrl), null);
+  assert.equal(
+    observedSelectedAlignment(events, [frame(130), frame(146, -400)], originalUrl),
+    null
+  );
+  assert.equal(
+    observedSelectedAlignment(events, [frame(130), frame(146, 128, 355)], originalUrl),
+    null
+  );
+  assert.equal(
+    observedSelectedAlignment(
+      events,
+      [{ ...frame(130), imageSrc: 'wrong' }, frame(146)],
+      originalUrl
+    ),
+    null
+  );
 });
 
 test('Windows source bundle includes the trace helper and quality fixture', async () => {

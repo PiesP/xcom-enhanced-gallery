@@ -64,7 +64,11 @@ import {
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
 import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
-import { finishSourceImageTrace, startSourceImageTrace } from './source-image-trace.ts';
+import {
+  finishSourceImageTrace,
+  startSourceImageTrace,
+  waitForSelectedAlignmentBeforeFault,
+} from './source-image-trace.ts';
 import {
   captureUpgradeSettingsFailure,
   observeDefaultVideoClick,
@@ -867,6 +871,11 @@ type SourceImageFailureEvidence = {
     screenshotError?: string;
     trace?: Awaited<ReturnType<typeof finishSourceImageTrace>>;
     traceNetwork?: Array<{ event: string; atEpochMs: number; status?: number }>;
+    faultReleaseGate?:
+      | ({ status: 'observed'; routeAtEpochMs: number; fulfilledAtEpochMs?: number } & Awaited<
+          ReturnType<typeof waitForSelectedAlignmentBeforeFault>
+        >)
+      | { status: 'failed'; routeAtEpochMs: number; error: string };
     error?: string;
     cleanup: {
       routeRemoved: boolean;
@@ -13920,6 +13929,7 @@ async function runSourceImageFailureCases({
   qualityApiResponses,
   qualityRequests,
   trace = false,
+  faultRelease = 'immediate',
 }: {
   context: BrowserContext;
   evidence: SourceImageFailureEvidence;
@@ -13929,6 +13939,7 @@ async function runSourceImageFailureCases({
   qualityApiResponses: ApiRecord[];
   qualityRequests: QualityRequest[];
   trace?: boolean;
+  faultRelease?: 'immediate' | 'after-initial-alignment';
 }) {
   const originalUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
   const displayUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=small`;
@@ -14006,6 +14017,7 @@ async function runSourceImageFailureCases({
     };
     const faultRoute = async (route: Route) => {
       assert.equal(route.request().url(), originalUrl);
+      const firstFault = receipt.faultRequests.length === 0;
       if (traceArmed) {
         assert(receipt.traceNetwork && receipt.traceNetwork.length < 16);
         receipt.traceNetwork.push({ event: 'fault-route', atEpochMs: Date.now() });
@@ -14017,6 +14029,19 @@ async function runSourceImageFailureCases({
         bytes: body.length,
         resourceType: route.request().resourceType(),
       });
+      if (firstFault && faultRelease === 'after-initial-alignment') {
+        const routeAtEpochMs = Date.now();
+        try {
+          const gate = await waitForSelectedAlignmentBeforeFault(owned!, originalUrl);
+          receipt.faultReleaseGate = { status: 'observed', routeAtEpochMs, ...gate };
+        } catch (error) {
+          receipt.faultReleaseGate = {
+            status: 'failed',
+            routeAtEpochMs,
+            error: safeError(error),
+          };
+        }
+      }
       await route.fulfill({
         status: expectedStatus,
         contentType: 'image/jpeg',
@@ -14027,6 +14052,9 @@ async function runSourceImageFailureCases({
           'Access-Control-Allow-Credentials': 'true',
         },
       });
+      if (receipt.faultReleaseGate?.status === 'observed' && firstFault) {
+        receipt.faultReleaseGate.fulfilledAtEpochMs = Date.now();
+      }
       if (traceArmed) {
         assert(receipt.traceNetwork && receipt.traceNetwork.length < 16);
         receipt.traceNetwork.push({ event: 'fault-fulfilled', atEpochMs: Date.now() });
@@ -14112,6 +14140,13 @@ async function runSourceImageFailureCases({
       await gallery.waitFor({ state: 'visible' });
       const failed = await failedSelection();
       receipt.failed = failed;
+      if (faultRelease === 'after-initial-alignment') {
+        assert.equal(
+          receipt.faultReleaseGate?.status,
+          'observed',
+          `Selected ${kind} diagnostic fault release lacked a settled alignment: ${JSON.stringify(receipt.faultReleaseGate)}`
+        );
+      }
       assert(
         failed.currentSrc === '' || failed.currentSrc === originalUrl,
         'Failed image currentSrc must not point at another attachment'
@@ -20464,6 +20499,7 @@ async function runSourceImageFailureFocusedProbe({
   output,
   root,
   trace,
+  faultRelease,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -20473,6 +20509,7 @@ async function runSourceImageFailureFocusedProbe({
   output: string;
   root: string;
   trace: boolean;
+  faultRelease: 'immediate' | 'after-initial-alignment';
 }) {
   const evidence: SourceImageFailureEvidence = { status: 'pending', cases: [] };
   let routes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
@@ -20493,6 +20530,7 @@ async function runSourceImageFailureFocusedProbe({
       qualityApiResponses: routes.qualityApiResponses,
       qualityRequests: routes.qualityRequests,
       trace,
+      faultRelease,
     });
     assert.deepEqual(routes.unhandledRequests, [], 'Source image fixture left a request unhandled');
     const transport = nativeLoopback.snapshot();
@@ -20724,15 +20762,30 @@ export async function run({
     }
     throw error;
   });
-  const sourceImageProbe = sourceImageSelectorText !== null;
-  const sourceImageTrace =
-    sourceImageSelectorText !== null &&
-    (JSON.parse(sourceImageSelectorText) as { trace?: unknown }).trace === true;
+  const sourceImageSelector =
+    sourceImageSelectorText === null
+      ? null
+      : (JSON.parse(sourceImageSelectorText) as Record<string, unknown>);
+  const sourceImageProbe = sourceImageSelector !== null;
+  const sourceImageTrace = sourceImageSelector?.trace === true;
+  const configuredFaultRelease = sourceImageSelector?.faultRelease;
+  assert(
+    configuredFaultRelease === undefined ||
+      configuredFaultRelease === 'immediate' ||
+      configuredFaultRelease === 'after-initial-alignment',
+    'Source image fault release selector is unsupported'
+  );
+  const sourceImageFaultRelease = configuredFaultRelease ?? 'immediate';
   if (sourceImageSelectorText !== null) {
-    assert.deepEqual(JSON.parse(sourceImageSelectorText), {
+    assert.deepEqual(sourceImageSelector, {
       scenario: 'source-image-failures',
       ...(sourceImageTrace ? { trace: true } : {}),
+      ...(configuredFaultRelease !== undefined ? { faultRelease: configuredFaultRelease } : {}),
     });
+    assert(
+      sourceImageFaultRelease !== 'after-initial-alignment' || sourceImageTrace,
+      'Observed fault release requires the bounded source image trace'
+    );
     assert.equal(browserName, 'msedge', 'Source image qualification requires installed Edge');
     assert.equal(
       installation,
@@ -21246,6 +21299,7 @@ export async function run({
           output,
           root,
           trace: sourceImageTrace,
+          faultRelease: sourceImageFaultRelease,
         });
       } else if (failedEntryProbe) {
         result.failedEntryRecovery = await runFailedEntryRecoveryProbe({
