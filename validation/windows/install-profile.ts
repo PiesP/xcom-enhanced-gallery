@@ -14363,6 +14363,16 @@ async function runSourceImageFailureCases({
           try {
             receipt.trace = await finishSourceImageTrace(owned);
             traceArmed = false;
+            assert.equal(
+              receipt.trace.overflow,
+              false,
+              'Source image trace observation exceeded its bound'
+            );
+            assert.equal(
+              receipt.trace.productOverflow,
+              false,
+              'Source image product event observation exceeded its bound'
+            );
           } catch (error) {
             receipt.cleanup.errors.push(safeError(error));
             failures.push(error);
@@ -20497,6 +20507,7 @@ async function runSourceImageFailureFocusedProbe({
   } catch (error) {
     primaryError = error;
     evidence.status = 'failed';
+    evidence.errors = [...(evidence.errors ?? []), safeError(error)];
   } finally {
     for (const close of [() => extensionPage?.close(), () => routes?.remove()]) {
       try {
@@ -20504,6 +20515,10 @@ async function runSourceImageFailureFocusedProbe({
       } catch (error) {
         cleanupErrors.push(error);
       }
+    }
+    if (cleanupErrors.length) {
+      evidence.status = 'failed';
+      evidence.errors = [...(evidence.errors ?? []), ...cleanupErrors.map(safeError)];
     }
     try {
       await writeFile(

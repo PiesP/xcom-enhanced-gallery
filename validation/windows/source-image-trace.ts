@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 PiesP
 
-import assert from 'node:assert/strict';
 import type { Page } from '@playwright/test';
 
 /** Diagnostic-only DOM observations. Extension content-script decisions need their own source probe. */
@@ -193,11 +192,5 @@ export async function finishSourceImageTrace(page: Page) {
       productOverflow: current.productOverflow,
     };
   });
-  assert.equal(trace.overflow, false, 'Source image trace observation exceeded its bound');
-  assert.equal(
-    trace.productOverflow,
-    false,
-    'Source image product event observation exceeded its bound'
-  );
   return trace;
 }
