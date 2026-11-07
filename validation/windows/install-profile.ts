@@ -1045,6 +1045,7 @@ type InstallResult = {
   videoSaveFormat?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  mediaApiReuse?: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>>;
   uxDetails?: unknown;
   settingsPersistence?: unknown;
   attachmentFilenames?: unknown;
@@ -20326,6 +20327,79 @@ async function runSettingsPersistenceProbe({
   }
 }
 
+/** Run the existing API contract helper with the same installed quality routes as the full flow. */
+async function runMediaApiReuseFocusedProbe({
+  context,
+  extensionId,
+  images,
+  displayImages,
+  nativeLoopback,
+  output,
+  root,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+}) {
+  let routes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
+  let page: Page | undefined;
+  let evidence: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>> | undefined;
+  let primarySeen = false;
+  let primaryError: unknown;
+  const cleanupErrors: unknown[] = [];
+  try {
+    routes = await installFixtureRoutes(context, root, images, displayImages);
+    nativeLoopback.setPayloads(images, routes.videoPayloads);
+    page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/manifest.json`);
+    evidence = await runInstalledMediaApiReuseProfile({
+      context,
+      page,
+      qualityFixtureUrl: QUALITY_FIXTURE_URL,
+      qualityTweetId: QUALITY_TWEET_ID,
+      qualityImagePaths: QUALITY_IMAGE_PATHS,
+      output,
+      videoPayloads: routes.videoPayloads,
+    });
+    assert.equal(evidence.status, 'passed', 'Installed API reuse helper did not pass');
+    assert.deepEqual(routes.unhandledRequests, [], 'API reuse fixture left a request unhandled');
+    const transport = nativeLoopback.snapshot();
+    assert.equal(transport.unexpectedCount, 0, 'API reuse requested an unallowlisted CDN path');
+    assert.equal(transport.overflow, false, 'API reuse fixture exceeded its transport cap');
+    assert.equal(transport.serverError, false, 'API reuse fixture listener failed');
+    assert.equal(transport.activeCount, 0, 'API reuse fixture retains an active response');
+  } catch (error) {
+    primarySeen = true;
+    primaryError = error;
+  } finally {
+    for (const close of [() => page?.close(), () => routes?.remove()]) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+  }
+  if (primarySeen && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'API reuse probe and cleanup failed'
+    );
+  }
+  if (primarySeen) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'API reuse probe cleanup failed');
+  }
+  assert(evidence, 'API reuse probe produced no evidence');
+  return evidence;
+}
+
 export async function run({
   chromium,
   firefox,
@@ -20481,6 +20555,22 @@ export async function run({
     assert.equal(liveObservation, null, 'Video format fixture cannot share live observation');
     assert.equal(acceptanceSelectorText, null, 'Video format fixture cannot share live acceptance');
   }
+  const mediaApiSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/media-api-reuse.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const mediaApiProbe = mediaApiSelectorText !== null;
+  if (mediaApiSelectorText !== null) {
+    assert.deepEqual(JSON.parse(mediaApiSelectorText), { scenario: 'media-api-reuse' });
+    assert.equal(installation, 'extension', 'API reuse requires the installed extension');
+    assert.equal(liveUrls.length, 0, 'API reuse uses only owned fixture URLs');
+    assert.equal(liveObservation, null, 'API reuse cannot share live observation');
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert(
@@ -20565,6 +20655,17 @@ export async function run({
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
+  if (mediaApiProbe) {
+    assert(!upgradeInput && !sameVersionInput, 'API reuse cannot run during upgrade checks');
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['media-api-reuse.json'],
+      'API reuse requires an exclusive focused selector'
+    );
+  }
   if (uxDetailsProbe) {
     assert(!upgradeInput && !sameVersionInput, 'UX details cannot run during upgrade checks');
   }
@@ -20672,6 +20773,7 @@ export async function run({
         !recoveryProbe &&
         !failedEntryProbe &&
         !experienceProbe &&
+        !mediaApiProbe &&
         !settingsProbe &&
         !uxDetailsProbe,
       'Attachment filenames require an exclusive focused selector'
@@ -20722,6 +20824,7 @@ export async function run({
         recoveryProbe ||
         failedEntryProbe ||
         experienceProbe ||
+        mediaApiProbe ||
         settingsProbe ||
         uxDetailsProbe ||
         videoFormatProbe,
@@ -20738,6 +20841,7 @@ export async function run({
         !recoveryProbe &&
         !failedEntryProbe &&
         !experienceProbe &&
+        !mediaApiProbe &&
         !settingsProbe &&
         !uxDetailsProbe &&
         !videoFormatProbe,
@@ -20775,25 +20879,27 @@ export async function run({
           ? 'focused installed language/theme settings acceptance; no full prior live campaign'
           : videoFormatProbe
             ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
-            : uxDetailsProbe
-              ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-              : settingsProbe
-                ? 'installed-extension settings persistence fixture; no live X observation'
-                : failedEntryProbe
-                  ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-                  : experienceProbe
-                    ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
-                    : recoveryProbe
-                      ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-                      : openingProbe
-                        ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                        : validatedLiveUrls.length
-                          ? actualSiteAcceptance
-                            ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                            : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                          : sameVersionInput
-                            ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                            : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+            : mediaApiProbe
+              ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
+              : uxDetailsProbe
+                ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+                : settingsProbe
+                  ? 'installed-extension settings persistence fixture; no live X observation'
+                  : failedEntryProbe
+                    ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+                    : experienceProbe
+                      ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
+                      : recoveryProbe
+                        ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                        : openingProbe
+                          ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                          : validatedLiveUrls.length
+                            ? actualSiteAcceptance
+                              ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                              : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                            : sameVersionInput
+                              ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                              : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -20931,6 +21037,16 @@ export async function run({
           root,
           images,
           displayImages,
+        });
+      } else if (mediaApiProbe) {
+        result.mediaApiReuse = await runMediaApiReuseFocusedProbe({
+          context,
+          extensionId,
+          images,
+          displayImages,
+          nativeLoopback,
+          output,
+          root,
         });
       } else if (failedEntryProbe) {
         result.failedEntryRecovery = await runFailedEntryRecoveryProbe({
@@ -21072,7 +21188,11 @@ export async function run({
         );
       }
       result.live = live;
-      result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
+      result.evidenceStatus = validatedLiveUrls.length
+        ? live.evidenceStatus
+        : mediaApiProbe
+          ? 'media-api-reuse-fixture-observed'
+          : 'fixture-observed';
       if (reportedFilenameText !== null) {
         assert(Array.isArray(live.pages) && live.pages.length === 1);
         const page: unknown = live.pages[0];

@@ -353,6 +353,11 @@ The helper records active-source, metadata, first-frame and completion timings
 as fixture observations, including the deliberately gated response boundary.
 The API helper also rejects a controlled response above 2 MiB without caching it
 and checks that a 302 response is not followed by the installed MV3 Fetch path.
+The exclusive `media-api-reuse.json` selector in
+[`inputs/README.md`](inputs/README.md) runs that same helper through the installed
+Chrome/Edge extension and shared quality fixture without executing the other
+full-flow cases. Its receipt qualifies only the API/ownership observations it
+actually executes; the full installed campaign keeps its separate result.
 After the production gallery cases, a separate direct `chrome.downloads` diagnostic
 records whether the native browser downloader follows one declared JPEG-to-JPEG
 302 and whether the saved bytes and final URL match the destination. It does not
