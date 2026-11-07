@@ -1,5 +1,39 @@
 # Optional Windows artifact fixture selector
 
+For the bounded #502 installed-Edge image recovery comparison, create the
+ignored, exclusive `source-image-failures.json` selector:
+
+```json
+{"scenario":"source-image-failures"}
+```
+
+Use `--browser msedge --mode desktop --installation extension` through the
+prepared-VM controller. This invokes the existing full-flow 404, empty and
+corrupt image helper with unchanged fault bytes, selection, recovery, retry,
+request and hit-target assertions. It retains
+`focused-source-image-failures.json` on success or failure and owns its pages,
+routes, listeners, extension profile and loopback cleanup. Other focused
+selectors, upgrades and public URLs cannot share this run.
+
+Optional `"trace": true` records bounded image/layout/scroll/rectangle and
+hit-target observations from before the click. It also collects JSON-string
+`xeg:gallery-scroll-trace` events when an explicitly source-bound diagnostic
+build provides them. Standard product builds do not emit these events; DOM
+observations alone must not be described as direct product guard decisions.
+Overflow remains a failure and the original visibility assertions still apply.
+
+The diagnostic-only `"faultRelease": "after-initial-alignment"` option requires
+`"trace": true` and the recorded source probes. It holds only the first fault
+response until the second viewport alignment and two stable observed frames;
+missing probes, expiry or overflow fail. Retries and fault bodies remain
+unchanged. This is one timing discriminator, not replacement acceptance or a
+product wait. The diagnostic source revisions and the comparison findings are
+recorded in [#502](https://github.com/PiesP/xcom-enhanced-gallery/issues/502).
+
+Keep original failures failed. Passing a new comparison does not establish the
+cause of an older visibility failure. Remove only the task-owned selector after
+the attempt; retain private evidence outside Git.
+
 For focused installed Chrome/Edge extension verification of #499/#500 API
 metadata reuse and response accounting, create the ignored, exclusive
 `media-api-reuse.json` selector with exactly:

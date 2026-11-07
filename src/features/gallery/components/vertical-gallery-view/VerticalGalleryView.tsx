@@ -1,4 +1,3 @@
-import { traceGalleryScroll } from '@features/gallery/hooks/scroll-diagnostic';
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
@@ -203,11 +202,6 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   const handleMediaLoad = (mediaId: string, indexValue: number): void => {
     const items = mediaItems();
     const item = items[indexValue];
-    traceGalleryScroll('correction-schedule', () => ({
-      mediaId,
-      index: indexValue,
-      actualMediaId: item?.id,
-    }));
     if (item?.id !== mediaId) {
       return;
     }

@@ -1,4 +1,3 @@
-import { traceGalleryScroll } from '@features/gallery/hooks/scroll-diagnostic';
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
@@ -91,12 +90,6 @@ export function useGalleryItemScroll(
 
   const alignItem = (index: number): void => {
     const container = containerAccessor();
-    traceGalleryScroll('align-enter', () => ({
-      index,
-      total: totalItemsAccessor(),
-      connected: container?.isConnected,
-      scrollTop: container?.scrollTop,
-    }));
     if (!container || index < 0 || index >= totalItemsAccessor()) {
       return;
     }
@@ -109,23 +102,13 @@ export function useGalleryItemScroll(
     const target = getCachedItem(index, itemsRoot);
 
     if (target) {
-      traceGalleryScroll('align-target', () => ({
-        index,
-        top: target.getBoundingClientRect().top,
-      }));
       options.onScrollStart?.();
       target.scrollIntoView({
         behavior: behavior(),
         block: alignToCenter() ? 'center' : block(),
         inline: 'nearest',
       });
-      traceGalleryScroll('align-done', () => ({
-        index,
-        top: target.getBoundingClientRect().top,
-        scrollTop: container.scrollTop,
-      }));
     } else {
-      traceGalleryScroll('align-target-missing', () => ({ index }));
       // Retry once if not found (e.g. virtual scrolling or render delay)
       const rafId = requestAnimationFrame(() => {
         pendingRafIds.delete(rafId);
@@ -133,11 +116,6 @@ export function useGalleryItemScroll(
           return;
         }
         const retryTarget = getCachedItem(index, itemsRoot);
-        traceGalleryScroll('align-retry', () => ({
-          index,
-          found: !!retryTarget,
-          connected: itemsRoot.isConnected,
-        }));
         if (retryTarget) {
           options.onScrollStart?.();
           retryTarget.scrollIntoView({
@@ -152,11 +130,6 @@ export function useGalleryItemScroll(
   };
 
   const scrollToItem = (index: number): void => {
-    traceGalleryScroll('scroll-to-item-guard', () => ({
-      index,
-      enabled: enabled(),
-      scrolling: isScrolling(),
-    }));
     if (!enabled()) {
       return;
     }
@@ -166,7 +139,6 @@ export function useGalleryItemScroll(
   // Layout changes need to preserve the viewed item even when the last
   // navigation source was scroll. Active user scrolling still owns position.
   const realignToItem = (index: number): void => {
-    traceGalleryScroll('realign-guard', () => ({ index, scrolling: isScrolling() }));
     if (isScrolling()) {
       return;
     }
@@ -183,12 +155,6 @@ export function useGalleryItemScroll(
       return;
     }
 
-    traceGalleryScroll('initial-effect', () => ({
-      index,
-      total,
-      enabled: untrack(enabled),
-      scrolling: untrack(isScrolling),
-    }));
     if (untrack(enabled) && !untrack(isScrolling)) {
       scrollToItem(index);
     }

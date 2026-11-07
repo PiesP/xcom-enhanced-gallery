@@ -1,4 +1,3 @@
-import { traceGalleryScroll } from '@features/gallery/hooks/scroll-diagnostic';
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
@@ -62,15 +61,6 @@ export function useGalleryScrollCorrection(
   } = options;
 
   const debouncedScrollCorrection = debounce((index: number, mediaId: string) => {
-    traceGalleryScroll('correction-guard', () => ({
-      index,
-      mediaId,
-      visible: isVisible(),
-      currentIndex: currentIndex(),
-      activeMediaId: activeMedia()?.id,
-      userAt: lastUserScrollTime(),
-      programmaticAt: lastProgrammaticScrollTime(),
-    }));
     if (!isVisible()) {
       return;
     }
@@ -87,7 +77,6 @@ export function useGalleryScrollCorrection(
       return;
     }
 
-    traceGalleryScroll('correction-accepted', () => ({ index, mediaId }));
     scrollToItem(index);
   }, SCROLL_CORRECTION_DEBOUNCE_MS);
 
