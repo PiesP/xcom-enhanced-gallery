@@ -16,7 +16,7 @@ import {
 } from '@shared/services/download/download-orchestrator';
 import type { BulkDownloadResult } from '@shared/services/download/types';
 import { getLanguageService } from '@shared/services/language-service';
-import { getMediaService } from '@shared/services/media-service';
+import { getGalleryMediaActions } from '@shared/services/media-service';
 import {
   gallerySignals,
   getDisplayedMediaIndex,
@@ -205,7 +205,7 @@ export function createDownloadHandler() {
     try {
       const languageService = getLanguageService();
       const mediaItems = gallerySignals.mediaItems;
-      const mediaService = getMediaService();
+      const mediaService = getGalleryMediaActions();
       const downloadService = getDownloadOrchestrator();
 
       if (type === 'current') {
@@ -441,7 +441,7 @@ export function createDownloadHandler() {
           {
             mediaBlobProvider: Object.assign(
               (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
-                getMediaService().getDownloadMedia(item, requestSignal, maxResponseBytes),
+                getGalleryMediaActions().getDownloadMedia(item, requestSignal, maxResponseBytes),
               { supports: (item: MediaInfo) => item.type === 'image' }
             ),
             signal,

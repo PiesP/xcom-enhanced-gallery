@@ -23,7 +23,7 @@ import type { TranslationKey } from '@shared/i18n/types';
 import { logger } from '@shared/logging/logger';
 import { getLanguageService } from '@shared/services/language-service';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
-import { getMediaService } from '@shared/services/media-service';
+import { getGalleryMediaActions } from '@shared/services/media-service';
 import {
   closeGallery,
   disposeGallerySignals,
@@ -170,7 +170,7 @@ export class GalleryApp {
         isCurrent: () => this.isCurrentMediaClick(opId, epoch, clickController, clickUrl),
         text: getLanguageService().translate('msg.gal.opening'),
       });
-      const mediaService = getMediaService();
+      const mediaService = getGalleryMediaActions();
       const result = await mediaService.extractFromClickedElement(element, {
         signal: signalScope.signal,
       });
@@ -405,11 +405,9 @@ export class GalleryApp {
     this.renderer.destroy();
     disposeGallerySignals();
     disposeKeyboardDebouncer();
-    // R3: Do NOT call getMediaService().destroy() — MediaService is a global
-    // singleton shared across the application. Destroying it here would break
-    // other consumers and prevent gallery re-open. Instead, cancel only
-    // demand-driven media requests scoped to this gallery session.
-    getMediaService().cancelPendingMediaRequests();
+    // Gallery borrows the page-wide MediaService. Cancel its in-flight download
+    // requests while retaining completed cache entries and the extraction session.
+    getGalleryMediaActions().cancelPendingMediaRequests();
 
     this.initialized = false;
     delete (globalThis as { xegGalleryDebug?: unknown }).xegGalleryDebug;

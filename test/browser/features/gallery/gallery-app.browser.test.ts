@@ -29,7 +29,7 @@ vi.mock('@shared/utils/events/lifecycle/gallery-lifecycle', () => ({
 }));
 
 vi.mock('@shared/services/media-service', () => ({
-  getMediaService: () => ({
+  getGalleryMediaActions: () => ({
     cancelPendingMediaRequests: state.cancelPending,
     extractFromClickedElement: state.extract,
   }),

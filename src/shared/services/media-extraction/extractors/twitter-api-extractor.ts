@@ -21,15 +21,16 @@ import {
   matchClickedMedia,
 } from '@shared/services/media-extraction/determine-clicked-index';
 import type {
+  ApiMetadataSession,
   MediaExtractionOptions,
   MediaExtractionResult,
-  MediaExtractorStrategy,
   TweetInfo,
 } from '@shared/types/media.types';
 import { createFailureResult } from '@shared/types/media.types';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/dom/tweet-extractor';
 
-export class TwitterAPIExtractor implements MediaExtractorStrategy {
+/** Owns one metadata cache and flight collection through TweetMetadataReuse. */
+export class TwitterAPIExtractor implements ApiMetadataSession {
   private readonly metadataReuse = new TweetMetadataReuse();
 
   invalidateMetadata(): void {
