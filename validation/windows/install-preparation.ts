@@ -415,8 +415,13 @@ export async function installFixtureRoutes(
   displayImages: ImageFixtures,
   compactImages?: CompactImages,
   experienceImages?: Buffer[],
-  options: { classicTweetApi?: boolean } = {}
+  options: { classicTweetApi?: boolean; classicApiObservationLimit?: 4 } = {}
 ) {
+  assert(
+    options.classicApiObservationLimit === undefined ||
+      (options.classicTweetApi === true && options.classicApiObservationLimit === 4),
+    'Four classic API observations require the owned failed-entry fixture'
+  );
   const html = await readFile(join(root, 'test/e2e/fixtures/installed-gallery-page.html'), 'utf8');
   const experienceHtml = experienceImages
     ? await readFile(join(root, 'test/e2e/fixtures/installed-gallery-experience-page.html'), 'utf8')
@@ -707,7 +712,10 @@ export async function installFixtureRoutes(
         url.pathname.startsWith('/i/api/graphql/')
       ) {
         assert.equal(route.request().method(), 'GET', 'Classic fixture API must use GET');
-        assert(classicApiResponses.length < 3, 'Classic fixture API observation overflow');
+        assert(
+          classicApiResponses.length < (options.classicApiObservationLimit ?? 3),
+          'Classic fixture API observation overflow'
+        );
         const record: ApiRecord = {
           tweetId,
           method: route.request().method(),

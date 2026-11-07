@@ -163,6 +163,16 @@ the original request error and its physical-flight token by composition; the
 [Tweet media API contract](docs/twitter-api-contract.md) owns classification,
 cache and failure-accounting details.
 
+Other direct native `Error` subclasses remain local boundary signals for HTTP
+status/body reads and deferred retries, bounded response/ZIP/download resources,
+unavailable original-media sources, and extension download lifecycle/storage
+failures. Their owning HTTP, download and extension modules retain classification,
+native cause/identity and recovery decisions; these errors do not serve as
+implementation bases. The request errors above are the changed examples, not an
+exhaustive list of permitted native errors. This exception does not authorize
+repository-defined error inheritance or a portfolio-wide error representation
+rewrite.
+
 For [composition issue #39](https://github.com/PiesP/.github/issues/39), the
 page lifecycle owns `MediaService`. It owns the demand-driven `DownloadMediaCache`
 and one `OwnedMediaExtractionSession` per initialization; `destroy()` retires
