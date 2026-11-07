@@ -101,3 +101,4 @@ memory/
 /validation/windows/inputs/reported-live-filename.json
 /validation/windows/inputs/video-save-format.json
 .vitest/
+/validation/windows/inputs/source-image-failures.json
