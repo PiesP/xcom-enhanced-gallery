@@ -12,9 +12,8 @@ import {
   getAPIMediaSelectionItems,
 } from '@shared/services/media/media-factory';
 import {
-  TweetMetadataRequestError,
+  normalizeTweetMetadataRequestFailure,
   TweetMetadataReuse,
-  TwitterAPIRequestError,
 } from '@shared/services/media/twitter-api-client';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import {
@@ -73,7 +72,8 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
           options.signal?.aborted ||
           ((error instanceof Error || error instanceof DOMException) &&
             error.name === 'AbortError');
-        const requestError = error instanceof TwitterAPIRequestError ? error : null;
+        const requestFailure = normalizeTweetMetadataRequestFailure(error);
+        const requestError = requestFailure?.requestError;
         return {
           ...createFailureResult(
             normalizeErrorMessage(error),
@@ -86,8 +86,8 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
             : requestError
               ? { failureKind: requestError.category }
               : {}),
-          ...(error instanceof TweetMetadataRequestError
-            ? { apiRequestToken: error.physicalRequestToken }
+          ...(requestFailure?.physicalRequestToken
+            ? { apiRequestToken: requestFailure.physicalRequestToken }
             : {}),
           ...(requestError?.retryAfterMs !== undefined
             ? { retryAfterMs: requestError.retryAfterMs }

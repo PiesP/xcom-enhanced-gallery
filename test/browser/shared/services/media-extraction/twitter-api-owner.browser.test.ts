@@ -14,7 +14,8 @@ vi.mock('@shared/services/media/twitter-api-client', () => {
   return {
     getTweetMedias,
     TwitterAPIRequestError,
-    TweetMetadataRequestError: class extends TwitterAPIRequestError {},
+    normalizeTweetMetadataRequestFailure: (error: unknown) =>
+      error instanceof TwitterAPIRequestError ? { requestError: error } : null,
     TweetMetadataReuse: class {
       async get(...args: Parameters<typeof getTweetMedias>) {
         return { entries: await getTweetMedias(...args), physicalRequestToken: {} };

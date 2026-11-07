@@ -136,9 +136,55 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
 
 import {
   getTweetMedias,
+  normalizeTweetMetadataRequestFailure,
+  TweetMetadataRequestError,
   TweetMetadataReuse,
   TwitterAPIRequestError,
 } from '@shared/services/media/twitter-api-client';
+
+describe('metadata request failure context', () => {
+  it('preserves the request error, cause, false and zero fields, and exact flight token', () => {
+    const cause = new Error('private transport diagnosis');
+    const requestError = new TwitterAPIRequestError(
+      'safe diagnosis',
+      cause,
+      'unreadable',
+      0,
+      0,
+      false
+    );
+    const physicalRequestToken = {};
+    const failure = new TweetMetadataRequestError(requestError, physicalRequestToken);
+    const normalized = normalizeTweetMetadataRequestFailure(failure);
+
+    expect(failure).toBeInstanceOf(Error);
+    expect(failure).not.toBeInstanceOf(TwitterAPIRequestError);
+    expect(failure).toMatchObject({
+      name: 'TwitterAPIRequestError',
+      message: 'safe diagnosis',
+      cause,
+      category: 'unreadable',
+      retryAfterMs: 0,
+      status: 0,
+      readable: false,
+    });
+    expect(failure.requestError).toBe(requestError);
+    expect(normalized?.requestError).toBe(requestError);
+    expect(normalized?.physicalRequestToken).toBe(physicalRequestToken);
+  });
+
+  it('keeps local request failures tokenless and unrelated failures unclassified', () => {
+    const requestError = new TwitterAPIRequestError('local capacity', undefined, 'deferred');
+    const normalized = normalizeTweetMetadataRequestFailure(requestError);
+    expect(normalized?.requestError).toBe(requestError);
+    expect(normalized).not.toHaveProperty('physicalRequestToken');
+    expect(normalized?.requestError.retryAfterMs).toBeUndefined();
+    expect(normalized?.requestError.status).toBeUndefined();
+    expect(normalized?.requestError.readable).toBeUndefined();
+    expect(normalizeTweetMetadataRequestFailure(new Error('unrelated'))).toBeNull();
+    expect(normalizeTweetMetadataRequestFailure('unrelated')).toBeNull();
+  });
+});
 
 const BASE_ARGS: BuildTweetResultByRestIdUrlArgs = {
   host: 'x.com',
@@ -578,6 +624,47 @@ describe('TweetMetadataReuse', () => {
     expect((await reuse.get('222')).entries).toHaveLength(2);
     expect(httpGet).toHaveBeenCalledTimes(3);
     reuse.dispose();
+  });
+
+  it('shares one physical failure token across coalesced waiters and uses a new one for the next flight', async () => {
+    const reuse = new TweetMetadataReuse();
+    let complete!: (value: unknown) => void;
+    httpGet.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          complete = resolve;
+        })
+    );
+    try {
+      const first = reuse.get('222');
+      const second = reuse.get('222');
+      await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(1));
+      complete({ ok: false, status: 503, readable: false, data: {} });
+      const [firstResult, secondResult] = await Promise.allSettled([first, second]);
+      if (
+        firstResult.status !== 'rejected' ||
+        secondResult.status !== 'rejected' ||
+        !(firstResult.reason instanceof TweetMetadataRequestError) ||
+        !(secondResult.reason instanceof TweetMetadataRequestError)
+      ) {
+        throw new Error('Expected two composed request failures');
+      }
+      const firstFailure = firstResult.reason;
+      const secondFailure = secondResult.reason;
+      expect(firstFailure.physicalRequestToken).toBe(secondFailure.physicalRequestToken);
+      expect(firstFailure.requestError).toBe(secondFailure.requestError);
+      expect(firstFailure).toMatchObject({ category: 'unreadable', readable: false, status: 503 });
+
+      httpGet.mockResolvedValueOnce({ ok: false, status: 503, data: {} });
+      const next: unknown = await reuse.get('222').catch((error: unknown) => error);
+      if (!(next instanceof TweetMetadataRequestError)) {
+        throw new Error('Expected a new composed request failure');
+      }
+      expect(next.physicalRequestToken).not.toBe(firstFailure.physicalRequestToken);
+      expect(httpGet).toHaveBeenCalledTimes(2);
+    } finally {
+      reuse.dispose();
+    }
   });
 
   it('reuses metadata at 4,999 ms and requests it again at exactly 5,000 ms', async () => {
@@ -1166,6 +1253,42 @@ describe('twitter-api-client request boundary', () => {
     });
     expect(httpGet).toHaveBeenCalledTimes(1);
     extractor.dispose();
+  });
+
+  it('retains false and zero transport fields through the composed flight and extractor', async () => {
+    const underlying = Object.assign(new Error('private transport detail'), {
+      status: 0,
+      readable: false,
+      retryAfterMs: 0,
+      category: 'unreadable',
+    });
+    httpGet.mockRejectedValueOnce(underlying);
+    const extractor = new TwitterAPIExtractor();
+    try {
+      const extracted = await extractor.extract(
+        {
+          tweetId: '222',
+          username: 'outer',
+          tweetUrl: 'https://x.com/outer/status/222',
+          extractionMethod: 'fixture',
+          confidence: 1,
+        },
+        document.createElement('video'),
+        {},
+        'transport-fields'
+      );
+      expect(extracted).toMatchObject({
+        apiRequestOutcome: 'failed',
+        apiRequestToken: expect.any(Object),
+        failureKind: 'unreadable',
+        apiHttpStatus: 0,
+        apiResponseReadable: false,
+        retryAfterMs: 0,
+      });
+      expect(httpGet).toHaveBeenCalledTimes(1);
+    } finally {
+      extractor.dispose();
+    }
   });
 
   it.each(['TweetUnavailable', 'TweetTombstone'])(

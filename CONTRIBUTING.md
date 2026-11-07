@@ -152,6 +152,17 @@ live-site, hosted-CI, or public-release evidence.
 
 ## Project constraints
 
+### Product composition and request errors
+
+Follow the [shared composition policy](https://github.com/PiesP/.github/blob/master/MAINTENANCE_POLICY.md#composition-and-behavioral-contracts)
+for product internals. Construct owned services at the page/session boundary;
+borrowers receive the operation capabilities they need, not owner-only disposal
+authority. `TwitterAPIRequestError` and `TweetMetadataRequestError` directly
+extend native `Error` as narrow request-boundary exceptions. The latter retains
+the original request error and its physical-flight token by composition; the
+[Tweet media API contract](docs/twitter-api-contract.md) owns classification,
+cache and failure-accounting details.
+
 ### Managed-file checks
 
 Oxfmt owns maintained TS/TSX, JS/MJS, CSS, JSON and HTML formatting using
