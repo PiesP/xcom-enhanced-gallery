@@ -15443,6 +15443,8 @@ async function runFailedEntryRecoveryProbe({
     undefined,
     {
       classicTweetApi: true,
+      // Two nominal requests plus two fresh held/cancelled documents can total four.
+      classicApiObservationLimit: 4,
     }
   );
   const onApiRequest = (request: Request) => {

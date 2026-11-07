@@ -214,7 +214,7 @@ type InstallPreparationModule = {
     displayImages: [Buffer, Buffer, Buffer],
     compactImages?: unknown,
     experienceImages?: Buffer[],
-    options?: { classicTweetApi?: boolean }
+    options?: { classicTweetApi?: boolean; classicApiObservationLimit?: 4 }
   ): Promise<{
     apiResponses: Array<{ status: number }>;
     classicApiResponses: Array<{ status: number; tweetId?: string }>;
@@ -574,6 +574,64 @@ describe('Windows X live page validation', () => {
     expect(defaultRoute.routes.apiResponses).toEqual([
       { method: 'GET', status: 403, url: '/i/api/graphql/owned/TweetResultByRestId' },
     ]);
+  });
+  it('keeps three classic API observations by default and admits exactly four for failed-entry recovery', async () => {
+    const root = resolve(import.meta.dirname, '../../..');
+    const images: [Buffer, Buffer, Buffer] = [
+      Buffer.from('first'),
+      Buffer.from('second'),
+      Buffer.from('third'),
+    ];
+    const url =
+      'https://x.com/i/api/graphql/owned/TweetResultByRestId?variables=' +
+      encodeURIComponent(JSON.stringify({ tweetId: '1234567890123456789' }));
+    const exercise = async (classicApiObservationLimit?: 4) => {
+      let handler:
+        | ((route: {
+            request(): { url(): string; method(): string };
+            fulfill(response: { status: number; body: string }): Promise<void>;
+          }) => Promise<void>)
+        | undefined;
+      const context = Object.assign(new EventEmitter(), {
+        route: vi.fn(async (_pattern: string, routeHandler: typeof handler) => {
+          handler = routeHandler;
+        }),
+        unroute: vi.fn(async () => {}),
+      });
+      const routes = await installPreparation.installFixtureRoutes(
+        context,
+        root,
+        images,
+        images,
+        undefined,
+        undefined,
+        {
+          classicTweetApi: true,
+          ...(classicApiObservationLimit ? { classicApiObservationLimit } : {}),
+        }
+      );
+      const fulfill = vi.fn(async (_response: { status: number; body: string }) => {});
+      const request = {
+        request: () => ({ url: () => url, method: () => 'GET' }),
+        fulfill,
+      };
+      const allowed = classicApiObservationLimit ?? 3;
+      try {
+        expect(handler).toBeDefined();
+        for (let index = 0; index < allowed; index += 1) {
+          await handler!(request);
+        }
+        expect(routes.classicApiResponses).toHaveLength(allowed);
+        expect(fulfill).toHaveBeenCalledTimes(allowed);
+        await expect(handler!(request)).rejects.toThrow('Classic fixture API observation overflow');
+        expect(routes.classicApiResponses).toHaveLength(allowed);
+        expect(fulfill).toHaveBeenCalledTimes(allowed);
+      } finally {
+        await routes.remove();
+      }
+    };
+    await exercise();
+    await exercise(4);
   });
   it('rejects an unsupported installed userscript browser before filesystem access', async () => {
     const chromium = { launchPersistentContext: vi.fn() };
