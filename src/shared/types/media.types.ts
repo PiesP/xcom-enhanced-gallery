@@ -210,3 +210,22 @@ export interface MediaExtractor {
     options?: MediaExtractionOptions
   ): Promise<MediaExtractionResult>;
 }
+
+/** The page service owns extraction invalidation and retirement. */
+export interface OwnedMediaExtractionSession extends MediaExtractor {
+  invalidateApiMetadata(): void;
+  dispose(): void;
+}
+
+/** The extraction orchestrator owns the stateful provider session. */
+export interface ApiMetadataSession extends MediaExtractorStrategy {
+  invalidateMetadata(): void;
+  dispose(): void;
+}
+
+/** Composed once per extraction session; only the API collaborator owns flights. */
+export interface MediaExtractionCollaborators {
+  readonly readContext: (element: HTMLElement) => TweetClickContext | null;
+  readonly api: ApiMetadataSession;
+  readonly dom: MediaExtractorStrategy;
+}

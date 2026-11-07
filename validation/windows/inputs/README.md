@@ -1,5 +1,21 @@
 # Optional Windows artifact fixture selector
 
+For focused installed Chrome/Edge extension verification of #499/#500 API
+metadata reuse and response accounting, create the ignored, exclusive
+`media-api-reuse.json` selector with exactly:
+
+```json
+{"scenario":"media-api-reuse"}
+```
+
+Run with `--installation extension` and no public `--live-url`. The route uses
+the full flow's installed package, task-owned HTTPS loopback, three-photo quality
+fixture, and unchanged `media-api-reuse-profile.ts` assertions. It retains
+`api-reuse-observations.json` and `installation-result.json`, including failure
+and cleanup outcomes. Other full-flow scenarios, live X, and the original
+profile are outside this focused result. Remove only this task-owned selector
+after the attempt.
+
 For the focused #482 installed filename scenario, create ignored
 `attachment-filenames.json` with exactly:
 

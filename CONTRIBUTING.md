@@ -152,6 +152,33 @@ live-site, hosted-CI, or public-release evidence.
 
 ## Project constraints
 
+### Product composition and request errors
+
+Follow the [shared composition policy](https://github.com/PiesP/.github/blob/master/MAINTENANCE_POLICY.md#composition-and-behavioral-contracts)
+for product internals. Construct owned services at the page/session boundary;
+borrowers receive the operation capabilities they need, not owner-only disposal
+authority. `TwitterAPIRequestError` and `TweetMetadataRequestError` directly
+extend native `Error` as narrow request-boundary exceptions. The latter retains
+the original request error and its physical-flight token by composition; the
+[Tweet media API contract](docs/twitter-api-contract.md) owns classification,
+cache and failure-accounting details.
+
+For [composition issue #39](https://github.com/PiesP/.github/issues/39), the
+page lifecycle owns `MediaService`. It owns the demand-driven `DownloadMediaCache`
+and one `OwnedMediaExtractionSession` per initialization; `destroy()` retires
+both once, and later initialization creates a new session. Gallery receives
+`GalleryMediaActions` for extraction, downloads, and cancellation of in-flight
+download requests, without metadata invalidation or service disposal. The
+orchestrator receives a context-reader function, an operation-only DOM extractor,
+and one owned API metadata session from
+`src/shared/services/media-extraction/default-collaborators.ts`.
+That API session owns `TweetMetadataReuse` and its bounded cache and shared
+physical-request flights; the orchestrator owns its circuit state and disposes
+only its API session. One cancelled waiter leaves other waiters active; the final
+waiter or session disposal aborts the owned flight. Keep platform adapter
+selection lazy, retain the single-IIFE build, and do not copy inputs merely to
+match an interface style.
+
 ### Managed-file checks
 
 Oxfmt owns maintained TS/TSX, JS/MJS, CSS, JSON and HTML formatting using

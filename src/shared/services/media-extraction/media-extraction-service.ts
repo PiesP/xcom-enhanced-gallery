@@ -4,14 +4,13 @@
 import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { logger } from '@shared/logging/logger';
+import { createDefaultMediaExtractionCollaborators } from '@shared/services/media-extraction/default-collaborators';
 import { captureClickedMediaEvidence } from '@shared/services/media-extraction/determine-clicked-index';
-import { DOMFallbackExtractor } from '@shared/services/media-extraction/extractors/dom-fallback-extractor';
-import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
-import { TwitterAPIExtractor } from '@shared/services/media-extraction/extractors/twitter-api-extractor';
 import type {
+  MediaExtractionCollaborators,
   MediaExtractionOptions,
   MediaExtractionResult,
-  MediaExtractor,
+  OwnedMediaExtractionSession,
   TweetInfo,
 } from '@shared/types/media.types';
 import { ErrorCode, ExtractionError } from '@shared/types/media.types';
@@ -82,10 +81,8 @@ function finalizeResult(result: MediaExtractionResult): MediaExtractionResult {
   return { ...result, mediaItems: uniqueItems, clickedIndex: adjustedIndex };
 }
 
-export class MediaExtractionService implements MediaExtractor {
-  private readonly tweetInfoExtractor: TweetInfoExtractor;
-  private readonly apiExtractor: TwitterAPIExtractor;
-  private readonly domFallbackExtractor: DOMFallbackExtractor;
+export class MediaExtractionService implements OwnedMediaExtractionSession {
+  private disposed = false;
 
   // Circuit breaker state for Twitter API — instance-level so each service
   // instance tracks its own failure count (B7: was module-level, shared across instances)
@@ -99,19 +96,23 @@ export class MediaExtractionService implements MediaExtractor {
   private static readonly CIRCUIT_THRESHOLD = 3;
   private static readonly CIRCUIT_RESET_MS = 60_000; // 1 minute
 
-  constructor() {
-    this.tweetInfoExtractor = new TweetInfoExtractor();
-    this.apiExtractor = new TwitterAPIExtractor();
-    this.domFallbackExtractor = new DOMFallbackExtractor();
-  }
+  constructor(
+    private readonly collaborators: MediaExtractionCollaborators = createDefaultMediaExtractionCollaborators()
+  ) {}
 
   /** Revalidate on explicit refresh; navigation and auth changes also invalidate on the next request. */
   invalidateApiMetadata(): void {
-    this.apiExtractor.invalidateMetadata();
+    if (!this.disposed) {
+      this.collaborators.api.invalidateMetadata();
+    }
   }
 
   dispose(): void {
-    this.apiExtractor.dispose();
+    if (this.disposed) {
+      return;
+    }
+    this.disposed = true;
+    this.collaborators.api.dispose();
   }
 
   private isApiCircuitOpen(): boolean {
@@ -148,12 +149,12 @@ export class MediaExtractionService implements MediaExtractor {
     __DEV__ && logger.info(`[MediaExtractor] ${extractionId}: Extraction started`);
 
     // Check for cancellation before starting extraction
-    if (options.signal?.aborted) {
+    if (this.disposed || options.signal?.aborted) {
       return createErrorResult('Extraction cancelled');
     }
 
     try {
-      const context = this.tweetInfoExtractor.extractContext(element);
+      const context = this.collaborators.readContext(element);
       const tweetInfo = context?.tweetInfo;
 
       if (!context || !tweetInfo?.tweetId) {
@@ -179,11 +180,11 @@ export class MediaExtractionService implements MediaExtractor {
             errors: [],
             ...(this.apiDeferredKind ? { failureKind: this.apiDeferredKind } : {}),
           }
-        : await this.apiExtractor.extract(tweetInfo, element, extractionOptions, extractionId);
+        : await this.collaborators.api.extract(tweetInfo, element, extractionOptions, extractionId);
 
       // Some request adapters can resolve after abort. Currentness must be
       // checked before API success resets the circuit breaker or returns data.
-      if (options.signal?.aborted) {
+      if (this.disposed || options.signal?.aborted) {
         return createErrorResult('Extraction cancelled');
       }
 
@@ -244,18 +245,18 @@ export class MediaExtractionService implements MediaExtractor {
 
       // Yield before CPU-intensive DOM fallback extraction
       await schedulerYield();
-      if (options.signal?.aborted) {
+      if (this.disposed || options.signal?.aborted) {
         return createErrorResult('Extraction cancelled');
       }
 
-      const domResult = await this.domFallbackExtractor.extract(
+      const domResult = await this.collaborators.dom.extract(
         tweetInfo,
         element,
         extractionOptions,
         extractionId
       );
 
-      if (options.signal?.aborted) {
+      if (this.disposed || options.signal?.aborted) {
         return createErrorResult('Extraction cancelled');
       }
 
@@ -292,6 +293,9 @@ export class MediaExtractionService implements MediaExtractor {
           : {}),
       };
     } catch (error) {
+      if (this.disposed || options.signal?.aborted) {
+        return createErrorResult('Extraction cancelled');
+      }
       __DEV__ && logger.error('Extract failed', extractionId, error);
       return createErrorResult(error);
     }

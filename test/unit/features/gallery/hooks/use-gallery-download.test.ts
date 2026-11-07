@@ -36,7 +36,7 @@ vi.mock('@shared/services/language-service', () => ({
   getLanguageService: () => ({ translate: state.translate }),
 }));
 vi.mock('@shared/services/media-service', () => ({
-  getMediaService: () => ({ getDownloadMedia: state.getDownloadMedia }),
+  getGalleryMediaActions: () => ({ getDownloadMedia: state.getDownloadMedia }),
 }));
 vi.mock('@shared/state/signals/gallery.signals', () => ({
   gallerySignals: {

@@ -24,6 +24,7 @@ vi.mock('@shared/services/http-request-service', async (importOriginal) => ({
 
 import { downloadLiveByteBudget } from '@shared/services/download/live-byte-budget';
 import { MediaService } from '@shared/services/media-service';
+import type { OwnedMediaExtractionSession } from '@shared/types/media.types';
 
 describe('MediaService', () => {
   beforeEach(() => {
@@ -79,5 +80,34 @@ describe('MediaService', () => {
     second?.lease.release();
     service.destroy();
     expect(downloadLiveByteBudget.usedBytes).toBe(beforeBytes);
+  });
+
+  it('keeps one owned extraction session across repeated use and creates a usable replacement after teardown', async () => {
+    const result: MediaExtractionResult = {
+      success: true,
+      mediaItems: [{ id: 'image', type: 'image', url: 'https://pbs.twimg.com/media/image.jpg' }],
+    };
+    const sessions = [0, 1].map((): OwnedMediaExtractionSession => ({
+      extractFromClickedElement: vi.fn(async () => result),
+      invalidateApiMetadata: vi.fn(),
+      dispose: vi.fn(),
+    }));
+    let nextSession = 0;
+    const service = new MediaService(() => sessions[nextSession++]!);
+    const target = document.createElement('img');
+    await service.initialize();
+    await service.initialize();
+    expect(await service.extractFromClickedElement(target)).toBe(result);
+    service.refreshApiMetadata();
+    expect(sessions[0]?.invalidateApiMetadata).toHaveBeenCalledTimes(1);
+    service.destroy();
+    service.destroy();
+    expect(sessions[0]?.dispose).toHaveBeenCalledTimes(1);
+
+    await service.initialize();
+    expect(await service.extractFromClickedElement(target)).toBe(result);
+    expect(nextSession).toBe(2);
+    service.destroy();
+    expect(sessions[1]?.dispose).toHaveBeenCalledTimes(1);
   });
 });
