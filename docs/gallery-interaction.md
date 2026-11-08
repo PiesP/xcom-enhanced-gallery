@@ -11,13 +11,15 @@ post attribution and current-item download use that identity. Manual wheel
 scrolling must not snap back to the requested index.
 
 The scrollport uses native `scrollend` after displacement. A bounded timer
-settles wheel or native-scrollbar input without displacement, where no
-`scrollend` can fire. Explicit navigation cancels earlier user scroll ownership
-before aligning its destination. Wheel input redirected from the gallery
-background claims user ownership before it moves the scrollport. A press in the
-native scrollbar gutter also claims user ownership and stops an active smooth
-navigation so the drag can select the viewport position. Toolbar and panel wheel
-input stays with those controls.
+settles wheel input or a direct scroll-surface interruption without displacement,
+where no `scrollend` can fire. Explicit navigation cancels earlier user scroll
+ownership before aligning its destination. Wheel input redirected from the gallery
+background claims user ownership before it moves the scrollport. During smooth
+navigation, a primary mouse press directly on the scroll surface claims user
+ownership and stops the animation so a native scrollbar drag can select the
+viewport position in classic and overlay scrollbar engines. Descendant media,
+forms, and panels keep their pointer input; the existing gallery background-click
+behavior remains in effect. Toolbar and panel wheel input stays with those controls.
 
 | Input | Owner | Effect |
 | --- | --- | --- |

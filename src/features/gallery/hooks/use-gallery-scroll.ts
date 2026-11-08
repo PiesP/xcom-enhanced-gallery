@@ -161,45 +161,21 @@ export function useGalleryScroll({
       !event.isPrimary ||
       event.pointerType !== 'mouse' ||
       event.button !== 0 ||
-      scrollElement.scrollHeight <= scrollElement.clientHeight
+      scrollElement.scrollHeight <= scrollElement.clientHeight ||
+      (!programmaticScrollActive && !shouldIgnoreScroll())
     ) {
       return;
     }
 
-    // A native scrollbar press targets the scrollport itself. Detect its real
-    // vertical gutter, excluding borders, content, and nested native controls.
-    const rect = scrollElement.getBoundingClientRect();
-    const scale = rect.width / scrollElement.offsetWidth;
-    if (
-      !Number.isFinite(scale) ||
-      scale <= 0 ||
-      event.clientY < rect.top + scrollElement.clientTop * scale ||
-      event.clientY >= rect.top + (scrollElement.clientTop + scrollElement.clientHeight) * scale
-    ) {
-      return;
-    }
-    const style = getComputedStyle(scrollElement);
-    const innerLeft = rect.left + parseFloat(style.borderLeftWidth) * scale;
-    const innerRight = rect.right - parseFloat(style.borderRightWidth) * scale;
-    const contentLeft = rect.left + scrollElement.clientLeft * scale;
-    const contentRight = contentLeft + scrollElement.clientWidth * scale;
-    const inLeftGutter = event.clientX >= innerLeft && event.clientX < contentLeft;
-    const inRightGutter = event.clientX >= contentRight && event.clientX < innerRight;
-    if (!inLeftGutter && !inRightGutter) {
-      return;
-    }
-
-    const interruptingProgrammaticScroll = programmaticScrollActive || shouldIgnoreScroll();
+    // Native scrollbar presses target the scrollport in both classic and
+    // overlay engines. Direct surface input can interrupt smooth navigation;
+    // descendant media, forms, and panels retain their own pointer handling.
     claimScrollInput();
-    if (interruptingProgrammaticScroll) {
-      // A native drag can arrive while smooth scrolling is still active. Stop
-      // that animation before it can overwrite the position selected by drag.
-      scrollElement.scrollTo({
-        left: scrollElement.scrollLeft,
-        top: scrollElement.scrollTop,
-        behavior: 'instant',
-      });
-    }
+    scrollElement.scrollTo({
+      left: scrollElement.scrollLeft,
+      top: scrollElement.scrollTop,
+      behavior: 'instant',
+    });
   };
 
   const beginProgrammaticScroll = (): void => {
