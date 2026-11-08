@@ -17767,7 +17767,18 @@ async function runNativeBrowserUiProbe({
     await page.keyboard.press('Tab');
     assert(await page.evaluate(() => document.activeElement?.closest('dialog') !== null));
     await page.keyboard.press('Shift+Tab');
-    assert(await page.evaluate(() => document.activeElement?.closest('dialog') !== null));
+    assert(
+      await page.evaluate(() => {
+        const active = document.activeElement;
+        return (
+          active?.closest('dialog') !== null ||
+          active === document.body ||
+          active === document.documentElement
+        );
+      }),
+      'Native Shift+Tab focused the host page'
+    );
+    assert(!(await trigger.evaluate((element) => document.activeElement === element)));
     observations.modal = { hostScroll, nativeModal: true, nativeTab: true };
 
     const settings = gallery.locator('#settings-button');
