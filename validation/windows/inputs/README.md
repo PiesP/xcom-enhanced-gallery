@@ -17,9 +17,29 @@ selectors, upgrades and public URLs cannot share this run.
 
 Optional `"trace": true` records bounded image/layout/scroll/rectangle and
 hit-target observations from before the click. It also collects JSON-string
-`xeg:gallery-scroll-trace` events when an explicitly source-bound diagnostic
-build provides them. Standard product builds do not emit these events; DOM
-observations alone must not be described as direct product guard decisions.
+`xeg:gallery-scroll-trace` events while its owned `data-xeg-scroll-trace` marker
+is armed. `VerticalImageItem` supplies `data-media-id`, `data-media-active` and
+`data-media-focused` from its real media and role props. The collector resolves
+active and focused indices independently from uniquely marked items, then maps
+those and the selected index to media IDs. Toolbar indices are retained as
+separate metadata: its `data-focused-index` represents displayed media and can
+fall back to the active index when actual focus is null. Missing or ambiguous
+item mappings report `identityValid: false`; no toolbar fallback supplies focus.
+Identity validity is separate from `coverageComplete`, which describes only
+observation of the assertion interval.
+
+The current opt-in producers emit actual `viewport-decision` records from
+`useVerticalGallery` and `align-done` after `useGalleryItemScroll` calls native
+alignment. An accepted viewport payload includes its target `index` and the
+independently read `currentIndex` and nullable `focusedIndex`; a target is not a
+substitute for either identity. JSON payloads are collected without filling in
+missing fields. The gate requires both independent indices to identify the
+selected item and two stable frames with valid matching media identities.
+The retained temporary source `4aba255` omitted those independent fields; its
+records cannot qualify this corrected contract or be relabeled as a successful
+ordering comparison. This is a current-source contract, not an exact historical
+replay. Unarmed ordinary execution emits no diagnostic events. DOM observations
+alone must not be described as direct product guard decisions.
 Overflow remains a failure and the original visibility assertions still apply.
 The observer remains active through the actual paint assertion intervals rather
 than stopping five seconds after the click. Receipts identify each assertion's
@@ -31,12 +51,18 @@ before trace attachment; an early successful assertion need not consume its
 whole deadline.
 
 The diagnostic-only `"faultRelease": "after-initial-alignment"` option requires
-`"trace": true` and the recorded source probes. It holds only the first fault
+`"trace": true` and the bound opt-in source producers. It holds only the first fault
 response until the second viewport alignment and two stable observed frames;
 missing probes, expiry or overflow fail. Retries and fault bodies remain
 unchanged. This is one timing discriminator, not replacement acceptance or a
 product wait. The diagnostic source revisions and the comparison findings are
 recorded in [#502](https://github.com/PiesP/xcom-enhanced-gallery/issues/502).
+
+A separate prerequisite for another controlled #502 comparison remains:
+demonstrate stable selected-item alignment while neighbor index 2 is held,
+accounting for other fixture image loads, including index 0. Identity-contract
+tests do not establish that layout condition, a native event order, or installed
+Edge acceptance.
 
 Keep original failures failed. Passing a new comparison does not establish the
 cause of an older visibility failure. Remove only the task-owned selector after

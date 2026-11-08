@@ -4,6 +4,10 @@
 import type { Page } from '@playwright/test';
 
 type AlignmentFrame = {
+  identityValid: boolean;
+  selectedMediaId: string | null;
+  activeMediaId: string | null;
+  focusedMediaId: string | null;
   atMs: number;
   selectedIndex: string | null;
   currentIndex: string | null;
@@ -58,7 +62,11 @@ export function observedSelectedAlignment(
 ) {
   const guards = productEvents.filter(
     (event) =>
-      event.event === 'viewport-realign-guard' &&
+      (event.event === 'viewport-realign-guard' ||
+        (event.event === 'viewport-decision' &&
+          event.decision === 'accepted' &&
+          event.reason === 'eligible' &&
+          event.index === 1)) &&
       event.visible === true &&
       event.currentIndex === 1 &&
       event.focusedIndex === 1 &&
@@ -87,6 +95,10 @@ export function observedSelectedAlignment(
   }
   for (const frame of [before, after]) {
     if (
+      !frame.identityValid ||
+      !frame.selectedMediaId ||
+      frame.activeMediaId !== frame.selectedMediaId ||
+      frame.focusedMediaId !== frame.selectedMediaId ||
       frame.selectedIndex !== '1' ||
       frame.currentIndex !== '1' ||
       frame.focusedIndex !== '1' ||
@@ -109,6 +121,7 @@ export function observedSelectedAlignment(
   if (
     beforeTop === null ||
     afterTop === null ||
+    before.selectedMediaId !== after.selectedMediaId ||
     Math.abs(beforeTop - afterTop) > 0.5 ||
     before.scrollTop !== after.scrollTop
   ) {
@@ -206,20 +219,37 @@ export async function startSourceImageTrace(page: Page, index: number) {
       const image = item?.querySelector('img');
       const alert = item?.querySelector('[role="alert"]');
       const wrapper = alert?.parentElement ?? null;
-      const currentIndex = toolbar?.getAttribute('data-current-index') ?? null;
-      const focusedIndex = toolbar?.getAttribute('data-focused-index') ?? null;
       const items = Array.from(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? []);
-      const mediaIdAt = (index: string | null) =>
-        index === null
-          ? null
-          : (items
-              .find((candidate) => candidate.getAttribute('data-index') === index)
-              ?.getAttribute('data-media-id') ?? null);
+      const roleIndex = (attribute: string) => {
+        const matches = items.filter((candidate) => candidate.getAttribute(attribute) === 'true');
+        return matches.length === 1 ? (matches[0]?.getAttribute('data-index') ?? null) : null;
+      };
+      const currentIndex = roleIndex('data-media-active');
+      const focusedIndex = roleIndex('data-media-focused');
+      const mediaIdAt = (index: string | null) => {
+        if (index === null || !/^(0|[1-9]\d*)$/.test(index)) {
+          return null;
+        }
+        const matches = items.filter((candidate) => candidate.getAttribute('data-index') === index);
+        if (matches.length !== 1) {
+          return null;
+        }
+        return matches[0]?.getAttribute('data-media-id') || null;
+      };
+      const activeMediaId = mediaIdAt(currentIndex);
+      const focusedMediaId = mediaIdAt(focusedIndex);
+      const selectedMediaId = mediaIdAt(String(itemIndex));
+      const identityValid =
+        activeMediaId !== null && focusedMediaId !== null && selectedMediaId !== null;
       return {
         currentIndex,
         focusedIndex,
-        activeMediaId: mediaIdAt(currentIndex),
-        focusedMediaId: mediaIdAt(focusedIndex),
+        toolbarCurrentIndex: toolbar?.getAttribute('data-current-index') ?? null,
+        toolbarDisplayedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+        activeMediaId,
+        focusedMediaId,
+        selectedMediaId,
+        identityValid,
         selectedIndex: item?.getAttribute('data-index') ?? null,
         fitMode: item?.getAttribute('data-fit-mode') ?? null,
         displayUrl: item?.getAttribute('data-media-display-url') ?? null,
@@ -322,6 +352,10 @@ export async function startSourceImageTrace(page: Page, index: number) {
       }
       const current = snapshot();
       state.alignmentFrames.push({
+        identityValid: current.identityValid,
+        selectedMediaId: current.selectedMediaId,
+        activeMediaId: current.activeMediaId,
+        focusedMediaId: current.focusedMediaId,
         atMs: performance.now(),
         selectedIndex: current.selectedIndex,
         currentIndex: current.currentIndex,
