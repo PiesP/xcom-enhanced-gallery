@@ -102,3 +102,4 @@ memory/
 /validation/windows/inputs/video-save-format.json
 .vitest/
 /validation/windows/inputs/source-image-failures.json
+/validation/windows/inputs/native-browser-ui.json
