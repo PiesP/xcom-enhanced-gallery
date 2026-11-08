@@ -81,7 +81,7 @@ const INSTALL = `(() => {
   const probe = { rows, frames, product, snapshot,
     naturalBehavior: getComputedStyle(items).scrollBehavior,
     programStart: 0, dragStart: 0, pointerHeld: 0, dragMoveStart: 0, dragEnd: 0,
-    mark(name) { this[name] = performance.now(); append(rows, { event: name, ...snapshot() }, 256); },
+    mark(name) { this[name] = performance.now(); append(rows, { event: name, ...snapshot() }, 256); return null; },
     geometry() {
       const rect = items.getBoundingClientRect();
       const max = items.scrollHeight - items.clientHeight;
@@ -99,7 +99,7 @@ const INSTALL = `(() => {
         to: { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
           y: Math.floor(rect.top + items.clientTop + track * 0.4 + length / 2) } };
     },
-    enableSmooth() { items.style.scrollBehavior = 'smooth'; },
+    enableSmooth() { items.style.scrollBehavior = 'smooth'; return null; },
     read() { return { naturalBehavior: this.naturalBehavior, programStart: this.programStart,
       dragStart: this.dragStart, pointerHeld: this.pointerHeld, dragMoveStart: this.dragMoveStart,
       dragEnd: this.dragEnd, rows, frames, product, overflow,
@@ -114,6 +114,7 @@ const INSTALL = `(() => {
       if (prior.marker === null) document.documentElement.removeAttribute('data-xeg-scroll-trace');
       else document.documentElement.setAttribute('data-xeg-scroll-trace', prior.marker);
       delete window.${PROBE};
+      return null;
     }
   };
   window.${PROBE} = probe;
@@ -164,10 +165,17 @@ export async function runNativeScrollbarTakeover(
   try {
     viewport = (await driver.evaluate(INSTALL)) as Sample;
     installed = true;
+    receipt.phase = 'baseline-navigation';
     await driver.press('Home');
-    await driver.waitFor(`window.${PROBE}.snapshot().top < 2`, 'initial product Home alignment');
+    await driver.waitFor(
+      `(() => { const p = window.${PROBE}; const last = p.rows.filter(row => row.event === 'scroll').at(-1);
+        return p.snapshot().current === '0' && performance.now() - (last?.at ?? 0) > 180; })()`,
+      'initial product Home identity and settled position'
+    );
+    receipt.baseline = await driver.evaluate(`window.${PROBE}.snapshot()`);
     await driver.evaluate(`window.${PROBE}.enableSmooth()`);
     await driver.screenshot('native-scrollbar-before.png');
+    receipt.phase = 'programmatic-smooth-scroll';
     await driver.evaluate(`window.${PROBE}.mark('programStart')`);
     await driver.press('End');
     await driver.waitFor(
@@ -193,6 +201,7 @@ export async function runNativeScrollbarTakeover(
       0,
       'Programmatic scroll completed before native input'
     );
+    receipt.phase = 'native-thumb-drag';
     await driver.evaluate(`window.${PROBE}.mark('dragStart')`);
     await driver.drag(geometry.from, geometry.to, async () => {
       await driver.evaluate(`window.${PROBE}.mark('pointerHeld')`);
@@ -210,6 +219,7 @@ export async function runNativeScrollbarTakeover(
     const manual = (await driver.evaluate(`window.${PROBE}.snapshot()`)) as Sample;
     receipt.manual = manual;
     await driver.screenshot('native-scrollbar-manual.png');
+    receipt.phase = 'viewport-layout-correction';
     const resizeAt = (await driver.evaluate('performance.now()')) as number;
     await driver.resize(viewport.width, viewport.viewportHeight - 80);
     await driver.waitFor(
