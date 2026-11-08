@@ -136,9 +136,10 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
         const focused = document.activeElement;
         if (
           focused instanceof HTMLElement &&
-          (focused.matches('input, select, textarea, video') || focused.isContentEditable)
+          (focused.matches('input, select, textarea') || focused.isContentEditable)
         ) {
-          // Native editing and playback controls own Escape while focused.
+          // Preserve text-entry Escape ownership. Native media UI can consume
+          // the key before a dialog cancel request reaches this handler.
           return;
         }
         requestClose();

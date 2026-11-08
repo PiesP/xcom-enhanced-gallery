@@ -5,13 +5,13 @@
  * @fileoverview Accessibility E2E tests for X.com Enhanced Gallery userscript.
  *
  * Tests verify ARIA attributes, focus management, and accessibility features
- * by rendering the gallery in a real browser and inspecting the DOM:
+ * by rendering the gallery and inspecting the DOM and browser accessibility tree:
  * 1. Gallery container is a named native modal dialog
  * 2. Gallery container has lang attribute (not empty)
  * 3. Gallery items have role='listitem' and aria-posinset/aria-setsize
  * 4. Image alt text contains position info (e.g., 'Image 1 of' pattern)
  * 5. Video elements have aria-label
- * 6. Toolbar element has role='toolbar'
+ * 6. Toolbar uses native fieldset and group semantics
  * 7. Native modal Tab key cannot focus the background page
  * 8. Body siblings are implicitly inert and absent from the accessibility tree
  * 9. Focus returns to trigger element when gallery closes
@@ -27,6 +27,21 @@ import { expect, type Page, test } from '@playwright/test';
 import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
+
+async function exposedAccessibilityNodes(page: Page, role: string, name?: string): Promise<number> {
+  const session = await page.context().newCDPSession(page);
+  try {
+    const { nodes } = await session.send('Accessibility.getFullAXTree');
+    return nodes.filter(
+      (node) =>
+        !node.ignored &&
+        node.role?.value === role &&
+        (name === undefined || node.name?.value === name)
+    ).length;
+  } finally {
+    await session.detach();
+  }
+}
 
 /**
  * Setup: Navigate to mock page + install GM mocks + inject userscript.
@@ -307,7 +322,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('focused native video control owns Escape while the modal stays open', async ({ page }) => {
+  test('unconsumed Escape on a focused video closes the gallery', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
@@ -315,10 +330,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await video.focus();
     await expect(video).toBeFocused();
     await page.keyboard.press('Escape');
-    await expect(page.locator('dialog[data-xeg-gallery-container]')).toBeVisible();
-
-    await video.evaluate((element) => (element as HTMLElement).blur());
-    await closeGallery(page);
+    await expect(page.locator('dialog[data-xeg-gallery-container]')).toHaveCount(0);
   });
 
   test('Toolbar controls use group semantics and native Tab navigation', async ({ page }) => {
@@ -351,7 +363,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     await openGallery(page);
 
-    await expect(page.getByRole('main')).toHaveCount(0);
+    await expect.poll(() => exposedAccessibilityNodes(page, 'main')).toBe(0);
     expect(
       await outside.evaluate((element) => {
         element.setAttribute('tabindex', '-1');
@@ -363,7 +375,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
 
     await expect(outside).not.toHaveAttribute('aria-hidden', 'true');
-    await expect(page.getByRole('main')).toHaveCount(1);
+    await expect.poll(() => exposedAccessibilityNodes(page, 'main')).toBe(1);
   });
 
   test('late body siblings stay implicitly inert and retain their authored ARIA state', async ({
@@ -385,7 +397,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     await expect(lateSibling).toHaveAttribute('aria-hidden', 'false');
     await expect(lateSibling).not.toHaveAttribute('inert', '');
-    await expect(page.getByRole('button', { name: 'Late background action' })).toHaveCount(0);
+    await expect
+      .poll(() => exposedAccessibilityNodes(page, 'button', 'Late background action'))
+      .toBe(0);
     expect(
       await lateSibling.locator('button').evaluate((button) => {
         button.focus();
@@ -397,7 +411,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     await expect(lateSibling).toHaveAttribute('aria-hidden', 'false');
     await expect(lateSibling).not.toHaveAttribute('inert', '');
-    await expect(page.getByRole('button', { name: 'Late background action' })).toHaveCount(1);
+    await expect
+      .poll(() => exposedAccessibilityNodes(page, 'button', 'Late background action'))
+      .toBe(1);
   });
 
   test('native Tab excludes hidden and negative-tabindex descendants', async ({ page }) => {
