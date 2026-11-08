@@ -29,6 +29,7 @@ public static class XegScrollbarInput {
     [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern bool SetForegroundWindow(IntPtr handle);
     [DllImport("user32.dll")] private static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll")] private static extern int GetSystemMetrics(int index);
     [DllImport("user32.dll")] private static extern bool GetCursorPos(out POINT point);
     [DllImport("user32.dll")] private static extern bool SetProcessDpiAwarenessContext(IntPtr context);
     [DllImport("user32.dll")] private static extern IntPtr GetThreadDpiAwarenessContext();
@@ -50,6 +51,7 @@ public static class XegScrollbarInput {
     public static bool Focus(IntPtr handle) { return SetForegroundWindow(handle); }
     public static POINT Cursor() { POINT point; if (!GetCursorPos(out point)) throw new InvalidOperationException("GetCursorPos failed"); return point; }
     public static void Move(int x, int y) { if (!SetCursorPos(x, y)) throw new InvalidOperationException("SetCursorPos failed"); }
+    public static int Metric(int index) { return GetSystemMetrics(index); }
     public static void Button(bool down) {
         var input = new INPUT[] { new INPUT { type = 0, mouse = new MOUSEINPUT { flags = down ? 0x0002u : 0x0004u } } };
         if (SendInput(1, input, Marshal.SizeOf(typeof(INPUT))) != 1) throw new InvalidOperationException("SendInput failed");
@@ -115,8 +117,12 @@ try {
     }
     if ($visible.Count -ne 1) { throw "Expected one visible browser document, got $($visible.Count)" }
     $bounds = $visible[0]
+    $desktop = @{ left = [XegScrollbarInput]::Metric(76); top = [XegScrollbarInput]::Metric(77);
+        width = [XegScrollbarInput]::Metric(78); height = [XegScrollbarInput]::Metric(79) }
+    if ($desktop.width -le 0 -or $desktop.height -le 0) { throw 'Physical desktop dimensions are invalid' }
     $response = @{ status = 'ready'; processId = $window.ProcessId; imagePath = $window.ImagePath;
         windowTitle = $window.Title; hwnd = $window.Handle.ToInt64();
+        desktop = $desktop;
         document = @{ left = $bounds.Left; top = $bounds.Top; width = $bounds.Width; height = $bounds.Height } }
     [Console]::Out.WriteLine(($response | ConvertTo-Json -Compress -Depth 5))
     [Console]::Out.Flush()
@@ -135,9 +141,15 @@ try {
         if ($request.command -eq 'close') { break }
     }
 } finally {
-    if ($buttonDown) { [XegScrollbarInput]::Button($false) }
-    [XegScrollbarInput]::Move($previousCursor.X, $previousCursor.Y)
-    if ($previousForeground -ne [IntPtr]::Zero -and $previousForeground -ne $window.Handle) {
-        [void][XegScrollbarInput]::Focus($previousForeground)
+    try {
+        if ($buttonDown) { [XegScrollbarInput]::Button($false) }
+    } finally {
+        try {
+            [XegScrollbarInput]::Move($previousCursor.X, $previousCursor.Y)
+        } finally {
+            if ($previousForeground -ne [IntPtr]::Zero -and $previousForeground -ne $window.Handle) {
+                [void][XegScrollbarInput]::Focus($previousForeground)
+            }
+        }
     }
 }
