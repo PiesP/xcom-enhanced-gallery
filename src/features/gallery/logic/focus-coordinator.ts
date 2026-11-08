@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-/** @fileoverview Scroll-based focus selection via IntersectionObserver. Selects most visible gallery item. */
+/** @fileoverview Scroll-based focus selection from current item geometry. */
 
 import {
   type FocusItemRect,
   selectBestFocusCandidate,
 } from '@features/gallery/logic/focus-candidate-selection';
-import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import type { Accessor } from 'solid-js';
 
 interface FocusCoordinatorOptions {
@@ -15,69 +14,25 @@ interface FocusCoordinatorOptions {
   readonly container: Accessor<HTMLElement | null>;
   readonly activeIndex: Accessor<number>;
   readonly onFocusChange: (index: number | null, source: 'auto' | 'manual') => void;
-  readonly threshold?: number | readonly number[];
-  readonly rootMargin?: string;
 }
 
 interface TrackedItem {
   readonly element: HTMLElement;
-  isVisible: boolean;
-  entry?: IntersectionObserverEntry;
-  unsubscribe?: () => void;
 }
-
-interface ObserverOptions {
-  readonly threshold: number | number[];
-  readonly rootMargin: string;
-}
-
-const DEFAULTS = {
-  THRESHOLD: [0, 0.5, 1.0],
-  ROOT_MARGIN: '0px',
-} as const;
 
 export class FocusCoordinator {
   private readonly items = new Map<number, TrackedItem>();
-  private readonly observerOptions: ObserverOptions;
   private _rafId: number | null = null;
 
-  constructor(private readonly options: FocusCoordinatorOptions) {
-    const threshold = options.threshold;
-    let resolvedThreshold: number | number[];
-    if (typeof threshold === 'number') {
-      resolvedThreshold = threshold;
-    } else if (Array.isArray(threshold)) {
-      resolvedThreshold = [...threshold];
-    } else {
-      resolvedThreshold = [...DEFAULTS.THRESHOLD];
-    }
-    this.observerOptions = {
-      threshold: resolvedThreshold,
-      rootMargin: options.rootMargin ?? DEFAULTS.ROOT_MARGIN,
-    };
-  }
+  constructor(private readonly options: FocusCoordinatorOptions) {}
 
   registerItem(index: number, element: HTMLElement | null): void {
-    const prev = this.items.get(index);
-    prev?.unsubscribe?.();
     if (!element) {
       this.items.delete(index);
       return;
     }
 
-    const trackedItem: TrackedItem = { element, isVisible: false };
-    trackedItem.unsubscribe = SharedObserver.observe(
-      element,
-      (entry) => {
-        const item = this.items.get(index);
-        if (item) {
-          item.entry = entry;
-          item.isVisible = entry.isIntersecting;
-        }
-      },
-      this.observerOptions
-    );
-    this.items.set(index, trackedItem);
+    this.items.set(index, { element });
   }
 
   /**
@@ -101,7 +56,7 @@ export class FocusCoordinator {
       const containerRect = container.getBoundingClientRect();
       const selection = selectBestFocusCandidate(
         { top: containerRect.top, height: containerRect.height },
-        this.collectVisibleItemRects(),
+        this.collectItemRects(),
         this.options.activeIndex()
       );
       if (!selection) {
@@ -119,19 +74,16 @@ export class FocusCoordinator {
       cancelAnimationFrame(this._rafId);
       this._rafId = null;
     }
-    for (const item of this.items.values()) {
-      item.unsubscribe?.();
-    }
     this.items.clear();
   }
 
   /** Batch DOM reads before passing immutable measurements to the pure ranker. */
-  private collectVisibleItemRects(): FocusItemRect[] {
+  private collectItemRects(): FocusItemRect[] {
     const itemRects: FocusItemRect[] = [];
     for (const [index, item] of this.items) {
-      // Observer entries can lag a late media load or a programmatic scroll.
-      // Measure the active item directly so full visibility remains provable.
-      if ((!item.isVisible && index !== this.options.activeIndex()) || !item.element.isConnected) {
+      // Observer entries can lag the final position at scrollend. Measure the
+      // connected items directly; the ranker decides which intersect the viewport.
+      if (!item.element.isConnected) {
         continue;
       }
       const rect = item.element.getBoundingClientRect();

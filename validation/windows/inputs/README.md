@@ -1,7 +1,9 @@
 # Optional Windows artifact fixture selector
 
-For focused installed Firefox modal and anchored-tooltip acceptance for #508,
-create the ignored, exclusive `native-browser-ui.json` selector with exactly:
+For focused installed Chrome/Edge or temporary-installed Firefox extension
+verification of native gallery UI, create the ignored, exclusive
+`native-browser-ui.json` selector:
+
 
 ```json
 {"scenario":"native-browser-ui"}
@@ -19,6 +21,81 @@ reopen. It retains `firefox-native-ui-observations.json`, screenshots, and the
 common `firefox-installation.json` receipt on success or failure. The filename
 download scenarios do not run in this focused route. Remove only this task-owned
 selector after the attempt; retain failed receipts and screenshots.
+
+For Chrome/Edge:
+
+Run through the prepared-VM controller with `--installation extension`, no
+public URL, and one installed browser at a time. The owned experience fixture
+checks a scrolled host, native modal and real Tab focus, anchored tooltip
+geometry and description, settings/help Escape ownership, native `scrollend`
+after wheel displacement, host scroll/focus restoration and reopen. The
+source-bound receipt is `native-browser-ui.json`; installation and cleanup
+results remain in `installation-result.json`. Remove only this selector after
+the run. It does not qualify live X or installed Safari.
+
+
+
+The probe also captures page-native viewport PNGs with a focused English
+Settings tooltip, then the actual Spanish ZIP tooltip at installed 200% tab
+zoom in the normal and 840×592 viewports. The receipt records the browser zoom,
+device-pixel ratio, CSS viewport size, tooltip/anchor geometry, description,
+anchor linkage, and tooltip-center hit target. The fixture restores tab zoom,
+viewport, and language before the wheel and close checks.
+
+For the bounded #509 native-scrollbar takeover observation in the same installed
+Chrome/Edge or temporary-installed Firefox session, use exactly:
+
+```json
+{"scenario":"native-browser-ui","scrollbarTakeover":true}
+```
+
+This extends the owned tall JPEG to 300×6000 pixels. The probe records the natural
+scroll behavior, then enables smooth behavior only on the fixture scrollport and
+uses real product Home/End input. Before that input, an isolated temporary
+scrollport records computed behavior, reduced-motion state, and frame/event
+positions for one `auto` and one explicit `smooth` call. This calibration only
+diagnoses whether that browser session animates; it is removed before product
+input and does not qualify takeover. Only the optional takeover selector starts
+Chrome with its existing `--enable-smooth-scrolling` setting in the owned
+temporary profile. The receipt records this launch condition, so this controlled
+run is distinct from an unmodified default Chrome session. Firefox's optional
+takeover profile sets `ui.prefersReducedMotion=0` and the CSSOM smooth-scroll
+spring constant `layout.css.scroll-snap.spring-constant="20.0"` (a Firefox float
+preference stored as a string, versus the engine's `250.0` default). This lengthens
+the native animation so the thumb can be captured while moving; it does not
+alter product scrolling calls. The calibration records the effective media query
+and actual movement. Ordinary Firefox UI runs retain the OS preference and
+default spring constant. An instant reduced-motion run does not qualify an
+in-flight takeover observation. A visible, isolated
+native scrollbar control first verifies that the OS pointer bridge can drag a
+thumb to half its track; this control is removed before the product observation.
+For current engines with overlay scrollbars, the bridge hovers over the inside
+edge before pressing the thumb and records the zero layout gutter. The probe
+requires one real wheel input to place the native thumb below the gallery's toolbar hover
+strip before programmatic navigation. That wheel is outside the takeover interval.
+The probe requires two distinct moving frames after End, remaining distance,
+an exposed scrollport hit target, and no completion before input,
+then uses a task-owned, DPI-aware Windows input helper to drag the actual native
+scrollbar gutter or exposed overlay edge while holding the mouse button. The
+helper requires a unique
+owned browser window, one visible UI Automation document, and agreement between
+the document's physical rectangle and the native CSS viewport at the browser's
+reported pixel ratio. The optional Chromium route uses a separate fixture tab
+without a device viewport override and temporarily sizes its native window to
+540×850; the original UI tab retains its 1280×800 and zoom checks. Firefox
+uses a bounded 420×700 BiDi viewport. The
+helper rejects ambiguous or offscreen mapping
+instead of guessing. It records bounded native events, including gallery-capture
+pointer and click targets, and the
+existing opt-in product alignment/viewport decisions; it never dispatches a
+synthetic scroll event or writes the scroll position. A height-only viewport
+change checks the later layout guard. `native-scrollbar-takeover.json` and PNGs
+retain both passing and failed observations. Programmatic ownership is inferred
+from the product's user/programmatic timestamps and independent media markers;
+native `scrollend` does not label its cancellation reason. This does not claim
+that the ordinary `auto` scrollport always animates, or qualify delayed HTTP
+response ordering, live X, or another browser/platform.
+
 
 For the bounded #502 installed-Edge image recovery comparison, create the
 ignored, exclusive `source-image-failures.json` selector:

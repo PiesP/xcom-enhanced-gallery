@@ -10,6 +10,17 @@ index, or the requested index when focus is unavailable; the toolbar counter,
 post attribution and current-item download use that identity. Manual wheel
 scrolling must not snap back to the requested index.
 
+The scrollport uses native `scrollend` after displacement. A bounded timer
+settles wheel input or a direct scroll-surface interruption without displacement,
+where no `scrollend` can fire. Explicit navigation cancels earlier user scroll
+ownership before aligning its destination. Wheel input redirected from the gallery
+background claims user ownership before it moves the scrollport. During smooth
+navigation, a primary mouse press directly on the scroll surface claims user
+ownership and stops the animation so a native scrollbar drag can select the
+viewport position in classic and overlay scrollbar engines. Descendant media,
+forms, and panels keep their pointer input; the existing gallery background-click
+behavior remains in effect. Toolbar and panel wheel input stays with those controls.
+
 | Input | Owner | Effect |
 | --- | --- | --- |
 | Toolbar Previous/Next and gallery arrow keys | [`gallery.signals.ts`](../src/shared/state/signals/gallery.signals.ts) | Move relative to the displayed item and commit a requested destination. |
@@ -36,8 +47,10 @@ scroll effect. Focus observation, video visibility and playback recovery remain
 separate; [video loading](media-video-loading.md) owns admission and pause/resume
 rules, and [video click policy](video-click-policy.md) owns click behavior.
 [`GalleryContainer.tsx`](../src/shared/components/isolation/GalleryContainer.tsx)
-owns opener focus restoration, while the lifecycle listener and focus tracker
-remove their listeners and observers on cleanup. The maintained
+activates the modal host state; [`gallery-host-state.ts`](../src/shared/components/isolation/gallery-host-state.ts)
+captures and restores the connected opener's focus, host scroll, and history
+scroll-restoration value. The lifecycle listener removes its listeners on
+cleanup; the focus tracker cancels scheduled measurement and clears item references. The maintained
 [`keyboard-navigation.spec.ts`](../test/e2e/specs/keyboard-navigation.spec.ts)
 exercises the rendered userscript flow; browser component tests and the Windows
 profile cover their own narrower environments. Installed extension and live X

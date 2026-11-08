@@ -1,80 +1,50 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-/**
- * @fileoverview CSS animation helpers for gallery entrance/exit effects.
- */
+/** Completion of the gallery's own finite CSS animations. */
 
-import { ANIMATION_TIMEOUT_MS } from '@constants/performance';
-
-const ANIMATION_CLASSES = {
-  FADE_IN: 'xeg-fade-in',
-  FADE_OUT: 'xeg-fade-out',
-} as const;
+const FADE_IN = 'xeg-fade-in';
+const FADE_OUT = 'xeg-fade-out';
+const activeAnimations = new WeakMap<Element, object>();
 
 function runCssAnimation(element: Element, className: string): Promise<void> {
-  return new Promise<void>((resolve) => {
-    let settled = false;
-    // oxlint-disable-next-line prefer-const -- The timeout is assigned after settle captures it.
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let observer: MutationObserver | undefined;
+  if (!element.isConnected) {
+    return Promise.resolve();
+  }
 
-    const settle = (): void => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      if (timer) {
-        clearTimeout(timer);
-      }
-      if (observer) {
-        observer.disconnect();
-      }
+  const token = {};
+  activeAnimations.set(element, token);
+  element.classList.remove(FADE_IN, FADE_OUT);
+  element.classList.add(className);
+
+  // getAnimations() defaults to this element only. Ignore descendant and
+  // unrelated animations, including infinite progress indicators.
+  const animation = element
+    .getAnimations()
+    .find(
+      (candidate): candidate is CSSAnimation =>
+        candidate instanceof CSSAnimation && candidate.animationName === className
+    );
+
+  const finished = animation
+    ? animation.finished.then(
+        () => undefined,
+        () => undefined
+      )
+    : Promise.resolve();
+  return finished.finally(() => {
+    // A canceled earlier call must not remove the class owned by a newer call.
+    if (activeAnimations.get(element) === token) {
+      activeAnimations.delete(element);
       element.classList.remove(className);
-      element.removeEventListener('animationend', settle);
-      element.removeEventListener('animationcancel', settle);
-      resolve();
-    };
-
-    timer = setTimeout(settle, ANIMATION_TIMEOUT_MS);
-
-    // MED-4: No { once: true } — settle() cleans up listeners explicitly.
-    // Using { once: true } would leave the listener registered when the
-    // timeout fires first (removeEventListener can't match the once-wrapper).
-    element.addEventListener('animationend', settle);
-    element.addEventListener('animationcancel', settle);
-
-    // W3: MutationObserver fallback — if the element is removed from DOM
-    // before animationend fires, settle immediately to avoid hanging promise
-    if (element.isConnected && typeof MutationObserver !== 'undefined') {
-      observer = new MutationObserver(() => {
-        if (!element.isConnected) {
-          settle();
-        }
-      });
-      // Observe the parent for childList changes (element removal)
-      if (element.parentElement) {
-        observer.observe(element.parentElement, { childList: true, subtree: false });
-      }
-    }
-
-    if (!element.isConnected) {
-      settle();
-      return;
-    }
-
-    try {
-      element.classList.add(className);
-    } catch {
-      settle();
     }
   });
 }
 
 export function animateGalleryEnter(element: Element): Promise<void> {
-  return runCssAnimation(element, ANIMATION_CLASSES.FADE_IN);
+  return runCssAnimation(element, FADE_IN);
 }
 
 export function animateGalleryExit(element: Element): Promise<void> {
-  return runCssAnimation(element, ANIMATION_CLASSES.FADE_OUT);
+  return runCssAnimation(element, FADE_OUT);
 }

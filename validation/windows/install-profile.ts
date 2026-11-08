@@ -51,6 +51,8 @@ import { withFilenameCorrelation } from './filename-correlation.ts';
 import { admitReportedLiveFilenameInstall } from './live-filename-target.ts';
 import { flattenUserscriptLiveEvidence } from './userscript-live-output.ts';
 import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
+import { runNativeScrollbarTakeover } from './native-scrollbar-takeover.ts';
+import { prepareNativeScrollbarPointer } from './native-pointer.ts';
 import {
   createControlledVideoSettings,
   decodeStoredValue,
@@ -1124,6 +1126,7 @@ type InstallResult = {
   videoSaveFormat?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  nativeBrowserUi?: unknown;
   mediaApiReuse?: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>>;
   sourceImageFailures?: SourceImageFailureEvidence;
   uxDetails?: unknown;
@@ -1736,7 +1739,10 @@ async function createServiceWorkerObserver(browserCdp: CDPSession, pageCdp: CDPS
   };
 }
 
-async function createExperienceImages(context: BrowserContext): Promise<Buffer[]> {
+async function createExperienceImages(
+  context: BrowserContext,
+  longScroll = false
+): Promise<Buffer[]> {
   const page = await context.newPage();
   try {
     await page.goto('about:blank');
@@ -1757,7 +1763,9 @@ async function createExperienceImages(context: BrowserContext): Promise<Buffer[]
           drawing.fillText(label, 10, Math.min(height - 10, 55));
           return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
         }),
-      EXPERIENCE_IMAGES
+      EXPERIENCE_IMAGES.map((image, index) =>
+        longScroll && index === 0 ? { ...image, height: 6000 } : image
+      )
     );
     const images = encoded.map((value) => Buffer.from(value ?? '', 'base64'));
     assert(images.length === EXPERIENCE_IMAGES.length && images.every((image) => image.length));
@@ -17706,6 +17714,456 @@ async function runUxDetailsProbe({
   return { status: 'passed', ...observations };
 }
 
+/** Focused installed-extension check for native modal, anchor and scroll completion. */
+async function runNativeBrowserUiProbe({
+  context,
+  browserName,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+  scrollbarTakeover,
+}: {
+  context: BrowserContext;
+  browserName: string;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+  scrollbarTakeover: boolean;
+}) {
+  const experienceImages = await createExperienceImages(context, scrollbarTakeover);
+  const routes = await installFixtureRoutes(
+    context,
+    root,
+    images,
+    displayImages,
+    undefined,
+    experienceImages
+  );
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  nativeLoopback.setExperienceImages(experienceImages);
+  const page = await context.newPage();
+  const observations: Record<string, unknown> = {};
+  const pageErrors: string[] = [];
+  const cleanupErrors: string[] = [];
+  let error: unknown;
+  page.on('pageerror', (failure) => pageErrors.push(failure.message));
+  const captureTooltip = async (button: Locator, file: string) => {
+    await button.focus();
+    const tooltip = button.locator('xpath=..').locator('[role="tooltip"]:popover-open');
+    await tooltip.waitFor({ state: 'visible' });
+    const geometry = await tooltip.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const anchor = document.activeElement;
+      const anchorRect = anchor?.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      const textRange = document.createRange();
+      textRange.selectNodeContents(element);
+      return {
+        text: element.textContent?.trim() ?? '',
+        textLines: textRange.getClientRects().length,
+        rect: rect.toJSON(),
+        anchor: anchorRect?.toJSON() ?? null,
+        viewport: {
+          width: innerWidth,
+          height: innerHeight,
+          devicePixelRatio,
+          visualScale: visualViewport?.scale ?? null,
+        },
+        inDialog: element.closest('dialog') !== null,
+        described:
+          anchor?.getAttribute('aria-describedby')?.split(/\s+/).includes(element.id) ?? false,
+        anchorName: anchor ? getComputedStyle(anchor).getPropertyValue('anchor-name').trim() : '',
+        positionAnchor: getComputedStyle(element).getPropertyValue('position-anchor').trim(),
+        centerHit: hit === element || element.contains(hit),
+      };
+    });
+    assert(geometry.text, 'Focused tooltip has no text');
+    if (geometry.text === 'Open Settings') {
+      assert.equal(geometry.textLines, 1, 'Short English help must fit on one line');
+    }
+    assert(geometry.anchor, 'Focused tooltip has no anchor rectangle');
+    assert(geometry.inDialog && geometry.described, 'Focused tooltip lost its modal description');
+    assert(geometry.anchorName && geometry.positionAnchor === geometry.anchorName);
+    assert(geometry.rect.left >= -1 && geometry.rect.top >= -1);
+    assert(geometry.rect.right <= geometry.viewport.width + 1);
+    assert(geometry.rect.bottom <= geometry.viewport.height + 1);
+    assert(geometry.centerHit, 'Focused tooltip center is occluded');
+    await page.screenshot({ path: join(output, file) });
+    return { ...geometry, screenshot: file };
+  };
+  try {
+    if (scrollbarTakeover) {
+      // Keep the focused UI/zoom route's established CSS viewport. The later
+      // native scrollbar tab retains this context's un-emulated viewport.
+      await page.setViewportSize({ width: 1280, height: 800 });
+    }
+    await page.goto(`chrome-extension://${extensionId}/manifest.json`);
+    await page.goto(EXPERIENCE_FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    if (scrollbarTakeover) {
+      await trigger.evaluate((image) => image.setAttribute('height', '6000'));
+    }
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.focus();
+    const hostScroll = await page.evaluate(() => window.scrollY);
+    assert(hostScroll > 0, 'The host page was not scrolled before gallery entry');
+    await trigger.click();
+    const gallery = page.locator('dialog[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert(await gallery.evaluate((element) => element.matches(':modal')));
+    assert.equal(
+      await page
+        .locator('[data-testid="tweetPhoto"] img')
+        .first()
+        .evaluate(
+          (element) => element.closest('dialog') === null && document.activeElement !== element
+        ),
+      true
+    );
+    await page.keyboard.press('Tab');
+    assert(await page.evaluate(() => document.activeElement?.closest('dialog') !== null));
+    await page.keyboard.press('Shift+Tab');
+    assert(
+      await page.evaluate(() => {
+        const active = document.activeElement;
+        return (
+          active?.closest('dialog') !== null ||
+          active === document.body ||
+          active === document.documentElement
+        );
+      }),
+      'Native Shift+Tab focused the host page'
+    );
+    assert(!(await trigger.evaluate((element) => document.activeElement === element)));
+    observations.modal = { hostScroll, nativeModal: true, nativeTab: true };
+
+    const settings = gallery.locator('#settings-button');
+    assert.equal(await settings.getAttribute('aria-label'), 'Open Settings');
+    observations.tooltip = await captureTooltip(settings, 'native-browser-ui-tooltip-en.png');
+
+    await settings.click();
+    assert.equal(await settings.getAttribute('aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await settings.getAttribute('aria-expanded'), 'false');
+    assert(await gallery.isVisible(), 'Settings Escape closed the gallery');
+    const help = gallery.locator('#keyboard-help-button');
+    await help.click();
+    assert.equal(await help.getAttribute('aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await help.getAttribute('aria-expanded'), 'false');
+    assert(await gallery.isVisible(), 'Help Escape closed the gallery');
+    observations.innerEscape = { settings: true, help: true };
+
+    const originalViewport = page.viewportSize();
+    assert(originalViewport, 'Native tooltip viewport is unavailable');
+    const baseline = await page.evaluate(() => ({
+      devicePixelRatio,
+      innerWidth,
+      visualScale: visualViewport?.scale ?? null,
+    }));
+    const priorZoom = await fixtureTabZoom(
+      context,
+      extensionId,
+      page,
+      null,
+      null,
+      EXPERIENCE_FIXTURE_URL
+    );
+    const language = gallery.locator('#settings-language-select');
+    let priorLanguage: string | undefined;
+    let zoomAttempted = false;
+    try {
+      await settings.click();
+      priorLanguage = await language.inputValue();
+      await language.selectOption('es');
+      await settings.click();
+      await page.waitForFunction(
+        () =>
+          document.querySelector(
+            'button[aria-label="Descargar los 3 archivos visibles como ZIP"]'
+          ) !== null
+      );
+      zoomAttempted = true;
+      const appliedZoom = await fixtureTabZoom(
+        context,
+        extensionId,
+        page,
+        2,
+        null,
+        EXPERIENCE_FIXTURE_URL
+      );
+      assert.equal(appliedZoom.observed, 2, 'Installed browser did not accept 200% tab zoom');
+      const zoomRatio = appliedZoom.observed / priorZoom.previous;
+      await page.waitForFunction(
+        (before) =>
+          devicePixelRatio >= before.devicePixelRatio * before.zoomRatio * 0.95 &&
+          innerWidth <= before.innerWidth / (before.zoomRatio * 0.95) &&
+          Math.abs((visualViewport?.scale ?? 1) - 1) <= 0.05,
+        { ...baseline, zoomRatio }
+      );
+      const bulk = gallery.locator(
+        'button[aria-label="Descargar los 3 archivos visibles como ZIP"]'
+      );
+      const zoomed = await captureTooltip(bulk, 'native-browser-ui-tooltip-es-zoom200.png');
+      assert.equal(zoomed.text, 'Descargar los 3 archivos visibles como ZIP');
+      await page.setViewportSize({ width: 840, height: 592 });
+      await page.waitForFunction(
+        ({ width, height, factor }) =>
+          Math.abs(innerWidth - width / factor) <= 1 &&
+          Math.abs(innerHeight - height / factor) <= 1,
+        { width: 840, height: 592, factor: 2 }
+      );
+      const narrow = await captureTooltip(bulk, 'native-browser-ui-tooltip-es-zoom200-narrow.png');
+      assert.equal(narrow.text, zoomed.text);
+      observations.localizedZoomTooltip = {
+        language: 'es',
+        baseline,
+        priorZoom,
+        appliedZoom,
+        zoomed,
+        narrow,
+      };
+    } finally {
+      for (const [name, restore] of [
+        ['tooltip viewport', () => page.setViewportSize(originalViewport)],
+        [
+          'tab zoom',
+          async () => {
+            if (!zoomAttempted) {
+              return;
+            }
+            const restored = await fixtureTabZoom(
+              context,
+              extensionId,
+              page,
+              priorZoom.previous,
+              priorZoom.settings,
+              EXPERIENCE_FIXTURE_URL
+            );
+            assert.equal(
+              restored.observed,
+              priorZoom.previous,
+              'Native browser UI zoom was not restored'
+            );
+            assert.equal(restored.observedSettings.mode, priorZoom.settings.mode);
+            assert.equal(restored.observedSettings.scope, priorZoom.settings.scope);
+          },
+        ],
+        [
+          'tooltip language',
+          async () => {
+            if (priorLanguage === undefined || !(await gallery.isVisible())) {
+              return;
+            }
+            if ((await settings.getAttribute('aria-expanded')) !== 'true') {
+              await settings.click();
+            }
+            await language.selectOption(priorLanguage);
+            await settings.click();
+          },
+        ],
+      ] as const) {
+        try {
+          await restore();
+        } catch (failure) {
+          cleanupErrors.push(`${name}: ${safeError(failure)}`);
+        }
+      }
+    }
+    assert.deepEqual(cleanupErrors, [], 'Native tooltip state restoration failed');
+
+    const items = gallery.locator('[data-gallery-element="items"]');
+    await items.evaluate((element) => {
+      element.dataset.nativeScrollEnds = '0';
+      element.addEventListener('scrollend', () => {
+        element.dataset.nativeScrollEnds = String(Number(element.dataset.nativeScrollEnds) + 1);
+      });
+    });
+    const before = await items.evaluate((element) => element.scrollTop);
+    await items.hover();
+    await page.mouse.wheel(0, 500);
+    await page.waitForFunction(() => {
+      const element = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+      return element && Number(element.dataset.nativeScrollEnds) > 0;
+    });
+    const after = await items.evaluate((element) => element.scrollTop);
+    assert(after !== before, 'Wheel input did not displace the gallery scrollport');
+    observations.scroll = {
+      before,
+      after,
+      nativeScrollEnds: await items.getAttribute('data-native-scroll-ends'),
+    };
+
+    if (scrollbarTakeover) {
+      const scrollPage = await context.newPage();
+      let nativePointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
+      try {
+        await scrollPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+        await scrollPage.goto(EXPERIENCE_FIXTURE_URL);
+        await scrollPage.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+          state: 'attached',
+        });
+        const scrollTrigger = scrollPage.locator('[data-testid="tweetPhoto"] img').first();
+        await scrollTrigger.evaluate((image) => image.setAttribute('height', '6000'));
+        await scrollTrigger.scrollIntoViewIfNeeded();
+        await scrollTrigger.click();
+        const scrollGallery = scrollPage.locator('dialog[data-xeg-gallery-container]');
+        await scrollGallery.waitFor({ state: 'visible' });
+        assert(await scrollGallery.evaluate((element) => element.matches(':modal')));
+        observations.scrollbarTakeover = await runNativeScrollbarTakeover(
+          {
+            launchCondition:
+              browserName === 'chrome'
+                ? '--enable-smooth-scrolling in this owned temporary Chrome profile'
+                : 'browser default',
+            prepareInput: async () => {
+              assert.equal(
+                scrollPage.viewportSize(),
+                null,
+                'Native scrollbar tab inherited an emulated viewport'
+              );
+              const cdp = await context.newCDPSession(scrollPage);
+              const target = await cdp.send('Target.getTargetInfo');
+              const window = await cdp.send('Browser.getWindowForTarget', {
+                targetId: target.targetInfo.targetId,
+              });
+              const previousBounds = window.bounds;
+              let pointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
+              try {
+                await cdp.send('Browser.setWindowBounds', {
+                  windowId: window.windowId,
+                  bounds: { windowState: 'normal', left: 0, top: 0, width: 540, height: 850 },
+                });
+                await scrollPage.evaluate(
+                  () =>
+                    new Promise<void>((resolve) =>
+                      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+                    )
+                );
+                pointer = await prepareNativeScrollbarPointer(
+                  (expression) => scrollPage.evaluate(expression),
+                  root,
+                  browserName === 'msedge' ? 'msedge.exe' : 'chrome.exe'
+                );
+                const ownedPointer = pointer;
+                nativePointer = ownedPointer;
+                return {
+                  mapping: ownedPointer.mapping,
+                  close: async () => {
+                    try {
+                      await ownedPointer.close();
+                    } finally {
+                      nativePointer = undefined;
+                      await cdp.send('Browser.setWindowBounds', {
+                        windowId: window.windowId,
+                        bounds: previousBounds,
+                      });
+                      await cdp.detach();
+                    }
+                  },
+                };
+              } catch (error) {
+                await pointer?.close();
+                await cdp.send('Browser.setWindowBounds', {
+                  windowId: window.windowId,
+                  bounds: previousBounds,
+                });
+                await cdp.detach();
+                throw error;
+              }
+            },
+            evaluate: (expression) => scrollPage.evaluate(expression),
+            waitFor: async (expression, _description, timeoutMs = 5000) => {
+              await scrollPage.waitForFunction(expression, undefined, { timeout: timeoutMs });
+            },
+            press: (key) => scrollPage.keyboard.press(key),
+            wheel: async (deltaY) => {
+              const box = await scrollPage.locator('[data-gallery-element="items"]').boundingBox();
+              assert(box, 'Native scrollport has no visible wheel target');
+              await scrollPage.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+              await scrollPage.mouse.wheel(0, deltaY);
+            },
+            hover: async (at) => {
+              assert(nativePointer, 'Native pointer bridge was not prepared');
+              await nativePointer.hover(at);
+            },
+            drag: async (from, to, afterDown) => {
+              assert(nativePointer, 'Native pointer bridge was not prepared');
+              await nativePointer.drag(from, to, afterDown);
+            },
+            resize: (width, height) => scrollPage.setViewportSize({ width, height }),
+            screenshot: async (filename) => {
+              await scrollPage.screenshot({ path: join(output, filename) });
+            },
+          },
+          output
+        );
+      } finally {
+        try {
+          await scrollPage.close();
+          await page.bringToFront();
+        } catch (failure) {
+          observations.scrollbarPageCleanupError = safeError(failure);
+          error ??= failure;
+        }
+      }
+    }
+
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    assert.equal(await page.evaluate(() => window.scrollY), hostScroll);
+    assert(await trigger.evaluate((element) => document.activeElement === element));
+    await trigger.click();
+    await gallery.waitFor({ state: 'visible' });
+    await gallery.locator('button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    observations.reopen = true;
+    assert.deepEqual(pageErrors, []);
+  } catch (failure) {
+    error = failure;
+  } finally {
+    for (const [name, close] of [
+      ['fixture page', () => page.close()],
+      ['fixture routes', () => routes.remove()],
+    ] as const) {
+      try {
+        await close();
+      } catch (failure) {
+        cleanupErrors.push(`${name}: ${safeError(failure)}`);
+      }
+    }
+    await writeFile(
+      join(output, 'native-browser-ui.json'),
+      JSON.stringify(
+        {
+          status: error || pageErrors.length || cleanupErrors.length ? 'failed' : 'passed',
+          scope: 'installed extension on owned deterministic X fixture',
+          observations,
+          pageErrors,
+          cleanupErrors,
+          ...(error ? { error: safeError(error) } : {}),
+        },
+        null,
+        2
+      )
+    );
+  }
+  if (error || pageErrors.length || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(error ? [error] : []), ...pageErrors, ...cleanupErrors],
+      'Native browser UI probe or cleanup failed'
+    );
+  }
+  return { status: 'passed', observations };
+}
+
 async function runGalleryExperienceProbe({
   context,
   downloads,
@@ -21218,6 +21676,41 @@ export async function run({
     );
     assert.equal(liveUrls.length, 0, 'Settings probe uses only the owned fixture');
   }
+  const nativeUiSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/native-browser-ui.json'),
+    'utf8'
+  ).catch((failure: unknown) => {
+    if (failure && typeof failure === 'object' && 'code' in failure && failure.code === 'ENOENT') {
+      return null;
+    }
+    throw failure;
+  });
+  const nativeUiProbe = nativeUiSelectorText !== null;
+  let nativeScrollbarTakeover = false;
+  if (nativeUiSelectorText !== null) {
+    const selector: unknown = JSON.parse(nativeUiSelectorText);
+    nativeScrollbarTakeover =
+      typeof selector === 'object' &&
+      selector !== null &&
+      'scrollbarTakeover' in selector &&
+      selector.scrollbarTakeover === true;
+    assert.deepEqual(selector, {
+      scenario: 'native-browser-ui',
+      ...(nativeScrollbarTakeover ? { scrollbarTakeover: true } : {}),
+    });
+    assert.equal(installation, 'extension', 'Native UI probe requires the installed extension');
+    assert.equal(liveUrls.length, 0, 'Native UI probe uses only the owned fixture');
+    assert.equal(liveObservation, null);
+    assert(!upgradeInput && !sameVersionInput);
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['native-browser-ui.json'],
+      'Native UI probe requires an exclusive selector'
+    );
+  }
   if (uxDetailsProbe) {
     assert(
       !openingProbe && !recoveryProbe && !failedEntryProbe && !experienceProbe && !settingsProbe,
@@ -21287,6 +21780,7 @@ export async function run({
         mediaApiProbe ||
         sourceImageProbe ||
         settingsProbe ||
+        nativeUiProbe ||
         uxDetailsProbe ||
         videoFormatProbe,
     }
@@ -21409,10 +21903,13 @@ export async function run({
       acceptDownloads: true,
       downloadsPath: downloads,
       locale: 'en-US',
-      viewport: { width: 1280, height: 800 },
+      viewport: nativeScrollbarTakeover ? null : { width: 1280, height: 800 },
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
+        ...(nativeScrollbarTakeover && browserName === 'chrome'
+          ? ['--enable-smooth-scrolling']
+          : []),
         `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP x.com:443 127.0.0.1:${nativeLoopback.port}`,
         `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`,
       ],
@@ -21544,6 +22041,18 @@ export async function run({
           nativeLoopback,
           images,
           displayImages,
+        });
+      } else if (nativeUiProbe) {
+        result.nativeBrowserUi = await runNativeBrowserUiProbe({
+          context,
+          browserName,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+          scrollbarTakeover: nativeScrollbarTakeover,
         });
       } else if (experienceProbe) {
         result.galleryExperience = await runGalleryExperienceProbe({

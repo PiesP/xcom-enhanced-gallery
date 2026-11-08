@@ -269,6 +269,16 @@ test('Firefox selector gate accepts exact isolated filename or native UI input',
     assert.equal(await validateFirefoxSelectors(root), 'native-browser-ui');
     await writeFile(
       join(inputs, 'native-browser-ui.json'),
+      '{"scenario":"native-browser-ui","scrollbarTakeover":true}\n'
+    );
+    assert.equal(await validateFirefoxSelectors(root), 'native-browser-ui');
+    await writeFile(
+      join(inputs, 'native-browser-ui.json'),
+      '{"scenario":"native-browser-ui","scrollbarTakeover":false}\n'
+    );
+    await assert.rejects(validateFirefoxSelectors(root), /unsupported options/u);
+    await writeFile(
+      join(inputs, 'native-browser-ui.json'),
       '{"scenario":"native-browser-ui","extra":true}\n'
     );
     await assert.rejects(validateFirefoxSelectors(root), /unsupported options/u);
