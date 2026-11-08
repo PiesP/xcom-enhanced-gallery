@@ -23,6 +23,44 @@ export interface NativeScrollbarDriver {
 }
 
 const PROBE = '__xegNativeScrollbarTakeover';
+const CONTROL = '__xegNativeScrollbarControl';
+
+/** Visible native scrollbar input control, removed before any product scroll observation. */
+const INSTALL_CONTROL = `(() => {
+  if (window.${CONTROL}) throw new Error('Native scrollbar control already installed');
+  const gallery = document.querySelector('dialog[data-xeg-gallery-container]');
+  if (!(gallery instanceof HTMLDialogElement)) throw new Error('Native scrollbar control requires the gallery');
+  const scroller = document.createElement('div');
+  scroller.setAttribute('aria-hidden', 'true');
+  scroller.setAttribute('data-xeg-native-scrollbar-control', '');
+  scroller.style.cssText = 'position:fixed;left:40px;top:260px;width:180px;height:300px;overflow-y:scroll;overflow-x:hidden;scroll-behavior:auto;scrollbar-width:auto;box-sizing:content-box;z-index:2147483647;background:white;pointer-events:auto';
+  const content = document.createElement('div');
+  content.style.cssText = 'width:100px;height:3000px;background:linear-gradient(white,#ddd)';
+  scroller.append(content);
+  gallery.append(scroller);
+  const events = [];
+  const observe = event => {
+    if (events.length < 80) events.push({ event: event.type, at: performance.now(),
+      top: scroller.scrollTop, trusted: event.isTrusted,
+      buttons: event.buttons ?? null, clientX: event.clientX ?? null, clientY: event.clientY ?? null });
+  };
+  for (const name of ['scroll', 'scrollend', 'pointerdown', 'pointerup', 'mousedown', 'mouseup']) {
+    scroller.addEventListener(name, observe, true);
+  }
+  const read = () => ({ top: scroller.scrollTop, max: scroller.scrollHeight - scroller.clientHeight,
+    events: events.slice(), connected: scroller.isConnected });
+  const rect = scroller.getBoundingClientRect();
+  const gutter = scroller.offsetWidth - scroller.clientWidth;
+  const length = Math.max(20, scroller.clientHeight * scroller.clientHeight / scroller.scrollHeight);
+  const track = scroller.clientHeight - length;
+  const from = { x: Math.floor(rect.left + scroller.clientLeft + scroller.clientWidth + gutter / 2),
+    y: Math.floor(rect.top + scroller.clientTop + length / 2) };
+  const to = { x: from.x, y: Math.floor(rect.top + scroller.clientTop + track * 0.5 + length / 2) };
+  const hit = document.elementFromPoint(from.x, from.y);
+  window.${CONTROL} = { read, stop() { scroller.remove(); delete window.${CONTROL}; } };
+  return { ...read(), gutter, from, to, hitTag: hit?.tagName ?? null,
+    hitControl: hit === scroller };
+})()`;
 
 /** Isolated fixture scrollport; its animation never substitutes for gallery movement. */
 const CALIBRATE = `(async () => {
@@ -251,6 +289,40 @@ export async function runNativeScrollbarTakeover(
     receipt.phase = 'prepare-native-input';
     preparedInput = await driver.prepareInput?.();
     receipt.nativeInput = preparedInput?.mapping ?? { kind: 'browser-injected pointer input' };
+    receipt.phase = 'native-input-control';
+    try {
+      const control = (await driver.evaluate(INSTALL_CONTROL)) as {
+        top: number;
+        max: number;
+        gutter: number;
+        from: { x: number; y: number };
+        to: { x: number; y: number };
+        hitControl: boolean;
+      };
+      receipt.nativeControlBefore = control;
+      assert(control.gutter > 0 && control.hitControl, 'Native control scrollbar is not exposed');
+      assert(control.max > 1000, 'Native control is too short');
+      await driver.screenshot('native-scrollbar-control-before.png');
+      await driver.drag(control.from, control.to, async () => {});
+      await driver.waitFor(
+        `(() => { const c = window.${CONTROL}; const row = c?.read();
+          return row && Math.abs(row.top - row.max * 0.5) <= row.max * 0.05; })()`,
+        'visible native control scrollbar drag to half track',
+        1200
+      );
+      receipt.nativeControlAfter = await driver.evaluate(`window.${CONTROL}.read()`);
+    } finally {
+      try {
+        receipt.nativeControlFinal = await driver.evaluate(`window.${CONTROL}?.read() ?? null`);
+        await driver.screenshot('native-scrollbar-control-after.png');
+      } finally {
+        await driver.evaluate(`(() => {
+          window.${CONTROL}?.stop();
+          document.querySelector('[data-xeg-native-scrollbar-control]')?.remove();
+          return null;
+        })()`);
+      }
+    }
     receipt.calibration = await driver.evaluate(CALIBRATE);
     const calibration = receipt.calibration as { hostBefore: number; hostAfter: number };
     assert.equal(calibration.hostAfter, calibration.hostBefore, 'Calibration moved the host page');
@@ -277,12 +349,20 @@ export async function runNativeScrollbarTakeover(
     await driver.wheel(baselineWheelDelta);
     await driver.waitFor(
       `(() => { const p = window.${PROBE}; const last = p.rows.filter(row => row.event === 'scroll').at(-1);
-        const end = p.rows.filter(row => row.event === 'scrollend' && row.at >= p.baselineWheelStart).at(-1);
-        return last && end && end.at >= last.at && performance.now() - last.at > 180; })()`,
-      'baseline native wheel completion'
+        return Boolean(last && last.at >= p.baselineWheelStart &&
+          performance.now() - last.at > 180); })()`,
+      'baseline browser wheel action and quiet position'
     );
     const baseline = (await driver.evaluate(`window.${PROBE}.snapshot()`)) as Sample;
-    receipt.baselineWheel = { deltaY: baselineWheelDelta, before: home.top, after: baseline.top };
+    const baselineNativeScrollendObserved = (await driver.evaluate(
+      `window.${PROBE}.rows.some(row => row.event === 'scrollend' && row.at >= window.${PROBE}.baselineWheelStart)`
+    )) as boolean;
+    receipt.baselineWheel = {
+      deltaY: baselineWheelDelta,
+      before: home.top,
+      after: baseline.top,
+      nativeScrollendObserved: baselineNativeScrollendObserved,
+    };
     receipt.baseline = baseline;
     assert(
       baseline.top >= 2000 && baseline.top <= 4500,
@@ -338,7 +418,7 @@ export async function runNativeScrollbarTakeover(
     await driver.waitFor(
       `(() => { const p = window.${PROBE}; const last = p.rows.filter(row => row.event === 'scroll').at(-1);
         const end = p.rows.filter(row => row.event === 'scrollend').at(-1);
-        return last && end && end.at >= last.at && performance.now() - last.at > 180; })()`,
+        return Boolean(last && end && end.at >= last.at && performance.now() - last.at > 180); })()`,
       'native thumb movement completion',
       2500
     );
