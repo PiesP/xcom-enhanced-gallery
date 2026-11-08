@@ -64,6 +64,14 @@ import {
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
 import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
+import { createLateImageLayoutProbe, type LateLayoutReceipt } from './late-image-layout.ts';
+import {
+  beginSourceImagePaintAssertion,
+  endSourceImagePaintAssertion,
+  finishSourceImageTrace,
+  startSourceImageTrace,
+  waitForSelectedAlignmentBeforeFault,
+} from './source-image-trace.ts';
 import {
   captureUpgradeSettingsFailure,
   observeDefaultVideoClick,
@@ -715,16 +723,71 @@ async function captureRecoveryPaint(page: Page, index: number) {
   }, index);
 }
 
-async function waitForRecoveryPaint(page: Page, index: number, description: string) {
-  const deadline = Date.now() + 5_000;
-  let last = await captureRecoveryPaint(page, index);
-  while (!last.painted && Date.now() < deadline) {
-    await delay(50);
+export async function waitForRecoveryPaint(
+  page: Page,
+  index: number,
+  description: string,
+  traceAssertionId?: string
+) {
+  const startedAtEpochMs = Date.now();
+  const deadline = startedAtEpochMs + 5_000;
+  let traceStarted = false;
+  let passed = false;
+  let primaryError: unknown;
+  let failed = false;
+  let last: Awaited<ReturnType<typeof captureRecoveryPaint>> | undefined;
+  try {
+    if (traceAssertionId) {
+      await beginSourceImagePaintAssertion(page, {
+        id: traceAssertionId,
+        startedAtEpochMs,
+        deadlineAtEpochMs: deadline,
+      });
+      traceStarted = true;
+    }
     last = await captureRecoveryPaint(page, index);
+    while (!last.painted && Date.now() < deadline) {
+      await delay(50);
+      last = await captureRecoveryPaint(page, index);
+    }
+    if (!last.painted) {
+      throw Object.assign(
+        new Error(`Timed out waiting for ${description}: ${JSON.stringify(last)}`),
+        { paintSnapshot: last, paintAssertionId: traceAssertionId ?? null }
+      );
+    }
+    passed = true;
+  } catch (error) {
+    failed = true;
+    primaryError = error;
   }
-  if (!last.painted) {
-    throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(last)}`);
+  let traceFailed = false;
+  let traceError: unknown;
+  if (traceAssertionId && traceStarted) {
+    try {
+      await endSourceImagePaintAssertion(page, {
+        id: traceAssertionId,
+        endedAtEpochMs: Date.now(),
+        status: passed ? 'passed' : 'failed',
+      });
+    } catch (error) {
+      traceFailed = true;
+      traceError = error;
+    }
   }
+  if (failed && traceFailed) {
+    throw new AggregateError(
+      [primaryError, traceError],
+      'Recovery paint and trace finalization failed'
+    );
+  }
+  if (failed) {
+    throw primaryError;
+  }
+  if (traceFailed) {
+    throw traceError;
+  }
+  assert(last);
   return last;
 }
 
@@ -854,6 +917,15 @@ type SourceImageFailureEvidence = {
     host?: unknown;
     failed?: unknown;
     failedPaint?: Awaited<ReturnType<typeof captureRecoveryPaint>>;
+    paintFailure?: {
+      id: string | null;
+      snapshot: Awaited<ReturnType<typeof captureRecoveryPaint>>;
+    };
+    diagnosticErrors?: string[];
+    lateLayout?: LateLayoutReceipt;
+    lateLayoutCleanup?: LateLayoutReceipt;
+    layoutFixtureImages?: Array<ReturnType<typeof imageReceipt>>;
+    layoutImageRequests?: QualityRequest[];
     neighbor?: unknown;
     returned?: unknown;
     retries?: unknown[];
@@ -864,6 +936,13 @@ type SourceImageFailureEvidence = {
     healthyRequests?: QualityRequest[];
     screenshot?: string;
     screenshotError?: string;
+    trace?: Awaited<ReturnType<typeof finishSourceImageTrace>>;
+    traceNetwork?: Array<{ event: string; atEpochMs: number; status?: number }>;
+    faultReleaseGate?:
+      | ({ status: 'observed'; routeAtEpochMs: number; fulfilledAtEpochMs?: number } & Awaited<
+          ReturnType<typeof waitForSelectedAlignmentBeforeFault>
+        >)
+      | { status: 'failed'; routeAtEpochMs: number; error: string };
     error?: string;
     cleanup: {
       routeRemoved: boolean;
@@ -1045,6 +1124,8 @@ type InstallResult = {
   videoSaveFormat?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  mediaApiReuse?: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>>;
+  sourceImageFailures?: SourceImageFailureEvidence;
   uxDetails?: unknown;
   settingsPersistence?: unknown;
   attachmentFilenames?: unknown;
@@ -13914,6 +13995,9 @@ async function runSourceImageFailureCases({
   output,
   qualityApiResponses,
   qualityRequests,
+  trace = false,
+  faultRelease = 'immediate',
+  lateIndex0 = false,
 }: {
   context: BrowserContext;
   evidence: SourceImageFailureEvidence;
@@ -13922,6 +14006,9 @@ async function runSourceImageFailureCases({
   output: string;
   qualityApiResponses: ApiRecord[];
   qualityRequests: QualityRequest[];
+  trace?: boolean;
+  faultRelease?: 'immediate' | 'after-initial-alignment';
+  lateIndex0?: boolean;
 }) {
   const originalUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
   const displayUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=small`;
@@ -13947,7 +14034,23 @@ async function runSourceImageFailureCases({
     let owned: Page | undefined;
     let observationOverflow = false;
     let faultActive = false;
+    let traceArmed = false;
+    let layoutProbe: ReturnType<typeof createLateImageLayoutProbe> | undefined;
+    const faultTasks = new Set<Promise<void>>();
+    const faultTaskErrors: string[] = [];
+    if (trace) {
+      receipt.traceNetwork = [];
+    }
     const apiMark = qualityApiResponses.length;
+    const qualityMark = qualityRequests.length;
+    if (lateIndex0) {
+      receipt.layoutFixtureImages = images.map(imageReceipt);
+    }
+    const diagnosticFailure = (error: unknown): void => {
+      (receipt.diagnosticErrors ??= []).push(safeError(error));
+      failures.push(error);
+      receipt.status = 'failed';
+    };
     const onConsole = (message: ConsoleMessage) => {
       if (message.type() !== 'error') {
         return;
@@ -13972,6 +14075,17 @@ async function runSourceImageFailureCases({
       if (!faultActive || response.url() !== originalUrl) {
         return;
       }
+      if (traceArmed) {
+        if (receipt.traceNetwork && receipt.traceNetwork.length < 16) {
+          receipt.traceNetwork.push({
+            event: 'original-response',
+            atEpochMs: Date.now(),
+            status: response.status(),
+          });
+        } else {
+          observationOverflow = true;
+        }
+      }
       if (receipt.responses.length < 4) {
         receipt.responses.push({
           url: response.url(),
@@ -13982,8 +14096,13 @@ async function runSourceImageFailureCases({
         observationOverflow = true;
       }
     };
-    const faultRoute = async (route: Route) => {
+    const serveFault = async (route: Route) => {
       assert.equal(route.request().url(), originalUrl);
+      const firstFault = receipt.faultRequests.length === 0;
+      if (traceArmed) {
+        assert(receipt.traceNetwork && receipt.traceNetwork.length < 16);
+        receipt.traceNetwork.push({ event: 'fault-route', atEpochMs: Date.now() });
+      }
       assert(receipt.faultRequests.length < 4, 'Selected image fault request budget exceeded');
       receipt.faultRequests.push({
         url: route.request().url(),
@@ -13991,6 +14110,35 @@ async function runSourceImageFailureCases({
         bytes: body.length,
         resourceType: route.request().resourceType(),
       });
+      if (firstFault && layoutProbe) {
+        receipt.lateLayout = await layoutProbe.waitForTransition();
+        if (receipt.lateLayout.status === 'passed') {
+          if (kind === '404') {
+            try {
+              await owned!.screenshot({
+                path: join(output, 'late-index0-aligned.png'),
+                timeout: 1_000,
+              });
+            } catch (error) {
+              diagnosticFailure(error);
+            }
+          }
+          layoutProbe.releaseNeighbor();
+        }
+      }
+      if (firstFault && faultRelease === 'after-initial-alignment') {
+        const routeAtEpochMs = Date.now();
+        try {
+          const gate = await waitForSelectedAlignmentBeforeFault(owned!, originalUrl);
+          receipt.faultReleaseGate = { status: 'observed', routeAtEpochMs, ...gate };
+        } catch (error) {
+          receipt.faultReleaseGate = {
+            status: 'failed',
+            routeAtEpochMs,
+            error: safeError(error),
+          };
+        }
+      }
       await route.fulfill({
         status: expectedStatus,
         contentType: 'image/jpeg',
@@ -14001,6 +14149,25 @@ async function runSourceImageFailureCases({
           'Access-Control-Allow-Credentials': 'true',
         },
       });
+      if (receipt.faultReleaseGate?.status === 'observed' && firstFault) {
+        receipt.faultReleaseGate.fulfilledAtEpochMs = Date.now();
+      }
+      if (traceArmed) {
+        assert(receipt.traceNetwork && receipt.traceNetwork.length < 16);
+        receipt.traceNetwork.push({ event: 'fault-fulfilled', atEpochMs: Date.now() });
+      }
+    };
+    const faultRoute = (route: Route): Promise<void> => {
+      const task = serveFault(route);
+      faultTasks.add(task);
+      void task.then(
+        () => faultTasks.delete(task),
+        (error) => {
+          faultTasks.delete(task);
+          faultTaskErrors.push(safeError(error));
+        }
+      );
+      return task;
     };
     const failedSelection = async () =>
       waitForValue(async () => {
@@ -14041,6 +14208,26 @@ async function runSourceImageFailureCases({
           : undefined;
       }, `selected ${kind} image native failure`);
     try {
+      if (lateIndex0) {
+        assert.deepEqual(
+          receipt.layoutFixtureImages,
+          [
+            {
+              bytes: 4237,
+              sha256: '991f60cfda525c43bfdb510bb8e363d79da0cdcade09e0a960c98a7b88365ade',
+            },
+            {
+              bytes: 4711,
+              sha256: 'bd8bb9ae1f472bc782773cffa26cc45cf2eb31ac553c93ebf4311558e7e9a258',
+            },
+            {
+              bytes: 4795,
+              sha256: '3b89f353723b57190cafa7694d3bbe28d23d328d2be5f0caa3332e7a4a469c6a',
+            },
+          ],
+          'Late-index0 acceptance must preserve the retained healthy-image bytes'
+        );
+      }
       owned = await context.newPage();
       owned.on('console', onConsole);
       owned.on('pageerror', onPageError);
@@ -14073,11 +14260,46 @@ async function runSourceImageFailureCases({
       const knownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
       await owned.route(originalUrl, faultRoute);
       faultActive = true;
+      if (trace) {
+        await startSourceImageTrace(owned, 1, lateIndex0);
+        traceArmed = true;
+      }
+      if (lateIndex0) {
+        layoutProbe = createLateImageLayoutProbe({
+          page: owned,
+          urls: [
+            `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[0]}?format=jpg&name=orig`,
+            originalUrl,
+            neighborUrl,
+          ],
+          mediaIds: [
+            `${QUALITY_TWEET_ID}_api_0`,
+            `${QUALITY_TWEET_ID}_api_1`,
+            `${QUALITY_TWEET_ID}_api_2`,
+          ],
+        });
+        await layoutProbe.install();
+      }
       await trigger.click();
       const gallery = owned.locator('[data-xeg-gallery-container]');
       await gallery.waitFor({ state: 'visible' });
       const failed = await failedSelection();
       receipt.failed = failed;
+      if (lateIndex0) {
+        assert.equal(
+          receipt.lateLayout?.status,
+          'passed',
+          `Late-index0 transition not qualified: ${JSON.stringify(receipt.lateLayout)}`
+        );
+        assert.deepEqual(receipt.diagnosticErrors ?? [], [], 'Late-index0 observation failed');
+      }
+      if (faultRelease === 'after-initial-alignment') {
+        assert.equal(
+          receipt.faultReleaseGate?.status,
+          'observed',
+          `Selected ${kind} diagnostic fault release lacked a settled alignment: ${JSON.stringify(receipt.faultReleaseGate)}`
+        );
+      }
       assert(
         failed.currentSrc === '' || failed.currentSrc === originalUrl,
         'Failed image currentSrc must not point at another attachment'
@@ -14091,7 +14313,8 @@ async function runSourceImageFailureCases({
       receipt.failedPaint = await waitForRecoveryPaint(
         owned,
         1,
-        `${kind}: failed image recovery text and actions painted inside the viewport`
+        `${kind}: failed image recovery text and actions painted inside the viewport`,
+        traceArmed ? `${kind}:initial` : undefined
       );
       if (kind === 'corrupt') {
         const screenshot = `src01-${kind}-error.png`;
@@ -14183,7 +14406,8 @@ async function runSourceImageFailureCases({
       receipt.exhaustedPaint = await waitForRecoveryPaint(
         owned,
         1,
-        `${kind}: exhausted image recovery text and action painted inside the viewport`
+        `${kind}: exhausted image recovery text and action painted inside the viewport`,
+        traceArmed ? `${kind}:exhausted` : undefined
       );
       await owned.screenshot({ path: join(output, `recovery-image-${kind}-exhausted.png`) });
       await owned.keyboard.press('Escape');
@@ -14311,6 +14535,13 @@ async function runSourceImageFailureCases({
       failures.push(error);
       receipt.status = 'failed';
       receipt.error = safeError(error);
+      if (error instanceof Error && 'paintSnapshot' in error) {
+        const measured = error as Error & {
+          paintSnapshot: Awaited<ReturnType<typeof captureRecoveryPaint>>;
+          paintAssertionId: string | null;
+        };
+        receipt.paintFailure = { id: measured.paintAssertionId, snapshot: measured.paintSnapshot };
+      }
       if (owned && !owned.isClosed() && !receipt.screenshot) {
         const screenshot = `src01-${kind}-error.png`;
         await owned
@@ -14325,6 +14556,61 @@ async function runSourceImageFailureCases({
     } finally {
       receipt.api = qualityApiResponses.slice(apiMark);
       if (owned) {
+        if (traceArmed) {
+          try {
+            receipt.trace = await finishSourceImageTrace(owned);
+            traceArmed = false;
+          } catch (error) {
+            receipt.cleanup.errors.push(safeError(error));
+            failures.push(error);
+          }
+          if (receipt.trace) {
+            try {
+              assert.equal(
+                receipt.trace.overflow,
+                false,
+                'Source image trace observation exceeded its bound'
+              );
+              assert.equal(
+                receipt.trace.productOverflow,
+                false,
+                'Source image product event observation exceeded its bound'
+              );
+              assert.equal(
+                receipt.trace.productMalformedCount,
+                0,
+                'Source image product trace was malformed'
+              );
+              assert.equal(
+                receipt.trace.coverageComplete,
+                true,
+                'Source image trace did not cover the complete paint assertion intervals'
+              );
+            } catch (error) {
+              diagnosticFailure(error);
+            }
+          }
+        }
+        if (layoutProbe) {
+          try {
+            receipt.lateLayoutCleanup = await layoutProbe.close();
+            assert.deepEqual(receipt.lateLayoutCleanup.errors, []);
+            assert.equal(receipt.lateLayoutCleanup.pendingRoutes, 0);
+            assert(
+              receipt.lateLayoutCleanup.routes.every((route) => !route.installed || route.removed)
+            );
+          } catch (error) {
+            receipt.cleanup.errors.push(safeError(error));
+            failures.push(error);
+          }
+        }
+        await Promise.allSettled([...faultTasks]);
+        if (faultTaskErrors.length) {
+          receipt.cleanup.errors.push(...faultTaskErrors);
+          failures.push(
+            new Error(`Selected fault response task failed: ${faultTaskErrors.join('; ')}`)
+          );
+        }
         if (!receipt.cleanup.routeRemoved) {
           try {
             await owned.unroute(originalUrl, faultRoute);
@@ -14359,11 +14645,14 @@ async function runSourceImageFailureCases({
           errors: [],
         };
       }
+      if (lateIndex0) {
+        receipt.layoutImageRequests = qualityRequests.slice(qualityMark);
+      }
       if (receipt.cleanup.errors.length) {
         receipt.status = 'failed';
       }
     }
-    if (receipt.cleanup.errors.length) {
+    if (receipt.cleanup.errors.length || receipt.diagnosticErrors?.length) {
       break;
     }
   }
@@ -15442,6 +15731,8 @@ async function runFailedEntryRecoveryProbe({
     undefined,
     {
       classicTweetApi: true,
+      // Two nominal requests plus two fresh held/cancelled documents can total four.
+      classicApiObservationLimit: 4,
     }
   );
   const onApiRequest = (request: Request) => {
@@ -20326,6 +20617,175 @@ async function runSettingsPersistenceProbe({
   }
 }
 
+/** Run the existing API contract helper with the same installed quality routes as the full flow. */
+async function runMediaApiReuseFocusedProbe({
+  context,
+  extensionId,
+  images,
+  displayImages,
+  nativeLoopback,
+  output,
+  root,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+}) {
+  let routes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
+  let page: Page | undefined;
+  let evidence: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>> | undefined;
+  let primarySeen = false;
+  let primaryError: unknown;
+  const cleanupErrors: unknown[] = [];
+  try {
+    routes = await installFixtureRoutes(context, root, images, displayImages);
+    nativeLoopback.setPayloads(images, routes.videoPayloads);
+    page = await context.newPage();
+    await page.goto(`chrome-extension://${extensionId}/manifest.json`);
+    evidence = await runInstalledMediaApiReuseProfile({
+      context,
+      page,
+      qualityFixtureUrl: QUALITY_FIXTURE_URL,
+      qualityTweetId: QUALITY_TWEET_ID,
+      qualityImagePaths: QUALITY_IMAGE_PATHS,
+      output,
+      videoPayloads: routes.videoPayloads,
+    });
+    assert.equal(evidence.status, 'passed', 'Installed API reuse helper did not pass');
+    assert.deepEqual(routes.unhandledRequests, [], 'API reuse fixture left a request unhandled');
+    const transport = nativeLoopback.snapshot();
+    assert.equal(transport.unexpectedCount, 0, 'API reuse requested an unallowlisted CDN path');
+    assert.equal(transport.overflow, false, 'API reuse fixture exceeded its transport cap');
+    assert.equal(transport.serverError, false, 'API reuse fixture listener failed');
+    assert.equal(transport.activeCount, 0, 'API reuse fixture retains an active response');
+  } catch (error) {
+    primarySeen = true;
+    primaryError = error;
+  } finally {
+    for (const close of [() => page?.close(), () => routes?.remove()]) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+  }
+  if (primarySeen && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'API reuse probe and cleanup failed'
+    );
+  }
+  if (primarySeen) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'API reuse probe cleanup failed');
+  }
+  assert(evidence, 'API reuse probe produced no evidence');
+  return evidence;
+}
+
+/** Reuse the full source-image failure contract with isolated owned routes and pages. */
+async function runSourceImageFailureFocusedProbe({
+  context,
+  extensionId,
+  images,
+  displayImages,
+  nativeLoopback,
+  output,
+  root,
+  trace,
+  faultRelease,
+  lateIndex0,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  trace: boolean;
+  faultRelease: 'immediate' | 'after-initial-alignment';
+  lateIndex0: boolean;
+}) {
+  const evidence: SourceImageFailureEvidence = { status: 'pending', cases: [] };
+  let routes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
+  let extensionPage: Page | undefined;
+  let primaryError: unknown;
+  const cleanupErrors: unknown[] = [];
+  try {
+    routes = await installFixtureRoutes(context, root, images, displayImages);
+    nativeLoopback.setPayloads(images, routes.videoPayloads);
+    extensionPage = await context.newPage();
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    await runSourceImageFailureCases({
+      context,
+      evidence,
+      extensionPage,
+      images,
+      output,
+      qualityApiResponses: routes.qualityApiResponses,
+      qualityRequests: routes.qualityRequests,
+      trace,
+      faultRelease,
+      lateIndex0,
+    });
+    assert.deepEqual(routes.unhandledRequests, [], 'Source image fixture left a request unhandled');
+    const transport = nativeLoopback.snapshot();
+    assert.equal(
+      transport.unexpectedCount,
+      0,
+      'Source image fixture requested an unallowlisted CDN path'
+    );
+    assert.equal(transport.overflow, false, 'Source image fixture exceeded its transport cap');
+    assert.equal(transport.serverError, false, 'Source image fixture listener failed');
+    assert.equal(transport.activeCount, 0, 'Source image fixture retains an active response');
+  } catch (error) {
+    primaryError = error;
+    evidence.status = 'failed';
+    evidence.errors = [...(evidence.errors ?? []), safeError(error)];
+  } finally {
+    for (const close of [() => extensionPage?.close(), () => routes?.remove()]) {
+      try {
+        await close();
+      } catch (error) {
+        cleanupErrors.push(error);
+      }
+    }
+    if (cleanupErrors.length) {
+      evidence.status = 'failed';
+      evidence.errors = [...(evidence.errors ?? []), ...cleanupErrors.map(safeError)];
+    }
+    try {
+      await writeFile(
+        join(output, 'focused-source-image-failures.json'),
+        JSON.stringify({ ...evidence, cleanupErrors: cleanupErrors.map(safeError) }, null, 2)
+      );
+    } catch (error) {
+      cleanupErrors.push(error);
+    }
+  }
+  if (primaryError && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'Source image probe and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Source image probe cleanup failed');
+  }
+  return evidence;
+}
+
 export async function run({
   chromium,
   firefox,
@@ -20481,6 +20941,74 @@ export async function run({
     assert.equal(liveObservation, null, 'Video format fixture cannot share live observation');
     assert.equal(acceptanceSelectorText, null, 'Video format fixture cannot share live acceptance');
   }
+  const mediaApiSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/media-api-reuse.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const mediaApiProbe = mediaApiSelectorText !== null;
+  if (mediaApiSelectorText !== null) {
+    assert.deepEqual(JSON.parse(mediaApiSelectorText), { scenario: 'media-api-reuse' });
+    assert.equal(installation, 'extension', 'API reuse requires the installed extension');
+    assert.equal(liveUrls.length, 0, 'API reuse uses only owned fixture URLs');
+    assert.equal(liveObservation, null, 'API reuse cannot share live observation');
+  }
+  const sourceImageSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/source-image-failures.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const sourceImageSelector =
+    sourceImageSelectorText === null
+      ? null
+      : (JSON.parse(sourceImageSelectorText) as Record<string, unknown>);
+  const sourceImageProbe = sourceImageSelector !== null;
+  const sourceImageTrace = sourceImageSelector?.trace === true;
+  const configuredFaultRelease = sourceImageSelector?.faultRelease;
+  assert(
+    configuredFaultRelease === undefined ||
+      configuredFaultRelease === 'immediate' ||
+      configuredFaultRelease === 'after-initial-alignment',
+    'Source image fault release selector is unsupported'
+  );
+  const sourceImageFaultRelease = configuredFaultRelease ?? 'immediate';
+  const sourceImageLateIndex0 = sourceImageSelector?.lateIndex0 === true;
+  assert(
+    sourceImageSelector?.lateIndex0 === undefined || sourceImageLateIndex0,
+    'Late-index0 selector is unsupported'
+  );
+  assert(
+    !sourceImageLateIndex0 || (sourceImageTrace && configuredFaultRelease === undefined),
+    'Late-index0 requires trace without another release discriminator'
+  );
+  if (sourceImageSelectorText !== null) {
+    assert.deepEqual(sourceImageSelector, {
+      scenario: 'source-image-failures',
+      ...(sourceImageTrace ? { trace: true } : {}),
+      ...(sourceImageLateIndex0 ? { lateIndex0: true } : {}),
+      ...(configuredFaultRelease !== undefined ? { faultRelease: configuredFaultRelease } : {}),
+    });
+    assert(
+      sourceImageFaultRelease !== 'after-initial-alignment' || sourceImageTrace,
+      'Observed fault release requires the bounded source image trace'
+    );
+    assert.equal(browserName, 'msedge', 'Source image qualification requires installed Edge');
+    assert.equal(
+      installation,
+      'extension',
+      'Source image qualification requires the installed extension'
+    );
+    assert.equal(liveUrls.length, 0, 'Source image qualification uses only owned fixture URLs');
+    assert.equal(liveObservation, null, 'Source image qualification cannot share live observation');
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert(
@@ -20565,6 +21093,31 @@ export async function run({
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
+  if (mediaApiProbe) {
+    assert(!upgradeInput && !sameVersionInput, 'API reuse cannot run during upgrade checks');
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['media-api-reuse.json'],
+      'API reuse requires an exclusive focused selector'
+    );
+  }
+  if (sourceImageProbe) {
+    assert(
+      !upgradeInput && !sameVersionInput,
+      'Source image probe cannot run during upgrade checks'
+    );
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['source-image-failures.json'],
+      'Source image probe requires an exclusive focused selector'
+    );
+  }
   if (uxDetailsProbe) {
     assert(!upgradeInput && !sameVersionInput, 'UX details cannot run during upgrade checks');
   }
@@ -20672,6 +21225,7 @@ export async function run({
         !recoveryProbe &&
         !failedEntryProbe &&
         !experienceProbe &&
+        !mediaApiProbe &&
         !settingsProbe &&
         !uxDetailsProbe,
       'Attachment filenames require an exclusive focused selector'
@@ -20722,6 +21276,8 @@ export async function run({
         recoveryProbe ||
         failedEntryProbe ||
         experienceProbe ||
+        mediaApiProbe ||
+        sourceImageProbe ||
         settingsProbe ||
         uxDetailsProbe ||
         videoFormatProbe,
@@ -20738,6 +21294,7 @@ export async function run({
         !recoveryProbe &&
         !failedEntryProbe &&
         !experienceProbe &&
+        !mediaApiProbe &&
         !settingsProbe &&
         !uxDetailsProbe &&
         !videoFormatProbe,
@@ -20775,25 +21332,29 @@ export async function run({
           ? 'focused installed language/theme settings acceptance; no full prior live campaign'
           : videoFormatProbe
             ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
-            : uxDetailsProbe
-              ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-              : settingsProbe
-                ? 'installed-extension settings persistence fixture; no live X observation'
-                : failedEntryProbe
-                  ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-                  : experienceProbe
-                    ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
-                    : recoveryProbe
-                      ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-                      : openingProbe
-                        ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                        : validatedLiveUrls.length
-                          ? actualSiteAcceptance
-                            ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                            : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                          : sameVersionInput
-                            ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                            : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+            : sourceImageProbe
+              ? 'focused installed-Edge source image 404, empty and corrupt recovery; owned X fixture only'
+              : mediaApiProbe
+                ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
+                : uxDetailsProbe
+                  ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+                  : settingsProbe
+                    ? 'installed-extension settings persistence fixture; no live X observation'
+                    : failedEntryProbe
+                      ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+                      : experienceProbe
+                        ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
+                        : recoveryProbe
+                          ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                          : openingProbe
+                            ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                            : validatedLiveUrls.length
+                              ? actualSiteAcceptance
+                                ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                                : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                              : sameVersionInput
+                                ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                                : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -20931,6 +21492,29 @@ export async function run({
           root,
           images,
           displayImages,
+        });
+      } else if (mediaApiProbe) {
+        result.mediaApiReuse = await runMediaApiReuseFocusedProbe({
+          context,
+          extensionId,
+          images,
+          displayImages,
+          nativeLoopback,
+          output,
+          root,
+        });
+      } else if (sourceImageProbe) {
+        result.sourceImageFailures = await runSourceImageFailureFocusedProbe({
+          context,
+          extensionId,
+          images,
+          displayImages,
+          nativeLoopback,
+          output,
+          root,
+          trace: sourceImageTrace,
+          faultRelease: sourceImageFaultRelease,
+          lateIndex0: sourceImageLateIndex0,
         });
       } else if (failedEntryProbe) {
         result.failedEntryRecovery = await runFailedEntryRecoveryProbe({
@@ -21072,7 +21656,13 @@ export async function run({
         );
       }
       result.live = live;
-      result.evidenceStatus = validatedLiveUrls.length ? live.evidenceStatus : 'fixture-observed';
+      result.evidenceStatus = validatedLiveUrls.length
+        ? live.evidenceStatus
+        : mediaApiProbe
+          ? 'media-api-reuse-fixture-observed'
+          : sourceImageProbe
+            ? 'source-image-failures-fixture-observed'
+            : 'fixture-observed';
       if (reportedFilenameText !== null) {
         assert(Array.isArray(live.pages) && live.pages.length === 1);
         const page: unknown = live.pages[0];

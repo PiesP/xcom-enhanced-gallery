@@ -295,10 +295,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
 
   const fitModeClass = () => FIT_MODE_CLASSES[resolvedFitMode()];
 
-  // Compute contain-intrinsic-size override for content-visibility: auto off-screen items.
-  // The old hardcoded `auto none auto 300px` ignored fit mode and actual image dimensions,
-  // causing off-screen items to all render at 300px height. This override uses CSS calc()
-  // expressions referencing viewport custom properties so sizing auto-updates on resize.
+  // Match off-screen reservation to the pending image footprint. Failed images
+  // retain the recovery panel's existing sizing, and video remains full-width.
   const cisOverrideStyle = createMemo(() => {
     const dims = dimensions();
     const value = computeContainIntrinsicSizeOverride({
@@ -306,6 +304,8 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       intrinsicHeight: dims.height,
       hasIntrinsicSize: hasIntrinsicSize(),
       fitMode: resolvedFitMode(),
+      mediaKind: isVideo() ? 'video' : 'image',
+      imageFailed: !isVideo() && isError(),
     });
     if (!value) {
       return {};
@@ -367,6 +367,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       aria-posinset={local.index + 1}
       aria-setsize={totalItems()}
       data-gallery-element="item"
+      data-media-id={local.media.id}
+      data-media-active={local.isActive ? 'true' : undefined}
+      data-media-focused={isFocused() ? 'true' : undefined}
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper}>

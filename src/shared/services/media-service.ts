@@ -10,16 +10,34 @@ import type {
   MediaExtractionOptions,
   MediaExtractionResult,
   MediaInfo,
+  MediaExtractor,
+  OwnedMediaExtractionSession,
 } from '@shared/types/media.types';
 
+/** Gallery borrows page-wide media operations without lifecycle authority. */
+export interface GalleryMediaActions extends MediaExtractor {
+  getDownloadMedia(
+    media: MediaInfo,
+    signal?: AbortSignal,
+    maxResponseBytes?: number
+  ): Promise<OwnedBlob> | null;
+  cancelPendingMediaRequests(): void;
+}
+
+/** Page owner of the extraction session and the independent download Blob cache. */
 export class MediaService {
-  private mediaExtraction: MediaExtractionService | null = null;
+  private mediaExtraction: OwnedMediaExtractionSession | null = null;
   private downloadCache: DownloadMediaCache | null = new DownloadMediaCache(
     DOWNLOAD_CACHE_MAX_ENTRIES,
     DOWNLOAD_CACHE_MAX_BYTES
   );
   private didCleanup = false;
   private _initialized = false;
+
+  constructor(
+    private readonly createExtractionSession: () => OwnedMediaExtractionSession = () =>
+      new MediaExtractionService()
+  ) {}
 
   /** Initialize service (idempotent) */
   public async initialize(): Promise<void> {
@@ -31,7 +49,7 @@ export class MediaService {
       DOWNLOAD_CACHE_MAX_ENTRIES,
       DOWNLOAD_CACHE_MAX_BYTES
     );
-    this.mediaExtraction = new MediaExtractionService();
+    this.mediaExtraction = this.createExtractionSession();
     this._initialized = true;
   }
 
@@ -89,5 +107,9 @@ export class MediaService {
 const { getInstance: getMediaService, resetForTests: resetMediaServiceForTests } = createSingleton(
   () => new MediaService()
 );
+
+export function getGalleryMediaActions(): GalleryMediaActions {
+  return getMediaService();
+}
 
 export { getMediaService, resetMediaServiceForTests };

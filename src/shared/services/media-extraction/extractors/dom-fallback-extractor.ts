@@ -24,7 +24,10 @@ import {
   markDomImageOriginalProbeLimit,
   resolveDomImageOriginal,
 } from '@shared/services/media-extraction/extractors/dom-image-original';
-import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
+import {
+  extractClickContext,
+  extractTweetInfo,
+} from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import type {
   MediaExtractionOptions,
   MediaExtractionResult,
@@ -211,13 +214,12 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       // Step 1: Find the tweet container
       const article = closestWithFallback<HTMLElement>(clickedElement, TWEET_CONTAINER_SELECTORS);
 
-      const ownerExtractor = new TweetInfoExtractor();
       const anchor = clickedElement.closest<HTMLElement>(STATUS_LINK_SELECTOR);
-      const anchorOwner = anchor ? ownerExtractor.extract(anchor) : null;
+      const anchorOwner = anchor ? extractTweetInfo(anchor) : null;
       // Article-less recovery is bounded to a positively owned enclosing link.
       const tile = anchorOwner?.tweetId === tweetInfo.tweetId ? anchor : null;
       const tweetContainer = article ?? tile;
-      const currentOwner = ownerExtractor.extractContext(clickedElement);
+      const currentOwner = extractClickContext(clickedElement);
       if (!tweetContainer || currentOwner?.ownership.ownerTweetId !== tweetInfo.tweetId) {
         return createFailureResult(
           'No tweet container found',
@@ -230,8 +232,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       const ownedText = Array.from(
         tweetContainer.querySelectorAll<HTMLElement>(TWEET_TEXT_SELECTOR)
       ).filter(
-        (element) =>
-          ownerExtractor.extractContext(element)?.ownership.ownerTweetId === tweetInfo.tweetId
+        (element) => extractClickContext(element)?.ownership.ownerTweetId === tweetInfo.tweetId
       );
       const tweetTextContent =
         ownedText.length === 1 ? ownedText[0]?.textContent?.trim() || undefined : undefined;
@@ -257,7 +258,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
         if (!element) {
           continue;
         }
-        const owner = ownerExtractor.extractContext(element);
+        const owner = extractClickContext(element);
         if (owner?.ownership.ownerTweetId !== tweetInfo.tweetId) {
           continue;
         }
@@ -357,7 +358,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
 
       // Network callbacks may settle after navigation or after the clicked tile changes.
       const currentClicked = findMediaElementInDOM(clickedElement);
-      const currentOwnerAfterProbe = ownerExtractor.extractContext(clickedElement);
+      const currentOwnerAfterProbe = extractClickContext(clickedElement);
       const currentSource = currentClicked ? extractMediaUrlFromElement(currentClicked) : null;
       const currentContainer = article
         ? closestWithFallback<HTMLElement>(clickedElement, TWEET_CONTAINER_SELECTORS)

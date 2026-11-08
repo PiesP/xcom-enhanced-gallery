@@ -57,20 +57,48 @@ export interface TweetMetadataResult {
   readonly physicalRequestToken?: object;
 }
 
-export class TweetMetadataRequestError extends TwitterAPIRequestError {
+/** Request failure context shared by every waiter of one physical flight. */
+export class TweetMetadataRequestError extends Error {
   constructor(
-    error: TwitterAPIRequestError,
+    readonly requestError: TwitterAPIRequestError,
     readonly physicalRequestToken: object
   ) {
-    super(
-      error.message,
-      error.cause,
-      error.category,
-      error.retryAfterMs,
-      error.status,
-      error.readable
-    );
+    super(requestError.message, { cause: requestError.cause });
+    this.name = requestError.name;
   }
+
+  get category(): TwitterAPIRequestError['category'] {
+    return this.requestError.category;
+  }
+
+  get retryAfterMs(): number | undefined {
+    return this.requestError.retryAfterMs;
+  }
+
+  get status(): number | undefined {
+    return this.requestError.status;
+  }
+
+  get readable(): boolean | undefined {
+    return this.requestError.readable;
+  }
+}
+
+/** Preserve provider classification without assigning a local failure a flight token. */
+export function normalizeTweetMetadataRequestFailure(error: unknown): {
+  readonly requestError: TwitterAPIRequestError;
+  readonly physicalRequestToken?: object;
+} | null {
+  if (error instanceof TweetMetadataRequestError) {
+    return {
+      requestError: error.requestError,
+      physicalRequestToken: error.physicalRequestToken,
+    };
+  }
+  if (error instanceof TwitterAPIRequestError) {
+    return { requestError: error };
+  }
+  return null;
 }
 
 interface ApiRequestContext {

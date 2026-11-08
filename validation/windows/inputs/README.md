@@ -1,5 +1,119 @@
 # Optional Windows artifact fixture selector
 
+For the bounded #502 installed-Edge image recovery comparison, create the
+ignored, exclusive `source-image-failures.json` selector:
+
+```json
+{"scenario":"source-image-failures"}
+```
+
+Use `--browser msedge --mode desktop --installation extension` through the
+prepared-VM controller. This invokes the existing full-flow 404, empty and
+corrupt image helper with unchanged fault bytes, selection, recovery, retry,
+request and hit-target assertions. It retains
+`focused-source-image-failures.json` on success or failure and owns its pages,
+routes, listeners, extension profile and loopback cleanup. Other focused
+selectors, upgrades and public URLs cannot share this run.
+
+Optional `"trace": true` records bounded image/layout/scroll/rectangle and
+hit-target observations from before the click. It also collects JSON-string
+`xeg:gallery-scroll-trace` events while its owned `data-xeg-scroll-trace` marker
+is armed. `VerticalImageItem` supplies `data-media-id`, `data-media-active` and
+`data-media-focused` from its real media and role props. The collector resolves
+active and focused indices independently from uniquely marked items, then maps
+those and the selected index to media IDs. Toolbar indices are retained as
+separate metadata: its `data-focused-index` represents displayed media and can
+fall back to the active index when actual focus is null. Missing or ambiguous
+item mappings report `identityValid: false`; no toolbar fallback supplies focus.
+Identity validity is separate from `coverageComplete`, which describes only
+observation of the assertion interval.
+
+The current opt-in producers emit actual `viewport-decision` records from
+`useVerticalGallery` and `align-done` after `useGalleryItemScroll` calls native
+alignment. An accepted viewport payload includes its target `index` and the
+independently read `currentIndex` and nullable `focusedIndex`; a target is not a
+substitute for either identity. JSON payloads are collected without filling in
+missing fields. The gate requires both independent indices to identify the
+selected item and two stable frames with valid matching media identities.
+The retained temporary source `4aba255` omitted those independent fields; its
+records cannot qualify this corrected contract or be relabeled as a successful
+ordering comparison. This is a current-source contract, not an exact historical
+replay. Unarmed ordinary execution emits no diagnostic events. DOM observations
+alone must not be described as direct product guard decisions.
+Overflow remains a failure and the original visibility assertions still apply.
+The observer remains active through the actual paint assertion intervals rather
+than stopping five seconds after the click. Receipts identify each assertion's
+start, unchanged five-second deadline, end, budget and coverage completeness,
+plus the trace stop reason. A 15-second lifetime, 1,800 frame, 192 changed-state
+sample and 512 product-event cap remain explicit. A bound or missing interval
+makes diagnostic coverage incomplete, including when an assertion starts
+before trace attachment; an early successful assertion need not consume its
+whole deadline.
+
+The diagnostic-only `"faultRelease": "after-initial-alignment"` option requires
+`"trace": true` and the bound opt-in source producers. It holds only the first fault
+response until the second viewport alignment and two stable observed frames;
+missing probes, expiry or overflow fail. Retries and fault bodies remain
+unchanged. This is one timing discriminator, not replacement acceptance or a
+product wait. The diagnostic source revisions and the comparison findings are
+recorded in [#502](https://github.com/PiesP/xcom-enhanced-gallery/issues/502).
+
+For the late-index-0 layout transition and the same full three-fault contract,
+use this exclusive input:
+
+```json
+{"scenario":"source-image-failures","trace":true,"lateIndex0":true}
+```
+
+This mode requires the unchanged generated JPEG fixtures. It holds the first
+original responses for indices 0 and 2, while the selected index-1 fault is also
+pending. After actual initial product alignment and stable matching identities,
+it releases index 0. A trusted native 480×320 completion, semantic loaded state
+and two subsequent stable frames must show matching pending/loaded row and
+wrapper sizes, with the selected item still aligned while index 2 stays held.
+The existing identity and geometric tolerances and trace-start + 5,000ms bound
+remain in force. A new post-load alignment event is unnecessary when sizing
+preserves the already aligned position; an observed anchor change requires an
+eligible product-owned repair.
+
+Once that transition passes, the helper releases index 2 and the unchanged
+selected fault response, then executes the existing visibility/hit checks,
+two retries, healthy-neighbor navigation and same-document healthy reopen for
+404, empty and corrupt inputs. Each case records its initial/post-load layout,
+native image events, relevant response hashes and owned cleanup in
+`focused-source-image-failures.json`. The original five-second paint deadlines
+remain separate from layout readiness. No assertion scroll, synthetic load or
+viewport callback is used. This mode cannot share another fault-release
+discriminator. A failed prerequisite or incomplete/overflowed observation is
+a failure, not a successful ordering comparison or historical attribution.
+
+A controlled event-order comparison requires its own fresh layout readiness,
+accounting for index 0 and other fixture loads while neighbor index 2 stays
+held. Identity-contract tests alone do not establish that condition or native
+event order. A further pair is conditional on the remaining question recorded
+in [#502](https://github.com/PiesP/xcom-enhanced-gallery/issues/502); the layout
+acceptance mode does not automatically start one.
+
+Keep original failures failed. Passing a new comparison does not establish the
+cause of an older visibility failure. Remove only the task-owned selector after
+the attempt; retain private evidence outside Git.
+
+For focused installed Chrome/Edge extension verification of #499/#500 API
+metadata reuse and response accounting, create the ignored, exclusive
+`media-api-reuse.json` selector with exactly:
+
+```json
+{"scenario":"media-api-reuse"}
+```
+
+Run with `--installation extension` and no public `--live-url`. The route uses
+the full flow's installed package, task-owned HTTPS loopback, three-photo quality
+fixture, and unchanged `media-api-reuse-profile.ts` assertions. It retains
+`api-reuse-observations.json` and `installation-result.json`, including failure
+and cleanup outcomes. Other full-flow scenarios, live X, and the original
+profile are outside this focused result. Remove only this task-owned selector
+after the attempt.
+
 For the focused #482 installed filename scenario, create ignored
 `attachment-filenames.json` with exactly:
 

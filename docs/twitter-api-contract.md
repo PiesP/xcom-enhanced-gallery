@@ -28,11 +28,21 @@ Local response-capacity rejections do not count as provider failures or apply
 server retry guidance. They are not retried or cached.
 Cancelled or stale requests and cache hits do not change that failure history.
 
+`TwitterAPIRequestError` carries the safe provider/transport category and HTTP
+fields. `TweetMetadataRequestError` directly extends native `Error` and composes
+the original request error with the one token created for its physical flight.
+It preserves the original message, name and cause reference; safe fields are
+read from the retained request error, including false and zero values. The
+extractor normalizes both direct request errors and composed flight failures
+before classifying them. Only a physical flight has a token, so several waiters
+share one circuit-accounting identity. Local capacity deferral, cancellation,
+cache reuse and unrelated exceptions acquire no such identity.
+
 The sanitized response fixtures in `test/fixtures/quoted-video-tweet-response.ts`
 and `test/fixtures/mixed-owner-video-response.ts` exercise the accepted direct,
 quoted, and HLS-only shapes. Request and owner checks are in
-`test/unit/shared/services/media/twitter-api-client.test.ts` and
-`test/unit/shared/services/media-extraction/`.
+`test/browser/shared/services/media/twitter-api-client.browser.test.ts` and
+`test/browser/shared/services/media-extraction/*.browser.test.ts`.
 
 Before changing the operation, capture current, authorized provider evidence
 for the same account/context and a representative direct and quoted post. Check

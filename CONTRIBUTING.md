@@ -73,7 +73,7 @@ before job steps and tools with separate TLS stores have separate trust boundari
 | `vp run fmt`, `fmt:check`, `lint` | Vite+ Oxfmt and Oxlint, including static/type import-cycle analysis. | Read-only; `lint` denies native warnings. `fmt:fix`, `lint:fix`, `quality:fix` write fixes for review. |
 | `vp run quality`, `verify`, `verify:full` | `quality` runs one integrated Vite+ check, the focused policy suite, and native type/import boundary probes. `verify` adds production userscript/metadata and both extension targets; `verify:full` adds coverage, a retained development userscript build, and all E2E browser lanes. Its internal coverage command omits only the boundary suite already run by `quality`. | Build/test outputs and browser profiles are generated; `verify:full` leaves production and development userscripts together with production metadata. `verify` alone does not prove E2E. Read exact command outcomes and artifacts; no VM/publication inference. |
 | `vp run test`, `test:watch`, `test:cov`, `test:policy`, `test:ci` | Vite+ Node and Chromium Browser Mode unit projects, plus serial repository probes; `test:policy` selects the separate Node policy project for `scripts/ci/repository-authority.test.ts` and `scripts/release/verify-source.test.ts`. | `test` and `test:cov` run Node, Browser Mode and repository probes; `test:watch` explicitly starts persistent watch mode. Coverage keeps the complete runtime source scope and existing thresholds. CI and release unit jobs install matching Chromium before coverage. `test:ci` runs policy and real compiler/import boundary probes; run the latter alone with `vp test run test/unit/tooling/node-ambient-types.test.ts`. The focused policy and boundary suites are not the complete unit suite. |
-| `vp run test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:native`, `test:e2e:all` | Playwright configs under `test/e2e/`; Vite+ Node projects run the installed Firefox/Selenium suite and nine Windows helper regressions on their explicit commands. | Requires built artifacts and browser binaries for installed-browser cases; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
+| `vp run test:e2e`, `test:e2e:headed`, `test:e2e:extension`, `test:e2e:extension:firefox`, `test:e2e:native`, `test:e2e:all` | Playwright configs under `test/e2e/`; Vite+ Node projects run the installed Firefox/Selenium suite and the Windows helper regressions on their explicit commands. | Requires built artifacts and browser binaries for installed-browser cases; may create browser profiles/downloads. `test:e2e:all` chains the lanes; distinguish fixture browser evidence from authenticated Windows/live-site evidence. |
 
 ### Quality ownership
 
@@ -151,6 +151,43 @@ behavior changes. A local build or fixture run does not establish Windows,
 live-site, hosted-CI, or public-release evidence.
 
 ## Project constraints
+
+### Product composition and request errors
+
+Follow the [shared composition policy](https://github.com/PiesP/.github/blob/master/MAINTENANCE_POLICY.md#composition-and-behavioral-contracts)
+for product internals. Construct owned services at the page/session boundary;
+borrowers receive the operation capabilities they need, not owner-only disposal
+authority. `TwitterAPIRequestError` and `TweetMetadataRequestError` directly
+extend native `Error` as narrow request-boundary exceptions. The latter retains
+the original request error and its physical-flight token by composition; the
+[Tweet media API contract](docs/twitter-api-contract.md) owns classification,
+cache and failure-accounting details.
+
+Other direct native `Error` subclasses remain local boundary signals for HTTP
+status/body reads and deferred retries, bounded response/ZIP/download resources,
+unavailable original-media sources, and extension download lifecycle/storage
+failures. Their owning HTTP, download and extension modules retain classification,
+native cause/identity and recovery decisions; these errors do not serve as
+implementation bases. The request errors above are the changed examples, not an
+exhaustive list of permitted native errors. This exception does not authorize
+repository-defined error inheritance or a portfolio-wide error representation
+rewrite.
+
+For [composition issue #39](https://github.com/PiesP/.github/issues/39), the
+page lifecycle owns `MediaService`. It owns the demand-driven `DownloadMediaCache`
+and one `OwnedMediaExtractionSession` per initialization; `destroy()` retires
+both once, and later initialization creates a new session. Gallery receives
+`GalleryMediaActions` for extraction, downloads, and cancellation of in-flight
+download requests, without metadata invalidation or service disposal. The
+orchestrator receives a context-reader function, an operation-only DOM extractor,
+and one owned API metadata session from
+`src/shared/services/media-extraction/default-collaborators.ts`.
+That API session owns `TweetMetadataReuse` and its bounded cache and shared
+physical-request flights; the orchestrator owns its circuit state and disposes
+only its API session. One cancelled waiter leaves other waiters active; the final
+waiter or session disposal aborts the owned flight. Keep platform adapter
+selection lazy, retain the single-IIFE build, and do not copy inputs merely to
+match an interface style.
 
 ### Managed-file checks
 

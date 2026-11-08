@@ -12,9 +12,8 @@ import {
   getAPIMediaSelectionItems,
 } from '@shared/services/media/media-factory';
 import {
-  TweetMetadataRequestError,
+  normalizeTweetMetadataRequestFailure,
   TweetMetadataReuse,
-  TwitterAPIRequestError,
 } from '@shared/services/media/twitter-api-client';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import {
@@ -22,15 +21,16 @@ import {
   matchClickedMedia,
 } from '@shared/services/media-extraction/determine-clicked-index';
 import type {
+  ApiMetadataSession,
   MediaExtractionOptions,
   MediaExtractionResult,
-  MediaExtractorStrategy,
   TweetInfo,
 } from '@shared/types/media.types';
 import { createFailureResult } from '@shared/types/media.types';
 import { extractTweetTextHTMLFromClickedElement } from '@shared/utils/dom/tweet-extractor';
 
-export class TwitterAPIExtractor implements MediaExtractorStrategy {
+/** Owns one metadata cache and flight collection through TweetMetadataReuse. */
+export class TwitterAPIExtractor implements ApiMetadataSession {
   private readonly metadataReuse = new TweetMetadataReuse();
 
   invalidateMetadata(): void {
@@ -73,7 +73,8 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
           options.signal?.aborted ||
           ((error instanceof Error || error instanceof DOMException) &&
             error.name === 'AbortError');
-        const requestError = error instanceof TwitterAPIRequestError ? error : null;
+        const requestFailure = normalizeTweetMetadataRequestFailure(error);
+        const requestError = requestFailure?.requestError;
         return {
           ...createFailureResult(
             normalizeErrorMessage(error),
@@ -86,8 +87,8 @@ export class TwitterAPIExtractor implements MediaExtractorStrategy {
             : requestError
               ? { failureKind: requestError.category }
               : {}),
-          ...(error instanceof TweetMetadataRequestError
-            ? { apiRequestToken: error.physicalRequestToken }
+          ...(requestFailure?.physicalRequestToken
+            ? { apiRequestToken: requestFailure.physicalRequestToken }
             : {}),
           ...(requestError?.retryAfterMs !== undefined
             ? { retryAfterMs: requestError.retryAfterMs }

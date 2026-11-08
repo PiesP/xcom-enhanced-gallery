@@ -57,6 +57,8 @@
       "validation/windows/firefox-native-proxy.ts",
       "validation/windows/https-loopback-lifecycle.ts",
       "validation/windows/media-api-reuse-profile.ts",
+      "validation/windows/source-image-trace.ts",
+      "validation/windows/late-image-layout.ts",
       "validation/windows/video-loading-profile.ts",
       "validation/windows/video-save-format-profile.ts",
       "validation/windows/userscript-fixture-certificate.ps1",

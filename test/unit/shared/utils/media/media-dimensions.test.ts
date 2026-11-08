@@ -237,6 +237,7 @@ describe('media-dimensions (pure functions)', () => {
     it('should convert pixels to rem', () => {
       const result = createIntrinsicSizingStyle({ width: 160, height: 90 });
       expect(result['--xeg-gallery-item-intrinsic-width']).toBe('10.0000rem');
+      expect(result['--xeg-gallery-item-natural-width']).toBe('160px');
       expect(result['--xeg-gallery-item-intrinsic-height']).toBe('5.6250rem');
     });
   });
@@ -332,6 +333,7 @@ describe('media-dimensions (pure functions)', () => {
       intrinsicWidth: 1600,
       intrinsicHeight: 900,
       hasIntrinsicSize: true,
+      mediaKind: 'image',
     } as const;
     const viewport = 'var(--xeg-viewport-height-constrained, 720px)';
 
@@ -346,8 +348,10 @@ describe('media-dimensions (pure functions)', () => {
     });
 
     it('derives exact fallback geometry for every fit mode', () => {
+      const imageWidth =
+        'min(1600px, max(0px, calc(100cqi - var(--xeg-gallery-item-inline-insets))))';
       expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitWidth' })).toBe(
-        'auto 100cqi auto calc(100cqi / 1.777778)'
+        `auto ${imageWidth} auto calc(${imageWidth} / 1.777778)`
       );
       expect(computeContainIntrinsicSizeOverride({ ...base, fitMode: 'fitHeight' })).toBe(
         `auto min(100cqi, calc(${viewport} * 1.777778)) auto ${viewport}`
@@ -367,7 +371,29 @@ describe('media-dimensions (pure functions)', () => {
           intrinsicHeight: 0,
           fitMode: 'fitWidth',
         })
-      ).toBe('auto 100cqi auto calc(100cqi / 1.777778)');
+      ).toBe(
+        'auto min(1600px, max(0px, calc(100cqi - var(--xeg-gallery-item-inline-insets)))) auto calc(min(1600px, max(0px, calc(100cqi - var(--xeg-gallery-item-inline-insets)))) / 1.777778)'
+      );
+    });
+
+    it('caps small images but preserves full-width video and failed-image reservations', () => {
+      const smallImage = {
+        ...base,
+        intrinsicWidth: 480,
+        intrinsicHeight: 320,
+        fitMode: 'fitWidth',
+      } as const;
+      const imageWidth =
+        'min(480px, max(0px, calc(100cqi - var(--xeg-gallery-item-inline-insets))))';
+      expect(computeContainIntrinsicSizeOverride(smallImage)).toBe(
+        `auto ${imageWidth} auto calc(${imageWidth} / 1.500000)`
+      );
+      expect(computeContainIntrinsicSizeOverride({ ...smallImage, mediaKind: 'video' })).toBe(
+        'auto 100cqi auto calc(100cqi / 1.500000)'
+      );
+      expect(computeContainIntrinsicSizeOverride({ ...smallImage, imageFailed: true })).toBe(
+        'auto 100cqi auto calc(100cqi / 1.500000)'
+      );
     });
   });
 });

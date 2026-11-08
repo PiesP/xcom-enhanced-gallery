@@ -218,7 +218,7 @@ function isValidTweetInfo(info: TweetInfo): boolean {
  * Extract tweet info from a DOM element using a strategy pipeline.
  * Tries strategies in order: element attributes → enclosing status link → tweet container.
  */
-function extractTweetInfo(element: HTMLElement): TweetInfo | null {
+export function extractTweetInfo(element: HTMLElement): TweetInfo | null {
   for (const strategy of strategies) {
     try {
       const result = strategy(element);
@@ -291,7 +291,7 @@ function requestInfo(
 }
 
 /** Keep query context separate from ownership in a bounded clickable branch. */
-function extractClickContext(element: HTMLElement): TweetClickContext | null {
+export function extractClickContext(element: HTMLElement): TweetClickContext | null {
   let owner = extractTweetInfo(element);
   const enclosing = element.closest(STATUS_LINK_SELECTOR);
   const enclosingOwner = enclosing ? strictStatusLink(enclosing) : null;
