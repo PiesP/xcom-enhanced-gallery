@@ -133,14 +133,6 @@ export function Tooltip(props: TooltipProps): JSXElement {
       onKeyDown={(event) => {
         if (event.key === 'Escape' && tooltipRef.matches(':popover-open')) {
           dismiss();
-          const toolbar = triggerRef.closest('[data-gallery-element="toolbar"]');
-          const expandedPanel = toolbar?.querySelector(
-            '#settings-button[aria-expanded="true"], #keyboard-help-button[aria-expanded="true"]'
-          );
-          if (!expandedPanel) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
         }
       }}
     >

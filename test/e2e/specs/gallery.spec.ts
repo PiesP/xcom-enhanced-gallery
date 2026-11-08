@@ -205,6 +205,10 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     );
     await expect(gallery).toBeVisible();
 
+    await expect(gallery.locator('#keyboard-help-button')).toBeFocused();
+    await expect(
+      gallery.locator('#keyboard-help-button').locator('..').getByRole('tooltip')
+    ).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(gallery).toHaveCount(0);
     expect(await page.evaluate(() => document.body.style.position)).toBe('');
