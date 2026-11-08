@@ -6,7 +6,15 @@ import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { FirefoxSession } from './firefox-install.ts';
+
+type FirefoxUiSession = {
+  readonly context: string;
+  command(method: string, params?: Record<string, unknown>, timeoutMs?: number): Promise<unknown>;
+  evaluateJson(expression: string, timeoutMs?: number): Promise<unknown>;
+  navigate(url: string): Promise<void>;
+  waitFor(expression: string, description: string, timeoutMs?: number): Promise<void>;
+  captureScreenshot(): Promise<Buffer>;
+};
 
 type Point = { x: number; y: number };
 type Host = { scrollY: number; bodyStyle: string; scrollRestoration: string; opener: boolean };
@@ -32,7 +40,7 @@ const EXPERIENCE_IMAGES = [
 
 /** Generated inside the installed Firefox session so intrinsic media sizes match the fixture. */
 export async function prepareFirefoxNativeUiImages(
-  session: FirefoxSession
+  session: FirefoxUiSession
 ): Promise<Record<string, Buffer>> {
   const images: Record<string, Buffer> = {};
   for (const { path, width, height } of EXPERIENCE_IMAGES) {
@@ -53,7 +61,7 @@ export async function prepareFirefoxNativeUiImages(
 }
 
 export async function performFirefoxPointerActions(
-  session: FirefoxSession,
+  session: FirefoxUiSession,
   actions: Array<Record<string, unknown>>
 ): Promise<void> {
   try {
@@ -74,7 +82,7 @@ export async function performFirefoxPointerActions(
 }
 
 async function pointer(
-  session: FirefoxSession,
+  session: FirefoxUiSession,
   selector: string,
   activate: boolean
 ): Promise<Point> {
@@ -93,20 +101,26 @@ async function pointer(
   const actions: Array<Record<string, unknown>> = [
     { type: 'pointerMove', origin: 'viewport', x: point.x, y: point.y },
   ];
-  if (activate) actions.push({ type: 'pointerDown', button: 0 }, { type: 'pointerUp', button: 0 });
+  if (activate) {
+    actions.push({ type: 'pointerDown', button: 0 }, { type: 'pointerUp', button: 0 });
+  }
   await performFirefoxPointerActions(session, actions);
   return point;
 }
 
 export async function firefoxNativeKey(
-  session: FirefoxSession,
+  session: FirefoxUiSession,
   value: string,
   modifier?: string
 ): Promise<void> {
   const actions: Array<Record<string, unknown>> = [];
-  if (modifier) actions.push({ type: 'keyDown', value: modifier });
+  if (modifier) {
+    actions.push({ type: 'keyDown', value: modifier });
+  }
   actions.push({ type: 'keyDown', value }, { type: 'keyUp', value });
-  if (modifier) actions.push({ type: 'keyUp', value: modifier });
+  if (modifier) {
+    actions.push({ type: 'keyUp', value: modifier });
+  }
   try {
     await session.command('input.performActions', {
       context: session.context,
@@ -117,13 +131,13 @@ export async function firefoxNativeKey(
   }
 }
 
-async function screenshot(session: FirefoxSession, output: string, name: string) {
+async function screenshot(session: FirefoxUiSession, output: string, name: string) {
   const bytes = await session.captureScreenshot();
   await writeFile(join(output, name), bytes, { flag: 'wx' });
   return { name, bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') };
 }
 
-async function tooltip(session: FirefoxSession, trigger: string): Promise<Tooltip> {
+async function tooltip(session: FirefoxUiSession, trigger: string): Promise<Tooltip> {
   return (await session.evaluateJson(`(() => {
     const button = document.querySelector(${JSON.stringify(trigger)});
     const tip = button?.parentElement?.querySelector('[role="tooltip"]:popover-open');
@@ -163,7 +177,7 @@ function assertTooltip(tip: Tooltip, label: string): void {
   );
 }
 
-async function host(session: FirefoxSession): Promise<Host> {
+async function host(session: FirefoxUiSession): Promise<Host> {
   return (await session.evaluateJson(`(() => ({
     scrollY: Math.round(window.scrollY),
     bodyStyle: document.body.getAttribute('style') ?? '',
@@ -173,7 +187,11 @@ async function host(session: FirefoxSession): Promise<Host> {
 }
 
 /** Focused installed-browser UI route. It never performs a native download. */
-export async function runFirefoxNativeUi(session: FirefoxSession, url: string, output: string) {
+export async function runFirefoxNativeUi(
+  session: FirefoxUiSession,
+  url: string,
+  output: string
+): Promise<Record<string, unknown>> {
   const observations: Record<string, unknown> = {};
   try {
     await session.command('browsingContext.setViewport', {
