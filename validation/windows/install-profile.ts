@@ -17798,6 +17798,11 @@ async function runNativeBrowserUiProbe({
     return { ...geometry, screenshot: file };
   };
   try {
+    if (scrollbarTakeover) {
+      // Keep the focused UI/zoom route's established CSS viewport. The later
+      // native scrollbar tab retains this context's un-emulated viewport.
+      await page.setViewportSize({ width: 1280, height: 800 });
+    }
     await page.goto(`chrome-extension://${extensionId}/manifest.json`);
     await page.goto(EXPERIENCE_FIXTURE_URL);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
@@ -17997,80 +18002,108 @@ async function runNativeBrowserUiProbe({
     };
 
     if (scrollbarTakeover) {
+      const scrollPage = await context.newPage();
       let nativePointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
-      observations.scrollbarTakeover = await runNativeScrollbarTakeover(
-        {
-          launchCondition:
-            browserName === 'chrome'
-              ? '--enable-smooth-scrolling in this owned temporary Chrome profile'
-              : 'browser default',
-          prepareInput: async () => {
-            const previousViewport = page.viewportSize();
-            assert(previousViewport, 'Native pointer input requires a measured page viewport');
-            const cdp = await context.newCDPSession(page);
-            const target = await cdp.send('Target.getTargetInfo');
-            const window = await cdp.send('Browser.getWindowForTarget', {
-              targetId: target.targetInfo.targetId,
-            });
-            const previousBounds = window.bounds;
-            let pointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
-            try {
-              await cdp.send('Browser.setWindowBounds', {
-                windowId: window.windowId,
-                bounds: { windowState: 'normal', left: 0, top: 0, width: 540, height: 450 },
-              });
-              // Match browser CSS coordinates to the real client area before OS input.
-              await cdp.send('Emulation.clearDeviceMetricsOverride');
-              pointer = await prepareNativeScrollbarPointer(
-                (expression) => page.evaluate(expression),
-                root,
-                browserName === 'msedge' ? 'msedge.exe' : 'chrome.exe'
+      try {
+        await scrollPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+        await scrollPage.goto(EXPERIENCE_FIXTURE_URL);
+        await scrollPage.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+          state: 'attached',
+        });
+        const scrollTrigger = scrollPage.locator('[data-testid="tweetPhoto"] img').first();
+        await scrollTrigger.evaluate((image) => image.setAttribute('height', '6000'));
+        await scrollTrigger.scrollIntoViewIfNeeded();
+        await scrollTrigger.click();
+        const scrollGallery = scrollPage.locator('dialog[data-xeg-gallery-container]');
+        await scrollGallery.waitFor({ state: 'visible' });
+        assert(await scrollGallery.evaluate((element) => element.matches(':modal')));
+        observations.scrollbarTakeover = await runNativeScrollbarTakeover(
+          {
+            launchCondition:
+              browserName === 'chrome'
+                ? '--enable-smooth-scrolling in this owned temporary Chrome profile'
+                : 'browser default',
+            prepareInput: async () => {
+              assert.equal(
+                scrollPage.viewportSize(),
+                null,
+                'Native scrollbar tab inherited an emulated viewport'
               );
-              const ownedPointer = pointer;
-              nativePointer = ownedPointer;
-              return {
-                mapping: ownedPointer.mapping,
-                close: async () => {
-                  try {
-                    await ownedPointer.close();
-                  } finally {
-                    nativePointer = undefined;
-                    await page.setViewportSize(previousViewport);
-                    await cdp.send('Browser.setWindowBounds', {
-                      windowId: window.windowId,
-                      bounds: previousBounds,
-                    });
-                    await cdp.detach();
-                  }
-                },
-              };
-            } catch (error) {
-              await pointer?.close();
-              await page.setViewportSize(previousViewport);
-              await cdp.send('Browser.setWindowBounds', {
-                windowId: window.windowId,
-                bounds: previousBounds,
+              const cdp = await context.newCDPSession(scrollPage);
+              const target = await cdp.send('Target.getTargetInfo');
+              const window = await cdp.send('Browser.getWindowForTarget', {
+                targetId: target.targetInfo.targetId,
               });
-              await cdp.detach();
-              throw error;
-            }
+              const previousBounds = window.bounds;
+              let pointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
+              try {
+                await cdp.send('Browser.setWindowBounds', {
+                  windowId: window.windowId,
+                  bounds: { windowState: 'normal', left: 0, top: 0, width: 540, height: 450 },
+                });
+                await scrollPage.evaluate(
+                  () =>
+                    new Promise<void>((resolve) =>
+                      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+                    )
+                );
+                pointer = await prepareNativeScrollbarPointer(
+                  (expression) => scrollPage.evaluate(expression),
+                  root,
+                  browserName === 'msedge' ? 'msedge.exe' : 'chrome.exe'
+                );
+                const ownedPointer = pointer;
+                nativePointer = ownedPointer;
+                return {
+                  mapping: ownedPointer.mapping,
+                  close: async () => {
+                    try {
+                      await ownedPointer.close();
+                    } finally {
+                      nativePointer = undefined;
+                      await cdp.send('Browser.setWindowBounds', {
+                        windowId: window.windowId,
+                        bounds: previousBounds,
+                      });
+                      await cdp.detach();
+                    }
+                  },
+                };
+              } catch (error) {
+                await pointer?.close();
+                await cdp.send('Browser.setWindowBounds', {
+                  windowId: window.windowId,
+                  bounds: previousBounds,
+                });
+                await cdp.detach();
+                throw error;
+              }
+            },
+            evaluate: (expression) => scrollPage.evaluate(expression),
+            waitFor: async (expression, _description, timeoutMs = 5000) => {
+              await scrollPage.waitForFunction(expression, undefined, { timeout: timeoutMs });
+            },
+            press: (key) => scrollPage.keyboard.press(key),
+            drag: async (from, to, afterDown) => {
+              assert(nativePointer, 'Native pointer bridge was not prepared');
+              await nativePointer.drag(from, to, afterDown);
+            },
+            resize: (width, height) => scrollPage.setViewportSize({ width, height }),
+            screenshot: async (filename) => {
+              await scrollPage.screenshot({ path: join(output, filename) });
+            },
           },
-          evaluate: (expression) => page.evaluate(expression),
-          waitFor: async (expression, _description, timeoutMs = 5000) => {
-            await page.waitForFunction(expression, undefined, { timeout: timeoutMs });
-          },
-          press: (key) => page.keyboard.press(key),
-          drag: async (from, to, afterDown) => {
-            assert(nativePointer, 'Native pointer bridge was not prepared');
-            await nativePointer.drag(from, to, afterDown);
-          },
-          resize: (width, height) => page.setViewportSize({ width, height }),
-          screenshot: async (filename) => {
-            await page.screenshot({ path: join(output, filename) });
-          },
-        },
-        output
-      );
+          output
+        );
+      } finally {
+        try {
+          await scrollPage.close();
+          await page.bringToFront();
+        } catch (failure) {
+          observations.scrollbarPageCleanupError = safeError(failure);
+          error ??= failure;
+        }
+      }
     }
 
     await page.keyboard.press('Escape');
@@ -21860,7 +21893,7 @@ export async function run({
       acceptDownloads: true,
       downloadsPath: downloads,
       locale: 'en-US',
-      viewport: { width: 1280, height: 800 },
+      viewport: nativeScrollbarTakeover ? null : { width: 1280, height: 800 },
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
