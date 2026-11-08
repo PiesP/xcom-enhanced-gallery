@@ -101,28 +101,65 @@ try {
         Start-Sleep -Milliseconds 100
     }
     if ([XegScrollbarInput]::Foreground() -ne $window.Handle) { throw 'Owned browser is not foreground' }
-    $root = [System.Windows.Automation.AutomationElement]::FromHandle($window.Handle)
-    if ($null -eq $root) { throw 'Owned browser is not exposed through UI Automation' }
     $condition = [System.Windows.Automation.PropertyCondition]::new(
         [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
         [System.Windows.Automation.ControlType]::Document
     )
-    $documents = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
     $visible = @()
-    foreach ($document in $documents) {
-        $rect = $document.Current.BoundingRectangle
-        if (-not $document.Current.IsOffscreen -and $rect.Width -gt 100 -and $rect.Height -gt 100) {
-            $visible += $rect
+    $root = $null
+    $uiaAttempts = 0
+    for ($uiaAttempts = 1; $uiaAttempts -le 15; $uiaAttempts++) {
+        $root = [System.Windows.Automation.AutomationElement]::FromHandle($window.Handle)
+        $visible = @()
+        if ($null -ne $root) {
+            $documents = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $condition)
+            foreach ($document in $documents) {
+                $rect = $document.Current.BoundingRectangle
+                if (-not $document.Current.IsOffscreen -and $rect.Width -gt 100 -and $rect.Height -gt 100) {
+                    $visible += $rect
+                }
+            }
         }
+        if ($visible.Count -eq 1) { break }
+        if ($visible.Count -gt 1) { throw "Owned browser has $($visible.Count) visible UIA documents" }
+        if ($uiaAttempts -lt 15) { Start-Sleep -Milliseconds 200 }
     }
-    if ($visible.Count -ne 1) { throw "Expected one visible browser document, got $($visible.Count)" }
+    if ($visible.Count -ne 1) {
+        $samples = @()
+        if ($null -ne $root) {
+            $walker = [System.Windows.Automation.TreeWalker]::RawViewWalker
+            $queue = New-Object 'System.Collections.Generic.Queue[object]'
+            $queue.Enqueue(@{ element = $root; depth = 0 })
+            while ($queue.Count -gt 0 -and $samples.Count -lt 32) {
+                $entry = $queue.Dequeue()
+                try {
+                    $current = $entry.element.Current
+                    $rect = $current.BoundingRectangle
+                    $samples += @{ type = $current.ControlType.ProgrammaticName; depth = $entry.depth;
+                        offscreen = $current.IsOffscreen;
+                        rect = @{ left = $rect.Left; top = $rect.Top; width = $rect.Width; height = $rect.Height } }
+                    $child = $walker.GetFirstChild($entry.element)
+                    while ($null -ne $child -and ($queue.Count + $samples.Count) -lt 32) {
+                        $queue.Enqueue(@{ element = $child; depth = $entry.depth + 1 })
+                        $child = $walker.GetNextSibling($child)
+                    }
+                } catch {
+                    if ($samples.Count -lt 32) {
+                        $samples += @{ type = 'unavailable'; depth = $entry.depth }
+                    }
+                }
+            }
+        }
+        $sampleJson = $samples | ConvertTo-Json -Compress -Depth 5
+        throw "Expected one visible owned-browser UIA document after $uiaAttempts attempts; found $($visible.Count); controls=$sampleJson"
+    }
     $bounds = $visible[0]
     $desktop = @{ left = [XegScrollbarInput]::Metric(76); top = [XegScrollbarInput]::Metric(77);
         width = [XegScrollbarInput]::Metric(78); height = [XegScrollbarInput]::Metric(79) }
     if ($desktop.width -le 0 -or $desktop.height -le 0) { throw 'Physical desktop dimensions are invalid' }
     $response = @{ status = 'ready'; processId = $window.ProcessId; imagePath = $window.ImagePath;
         windowTitle = $window.Title; hwnd = $window.Handle.ToInt64();
-        desktop = $desktop;
+        desktop = $desktop; uiaAttempts = $uiaAttempts;
         document = @{ left = $bounds.Left; top = $bounds.Top; width = $bounds.Width; height = $bounds.Height } }
     [Console]::Out.WriteLine(($response | ConvertTo-Json -Compress -Depth 5))
     [Console]::Out.Flush()

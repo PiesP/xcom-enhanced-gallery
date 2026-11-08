@@ -23,6 +23,7 @@ type Ready = {
   imagePath: string;
   windowTitle: string;
   hwnd: number;
+  uiaAttempts: number;
   document: { left: number; top: number; width: number; height: number };
   desktop: { left: number; top: number; width: number; height: number };
 };
@@ -77,6 +78,7 @@ export async function prepareNativeScrollbarPointer(
   );
   const lines = createInterface({ input: child.stdout })[Symbol.asyncIterator]();
   let diagnostic = '';
+  const diagnosticLimit = 10_000;
   let childClosed = false;
   let childFailure: Error | undefined;
   const stopped = new Promise<void>((resolve) => {
@@ -87,14 +89,14 @@ export async function prepareNativeScrollbarPointer(
   });
   child.on('error', (error) => {
     childFailure = error;
-    diagnostic = (diagnostic + String(error)).slice(-2_000);
+    diagnostic = (diagnostic + String(error)).slice(-diagnosticLimit);
   });
   child.stdin.on('error', (error) => {
-    diagnostic = (diagnostic + String(error)).slice(-2_000);
+    diagnostic = (diagnostic + String(error)).slice(-diagnosticLimit);
   });
   child.stderr.setEncoding('utf8');
   child.stderr.on('data', (chunk: string) => {
-    diagnostic = (diagnostic + chunk).slice(-2_000);
+    diagnostic = (diagnostic + chunk).slice(-diagnosticLimit);
   });
   const response = async (timeoutMs = 6_000): Promise<Record<string, unknown>> => {
     if (childFailure || childClosed) {
@@ -175,7 +177,7 @@ export async function prepareNativeScrollbarPointer(
     }
   };
   try {
-    const ready = (await response()) as Ready;
+    const ready = (await response(10_000)) as Ready;
     assert.equal(ready.status, 'ready');
     assert.equal(ready.windowTitle.includes(marker), true);
     assert.equal(ready.imagePath.toLowerCase().endsWith(`\\${image}`), true);
@@ -226,6 +228,7 @@ export async function prepareNativeScrollbarPointer(
         browserImage: image,
         processId: ready.processId,
         hwnd: ready.hwnd,
+        uiaAttempts: ready.uiaAttempts,
         documentPhysical: bounds,
         desktopPhysical: desktop,
         viewportCss: viewport,
