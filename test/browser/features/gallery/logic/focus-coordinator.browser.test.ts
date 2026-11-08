@@ -2,7 +2,6 @@
 // Copyright (c) 2024-2026 PiesP
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
-import { SharedObserver } from '@shared/utils/performance/observer-pool';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 describe('FocusCoordinator for mixed-size media', () => {
@@ -11,12 +10,7 @@ describe('FocusCoordinator for mixed-size media', () => {
     document.body.replaceChildren();
   });
 
-  it('republishes the selected video after a stale observer update, then follows real scroll', () => {
-    const observerCallbacks = new Map<Element, (entry: IntersectionObserverEntry) => void>();
-    vi.spyOn(SharedObserver, 'observe').mockImplementation((element, callback) => {
-      observerCallbacks.set(element, callback);
-      return () => observerCallbacks.delete(element);
-    });
+  it('selects the visible item from current geometry when observer delivery would lag scrollend', () => {
     const frames: FrameRequestCallback[] = [];
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
       frames.push(callback);
@@ -49,8 +43,6 @@ describe('FocusCoordinator for mixed-size media', () => {
     });
     coordinator.registerItem(0, photo);
     coordinator.registerItem(1, video);
-    observerCallbacks.get(photo)?.({ isIntersecting: true } as IntersectionObserverEntry);
-    // The video observer has not delivered its post-load visibility entry yet.
     coordinator.updateFocus(true);
     frames.shift()?.(0);
     expect(onFocusChange).toHaveBeenLastCalledWith(1, 'auto');
@@ -59,6 +51,43 @@ describe('FocusCoordinator for mixed-size media', () => {
     coordinator.updateFocus(true);
     frames.shift()?.(0);
     expect(onFocusChange).toHaveBeenLastCalledWith(0, 'auto');
+    coordinator.cleanup();
+  });
+
+  it('selects a newly visible last item after wheel scrolling without waiting for an observer entry', () => {
+    const frames: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+
+    const container = document.createElement('div');
+    const first = document.createElement('div');
+    const last = document.createElement('div');
+    container.append(first, last);
+    document.body.append(container);
+    vi.spyOn(container, 'getBoundingClientRect').mockImplementation(
+      () => ({ top: 0, height: 800 }) as DOMRect
+    );
+    vi.spyOn(first, 'getBoundingClientRect').mockImplementation(
+      () => ({ top: -900, height: 600 }) as DOMRect
+    );
+    vi.spyOn(last, 'getBoundingClientRect').mockImplementation(
+      () => ({ top: 100, height: 600 }) as DOMRect
+    );
+
+    const onFocusChange = vi.fn();
+    const coordinator = new FocusCoordinator({
+      isEnabled: () => true,
+      container: () => container,
+      activeIndex: () => 0,
+      onFocusChange,
+    });
+    coordinator.registerItem(0, first);
+    coordinator.registerItem(2, last);
+    coordinator.updateFocus(true);
+    frames.shift()?.(0);
+    expect(onFocusChange).toHaveBeenLastCalledWith(2, 'auto');
     coordinator.cleanup();
   });
 });
