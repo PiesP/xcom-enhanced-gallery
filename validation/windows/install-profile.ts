@@ -52,6 +52,7 @@ import { admitReportedLiveFilenameInstall } from './live-filename-target.ts';
 import { flattenUserscriptLiveEvidence } from './userscript-live-output.ts';
 import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
 import { runNativeScrollbarTakeover } from './native-scrollbar-takeover.ts';
+import { prepareNativeScrollbarPointer } from './native-pointer.ts';
 import {
   createControlledVideoSettings,
   decodeStoredValue,
@@ -17996,33 +17997,72 @@ async function runNativeBrowserUiProbe({
     };
 
     if (scrollbarTakeover) {
+      let nativePointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
       observations.scrollbarTakeover = await runNativeScrollbarTakeover(
         {
           launchCondition:
             browserName === 'chrome'
               ? '--enable-smooth-scrolling in this owned temporary Chrome profile'
               : 'browser default',
+          prepareInput: async () => {
+            const previousViewport = page.viewportSize();
+            assert(previousViewport, 'Native pointer input requires a measured page viewport');
+            const cdp = await context.newCDPSession(page);
+            const target = await cdp.send('Target.getTargetInfo');
+            const window = await cdp.send('Browser.getWindowForTarget', {
+              targetId: target.targetInfo.targetId,
+            });
+            const previousBounds = window.bounds;
+            let pointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
+            try {
+              await cdp.send('Browser.setWindowBounds', {
+                windowId: window.windowId,
+                bounds: { windowState: 'normal', left: 0, top: 0, width: 540, height: 450 },
+              });
+              // Match browser CSS coordinates to the real client area before OS input.
+              await cdp.send('Emulation.clearDeviceMetricsOverride');
+              pointer = await prepareNativeScrollbarPointer(
+                (expression) => page.evaluate(expression),
+                root,
+                browserName === 'msedge' ? 'msedge.exe' : 'chrome.exe'
+              );
+              const ownedPointer = pointer;
+              nativePointer = ownedPointer;
+              return {
+                mapping: ownedPointer.mapping,
+                close: async () => {
+                  try {
+                    await ownedPointer.close();
+                  } finally {
+                    nativePointer = undefined;
+                    await page.setViewportSize(previousViewport);
+                    await cdp.send('Browser.setWindowBounds', {
+                      windowId: window.windowId,
+                      bounds: previousBounds,
+                    });
+                    await cdp.detach();
+                  }
+                },
+              };
+            } catch (error) {
+              await pointer?.close();
+              await page.setViewportSize(previousViewport);
+              await cdp.send('Browser.setWindowBounds', {
+                windowId: window.windowId,
+                bounds: previousBounds,
+              });
+              await cdp.detach();
+              throw error;
+            }
+          },
           evaluate: (expression) => page.evaluate(expression),
           waitFor: async (expression, _description, timeoutMs = 5000) => {
             await page.waitForFunction(expression, undefined, { timeout: timeoutMs });
           },
           press: (key) => page.keyboard.press(key),
           drag: async (from, to, afterDown) => {
-            await page.mouse.move(from.x, from.y);
-            await page.mouse.down();
-            try {
-              await afterDown();
-              for (let step = 1; step <= 10; step += 1) {
-                await page.mouse.move(
-                  from.x + ((to.x - from.x) * step) / 10,
-                  from.y + ((to.y - from.y) * step) / 10
-                );
-                // A held native gesture, rather than instantaneous position injection.
-                await page.waitForTimeout(35);
-              }
-            } finally {
-              await page.mouse.up();
-            }
+            assert(nativePointer, 'Native pointer bridge was not prepared');
+            await nativePointer.drag(from, to, afterDown);
           },
           resize: (width, height) => page.setViewportSize({ width, height }),
           screenshot: async (filename) => {

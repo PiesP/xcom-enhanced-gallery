@@ -8,6 +8,7 @@ import { join } from 'node:path';
 /** Small input seam shared by the installed Chromium and Firefox transports. */
 export interface NativeScrollbarDriver {
   readonly launchCondition?: string;
+  prepareInput?: () => Promise<{ mapping: Record<string, unknown>; close: () => Promise<void> }>;
   evaluate(expression: string): Promise<unknown>;
   waitFor(expression: string, description: string, timeoutMs?: number): Promise<void>;
   press(key: 'Home' | 'End'): Promise<void>;
@@ -108,7 +109,11 @@ const INSTALL = `(() => {
   const append = (list, row, cap) => {
     if (list.length < cap) list.push(row); else overflow = true;
   };
-  const event = e => append(rows, { event: e.type, trusted: e.isTrusted, ...snapshot() }, 256);
+  const event = e => append(rows, { event: e.type, trusted: e.isTrusted,
+    targetTag: e.target?.tagName ?? null,
+    targetGalleryElement: e.target?.closest?.('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+    clientX: e.clientX ?? null, clientY: e.clientY ?? null,
+    dialogOpen: gallery.open, ...snapshot() }, 256);
   const trace = e => {
     try { append(product, JSON.parse(e.detail), 128); }
     catch { overflow = true; }
@@ -116,6 +121,7 @@ const INSTALL = `(() => {
   for (const name of ['scroll', 'scrollend', 'pointerdown', 'pointerup', 'wheel']) {
     items.addEventListener(name, event, { capture: true, passive: true });
   }
+  gallery.addEventListener('click', event, { capture: true, passive: true });
   window.addEventListener('xeg:gallery-scroll-trace', trace);
   document.documentElement.setAttribute('data-xeg-scroll-trace', '');
   const sample = () => {
@@ -162,6 +168,7 @@ const INSTALL = `(() => {
       for (const name of ['scroll', 'scrollend', 'pointerdown', 'pointerup', 'wheel']) {
         items.removeEventListener(name, event, true);
       }
+      gallery.removeEventListener('click', event, true);
       window.removeEventListener('xeg:gallery-scroll-trace', trace);
       items.style.scrollBehavior = prior.behavior;
       if (prior.marker === null) document.documentElement.removeAttribute('data-xeg-scroll-trace');
@@ -215,8 +222,12 @@ export async function runNativeScrollbarTakeover(
   let viewport: Sample | undefined;
   let failure: unknown;
   let installed = false;
+  let preparedInput: { mapping: Record<string, unknown>; close: () => Promise<void> } | undefined;
   try {
     receipt.launchCondition = driver.launchCondition ?? 'browser default';
+    receipt.phase = 'prepare-native-input';
+    preparedInput = await driver.prepareInput?.();
+    receipt.nativeInput = preparedInput?.mapping ?? { kind: 'browser-injected pointer input' };
     receipt.calibration = await driver.evaluate(CALIBRATE);
     const calibration = receipt.calibration as { hostBefore: number; hostAfter: number };
     assert.equal(calibration.hostAfter, calibration.hostBefore, 'Calibration moved the host page');
@@ -314,7 +325,11 @@ export async function runNativeScrollbarTakeover(
     receipt.analysis = {
       scrollendEvents: tape.rows
         .filter((row) => row.event === 'scrollend' && row.at >= tape.programStart)
-        .map((row) => ({ at: row.at, top: row.top, duringDrag: row.at <= tape.dragEnd })),
+        .map((row) => ({
+          at: row.at,
+          top: row.top,
+          duringDrag: row.at >= tape.dragStart && row.at <= tape.dragEnd,
+        })),
       scrollendBeforePointerMove: tape.rows.some(
         (row) =>
           row.event === 'scrollend' && row.at >= tape.programStart && row.at < tape.dragMoveStart
@@ -386,6 +401,13 @@ export async function runNativeScrollbarTakeover(
     if (viewport) {
       try {
         await driver.resize(viewport.width, viewport.viewportHeight);
+      } catch (error) {
+        cleanupErrors.push(String(error));
+      }
+    }
+    if (preparedInput) {
+      try {
+        await preparedInput.close();
       } catch (error) {
         cleanupErrors.push(String(error));
       }

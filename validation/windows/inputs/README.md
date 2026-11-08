@@ -60,8 +60,14 @@ Chrome with its existing `--enable-smooth-scrolling` setting in the owned
 temporary profile. The receipt records this launch condition, so this controlled
 run is distinct from an unmodified default Chrome session. The probe requires
 multiple moving frames, remaining distance, and no completion before input,
-then drags the actual native scrollbar
-gutter while holding the mouse button. It records bounded native events and the
+then uses a task-owned, DPI-aware Windows input helper to drag the actual native
+scrollbar gutter while holding the mouse button. The helper requires a unique
+owned browser window, one visible UI Automation document, and agreement between
+the document's physical rectangle and the native CSS viewport at the browser's
+reported pixel ratio. Chromium temporarily uses a 540×450 native window with
+device emulation cleared; Firefox uses a bounded 420×360 BiDi viewport. The
+helper rejects ambiguous or offscreen mapping
+instead of guessing. It records bounded native events and the
 existing opt-in product alignment/viewport decisions; it never dispatches a
 synthetic scroll event or writes the scroll position. A height-only viewport
 change checks the later layout guard. `native-scrollbar-takeover.json` and PNGs

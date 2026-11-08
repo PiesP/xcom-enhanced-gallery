@@ -27,6 +27,7 @@ import {
   runFirefoxNativeUi,
 } from './firefox-native-ui.ts';
 import { runNativeScrollbarTakeover } from './native-scrollbar-takeover.ts';
+import { prepareNativeScrollbarPointer } from './native-pointer.ts';
 
 const EXTENSION_ID = 'xcom-enhanced-gallery@piesp.dev';
 const FIXTURE_URL = 'https://x.com/testuser/status/1234567890123456789';
@@ -777,39 +778,56 @@ export async function runFirefoxInstallation({
         EXPERIENCE_URL,
         output,
         scrollbarTakeover
-          ? () =>
-              runNativeScrollbarTakeover(
+          ? async () => {
+              let nativePointer:
+                | Awaited<ReturnType<typeof prepareNativeScrollbarPointer>>
+                | undefined;
+              return runNativeScrollbarTakeover(
                 {
+                  prepareInput: async () => {
+                    const viewport = (await session!.evaluateJson(
+                      '(() => ({ width: innerWidth, height: innerHeight }))()'
+                    )) as { width: number; height: number };
+                    await session!.command('browsingContext.setViewport', {
+                      context: session!.context,
+                      viewport: { width: 420, height: 360 },
+                    });
+                    try {
+                      nativePointer = await prepareNativeScrollbarPointer(
+                        (expression) => session!.evaluateJson(expression),
+                        root,
+                        'firefox.exe'
+                      );
+                      const ownedPointer = nativePointer;
+                      return {
+                        mapping: ownedPointer.mapping,
+                        close: async () => {
+                          try {
+                            await ownedPointer.close();
+                          } finally {
+                            nativePointer = undefined;
+                            await session!.command('browsingContext.setViewport', {
+                              context: session!.context,
+                              viewport,
+                            });
+                          }
+                        },
+                      };
+                    } catch (error) {
+                      await session!.command('browsingContext.setViewport', {
+                        context: session!.context,
+                        viewport,
+                      });
+                      throw error;
+                    }
+                  },
                   evaluate: (expression) => session!.evaluateJson(expression),
                   waitFor: (expression, description, timeoutMs) =>
                     session!.waitFor(expression, description, timeoutMs),
                   press: (key) => firefoxNativeKey(session!, key === 'Home' ? '\uE011' : '\uE010'),
                   drag: async (from, to, afterDown) => {
-                    const pointer = (actions: Array<Record<string, unknown>>) =>
-                      session!.command('input.performActions', {
-                        context: session!.context,
-                        actions: [
-                          {
-                            type: 'pointer',
-                            id: 'xeg-firefox-scrollbar',
-                            parameters: { pointerType: 'mouse' },
-                            actions,
-                          },
-                        ],
-                      });
-                    try {
-                      await pointer([
-                        { type: 'pointerMove', origin: 'viewport', ...from },
-                        { type: 'pointerDown', button: 0 },
-                      ]);
-                      await afterDown();
-                      await pointer([
-                        { type: 'pointerMove', origin: 'viewport', duration: 350, ...to },
-                        { type: 'pointerUp', button: 0 },
-                      ]);
-                    } finally {
-                      await session!.command('input.releaseActions', { context: session!.context });
-                    }
+                    assert(nativePointer, 'Native pointer bridge was not prepared');
+                    await nativePointer.drag(from, to, afterDown);
                   },
                   resize: async (width, height) => {
                     await session!.command('browsingContext.setViewport', {
@@ -824,7 +842,8 @@ export async function runFirefoxInstallation({
                   },
                 },
                 output
-              )
+              );
+            }
           : undefined
       );
       assert((await readFile(sentinel)).equals(sentinelBytes), 'Preexisting sentinel changed');
