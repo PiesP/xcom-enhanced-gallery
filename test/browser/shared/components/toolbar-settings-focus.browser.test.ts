@@ -187,7 +187,9 @@ describe('toolbar settings focus', () => {
       vi.advanceTimersByTime(50);
       expect(document.activeElement).toBe(ui.theme);
     } finally {
-      if (!disposed) ui.dispose();
+      if (!disposed) {
+        ui.dispose();
+      }
     }
   });
 });
