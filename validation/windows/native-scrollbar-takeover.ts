@@ -458,11 +458,32 @@ export async function runNativeScrollbarTakeover(
     const movedByDrag = tape.rows.some(
       (row) => row.event === 'scroll' && row.at >= tape.dragMoveStart && row.at <= tape.dragEnd
     );
-    const thumbReachedTarget = Math.abs(manual.top - geometry.max * 0.4) < geometry.max * 0.1;
+    const thumbReachedTarget = Math.abs(manual.top - geometry.max * 0.4) < geometry.max * 0.025;
+    const nativeDown = tape.rows.find(
+      (row) => row.event === 'pointerdown' && row.at >= tape.dragStart && row.at <= tape.pointerHeld
+    );
+    const heldPosition = tape.rows.find((row) => row.event === 'pointerHeld')?.top;
+    const reverseDisplacement =
+      heldPosition !== undefined &&
+      tape.rows.some(
+        (row) =>
+          row.event === 'scroll' &&
+          row.at >= tape.dragMoveStart &&
+          row.at <= tape.dragEnd &&
+          row.top < heldPosition - 20
+      );
     const firstDisplacement = tape.rows.find(
       (row) => row.event === 'scroll' && row.at >= tape.dragMoveStart
     );
     receipt.analysis = {
+      nativePointerDownAt: nativeDown?.at ?? null,
+      pointerDownDeliveryInterval: [tape.dragStart, tape.pointerHeld],
+      scrollendBeforeNativePointerDown: nativeDown
+        ? tape.rows.some(
+            (row) =>
+              row.event === 'scrollend' && row.at >= tape.programStart && row.at < nativeDown.at
+          )
+        : null,
       scrollendEvents: tape.rows
         .filter((row) => row.event === 'scrollend' && row.at >= tape.programStart)
         .map((row) => ({
@@ -491,7 +512,9 @@ export async function runNativeScrollbarTakeover(
         (row) => row.event === 'wheel' && row.at >= tape.programStart
       ).length,
       displacementDuringNativePointerMove: movedByDrag,
+      manualMovementOpposesProgrammaticDirection: reverseDisplacement,
       nativeThumbReachedRequestedTrackFraction: thumbReachedTarget,
+      thumbTargetTolerance: geometry.max * 0.025,
       userIntentProtected: protectedIntent,
       positionDeltaAfterResize: tape.current.top - manual.top,
       ownershipObservation:
@@ -500,7 +523,17 @@ export async function runNativeScrollbarTakeover(
     await driver.screenshot('native-scrollbar-after-resize.png');
     assert(!tape.overflow, 'Native scrollbar observation exceeded its bounds');
     assert(movedByDrag, 'Native scrollbar drag did not establish manual displacement');
+    assert(reverseDisplacement, 'Thumb input did not reverse the ongoing programmatic movement');
     assert(thumbReachedTarget, 'Pointer input did not establish the requested native thumb drag');
+    if (nativeDown) {
+      assert(
+        !tape.rows.some(
+          (row) =>
+            row.event === 'scrollend' && row.at >= tape.programStart && row.at < nativeDown.at
+        ),
+        'Programmatic scrolling completed before native pointerdown'
+      );
+    }
     assert.equal(
       tape.rows.filter((row) => row.event === 'wheel' && row.at >= tape.programStart).length,
       0
