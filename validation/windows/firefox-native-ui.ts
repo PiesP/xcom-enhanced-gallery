@@ -30,6 +30,7 @@ type Tooltip = {
   lineBoxes: Array<{ left: number; top: number; width: number; height: number }>;
   rect: { left: number; top: number; right: number; bottom: number; width: number; height: number };
   trigger: { left: number; top: number; right: number; bottom: number };
+  horizontalGap: number;
   hit: boolean;
   viewport: { width: number; height: number };
 };
@@ -160,6 +161,7 @@ async function tooltip(session: FirefoxUiSession, trigger: string): Promise<Tool
       lineBoxes: lineBoxes.map(box => ({ left: box.left, top: box.top, width: box.width, height: box.height })),
       rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height },
       trigger: { left: anchor.left, top: anchor.top, right: anchor.right, bottom: anchor.bottom },
+      horizontalGap: Math.max(anchor.left - rect.right, rect.left - anchor.right, 0),
       hit: document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === tip,
       viewport: { width: innerWidth, height: innerHeight },
     };
@@ -173,6 +175,7 @@ function assertTooltip(tip: Tooltip, label: string): void {
   assert.equal(tip.positionAnchor, tip.anchorName, `${label}: tooltip anchor mismatch`);
   assert(tip.lines > 0 && tip.hit, `${label}: tooltip text or hit target missing`);
   assert(tip.rect.width > 0 && tip.rect.height > 0, `${label}: tooltip collapsed`);
+  assert(tip.horizontalGap <= 12, `${label}: tooltip drifted away from its trigger`);
   assert(
     tip.rect.left >= -1 && tip.rect.right <= tip.viewport.width + 1,
     `${label}: horizontal clipping`

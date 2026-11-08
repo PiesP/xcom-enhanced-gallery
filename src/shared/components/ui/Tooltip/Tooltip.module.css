@@ -8,7 +8,7 @@
 .content {
   position: fixed;
   inset: auto;
-  position-area: bottom center;
+  position-area: bottom span-all;
   position-try-fallbacks:
     flip-block,
     bottom left,
@@ -38,7 +38,7 @@
 }
 
 .content[data-placement='top'] {
-  position-area: top center;
+  position-area: top span-all;
 }
 
 @media (prefers-reduced-motion: reduce) {

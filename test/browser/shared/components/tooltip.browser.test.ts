@@ -5,6 +5,7 @@ import { Tooltip } from '@shared/components/ui/Tooltip/Tooltip';
 import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
+import { page } from 'vite-plus/test/browser';
 
 describe('Tooltip accessibility and native presentation', () => {
   afterEach(() => {
@@ -89,5 +90,58 @@ describe('Tooltip accessibility and native presentation', () => {
     expect(tooltip.matches(':popover-open')).toBe(true);
     dispose();
     expect(scope.querySelector('[role="tooltip"]')).toBeNull();
+  });
+
+  it('keeps a max-content Arabic tooltip near its anchor in a narrow modal viewport', async () => {
+    const previousViewport = { width: innerWidth, height: innerHeight };
+    await page.viewport(420, 600);
+    const dialog = document.createElement('dialog');
+    dialog.dir = 'rtl';
+    dialog.style.cssText =
+      'position: fixed; inset: 0; margin: 0; padding: 0; border: 0; width: 420px; height: 600px; max-width: none; max-height: none';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'Settings';
+    button.style.cssText = 'position: fixed; left: 186px; top: 120px; width: 44px; height: 44px';
+    document.body.append(dialog);
+    let dispose: (() => void) | undefined;
+    try {
+      dispose = render(
+        () =>
+          createComponent(Tooltip, {
+            content: 'فتح الإعدادات',
+            showDelay: 0,
+            children: button,
+          }),
+        dialog
+      );
+      dialog.showModal();
+      button.focus();
+      const tooltip = dialog.querySelector<HTMLElement>('[role="tooltip"]');
+      expect(tooltip).not.toBeNull();
+      await vi.waitFor(() => expect(tooltip?.matches(':popover-open')).toBe(true));
+      const triggerRect = button.getBoundingClientRect();
+      const tooltipRect = tooltip!.getBoundingClientRect();
+      const horizontalGap = Math.max(
+        triggerRect.left - tooltipRect.right,
+        tooltipRect.left - triggerRect.right,
+        0
+      );
+      expect(getComputedStyle(tooltip!).direction).toBe('rtl');
+      expect(getComputedStyle(tooltip!).positionAnchor).toBe(
+        button.style.getPropertyValue('anchor-name')
+      );
+      expect(button.getAttribute('aria-describedby')).toContain(tooltip!.id);
+      expect(horizontalGap).toBeLessThanOrEqual(12);
+      expect(tooltipRect.left).toBeGreaterThanOrEqual(0);
+      expect(tooltipRect.right).toBeLessThanOrEqual(420);
+    } finally {
+      dispose?.();
+      if (dialog.open) {
+        dialog.close();
+      }
+      dialog.remove();
+      await page.viewport(previousViewport.width, previousViewport.height);
+    }
   });
 });
