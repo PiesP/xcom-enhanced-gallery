@@ -308,7 +308,11 @@ test('loads the Chrome extension, completes a privileged download, and restores 
     await publicTrigger.click();
     const publicGallery = page.locator('[data-xeg-gallery-container]');
     await expect(publicGallery).toBeVisible();
-    await expect(publicGallery).toHaveAttribute('role', 'dialog');
+    expect(
+      await publicGallery.evaluate(
+        (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+      )
+    ).toBe(true);
     await expect(publicGallery.locator('#xeg-toolbar-counter')).toHaveAttribute(
       'data-position',
       '2'

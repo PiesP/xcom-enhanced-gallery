@@ -6,7 +6,7 @@
  *
  * Tests verify ARIA attributes, focus management, and accessibility features
  * by rendering the gallery in a real browser and inspecting the DOM:
- * 1. Gallery container has role='dialog' and aria-modal='true'
+ * 1. Gallery container is a named native modal dialog
  * 2. Gallery container has lang attribute (not empty)
  * 3. Gallery items have role='listitem' and aria-posinset/aria-setsize
  * 4. Image alt text contains position info (e.g., 'Image 1 of' pattern)
@@ -133,14 +133,17 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     }
   });
 
-  test('Gallery container has role=dialog and aria-modal=true', async ({ page }) => {
+  test('Gallery container is a named native modal dialog', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
     const container = page.locator('[data-xeg-gallery-container]');
     await expect(container).toBeVisible();
-    await expect(container).toHaveAttribute('role', 'dialog');
-    await expect(container).toHaveAttribute('aria-modal', 'true');
+    expect(
+      await container.evaluate(
+        (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+      )
+    ).toBe(true);
     await expect(page.getByRole('dialog', { name: 'Image gallery' })).toBeVisible();
 
     await closeGallery(page);

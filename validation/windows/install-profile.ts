@@ -5077,8 +5077,12 @@ async function runPublicFixtureCycle({
   await trigger.click();
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
-  assert.equal(await gallery.getAttribute('role'), 'dialog');
-  assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+  assert.equal(
+    await gallery.evaluate(
+      (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+    ),
+    true
+  );
   assert.equal(
     await gallery.locator('#xeg-toolbar-counter').getAttribute('data-position'),
     '2',
@@ -6748,8 +6752,12 @@ async function assertQuotedGallery(
 ) {
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
-  assert.equal(await gallery.getAttribute('role'), 'dialog');
-  assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+  assert.equal(
+    await gallery.evaluate(
+      (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+    ),
+    true
+  );
   const counter = gallery.locator('#xeg-toolbar-counter');
   const expectedTotal =
     ('expectedTotal' in quotedCase ? quotedCase.expectedTotal : undefined) ??
