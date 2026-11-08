@@ -322,8 +322,15 @@ export async function runFirefoxNativeUi(
       "Boolean(document.querySelector('#settings-button + [role=tooltip]:popover-open, #settings-button ~ [role=tooltip]:popover-open'))",
       'RTL settings tooltip'
     );
+    const rtlImmediate = await tooltip(session, '#settings-button');
+    observations.rtl = { language: 'ar', immediate: rtlImmediate };
+    await session.evaluateJson(`(async () => {
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      await new Promise(resolve => requestAnimationFrame(resolve));
+      return true;
+    })()`);
     const rtl = await tooltip(session, '#settings-button');
-    observations.rtl = { language: 'ar', tooltip: rtl };
+    observations.rtl = { language: 'ar', immediate: rtlImmediate, tooltip: rtl };
     if (
       rtl.horizontalGap > 12 ||
       rtl.rect.left < -1 ||
@@ -332,7 +339,7 @@ export async function runFirefoxNativeUi(
       rtl.rect.bottom > rtl.viewport.height + 1
     ) {
       try {
-        observations.rtlDiagnostic = await session.evaluateJson(`(() => {
+        observations.rtlDiagnostic = await session.evaluateJson(`(async () => {
           const button = document.querySelector('#settings-button');
           const tip = button?.parentElement?.querySelector('[role="tooltip"]:popover-open');
           const toolbar = button?.closest('[data-gallery-element="toolbar"]');
@@ -347,7 +354,7 @@ export async function runFirefoxNativeUi(
               tip: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
               anchor: { left: anchor.left, top: anchor.top, right: anchor.right, bottom: anchor.bottom },
               horizontalGap: Math.max(anchor.left - rect.right, rect.left - anchor.right, 0),
-              tipStyle: { direction: tipStyle.direction, positionArea: tipStyle.getPropertyValue('position-area'), justifySelf: tipStyle.justifySelf, positionTryFallbacks: tipStyle.getPropertyValue('position-try-fallbacks'), transform: tipStyle.transform },
+              tipStyle: { direction: tipStyle.direction, positionArea: tipStyle.getPropertyValue('position-area'), justifySelf: tipStyle.justifySelf, positionTryFallbacks: tipStyle.getPropertyValue('position-try-fallbacks'), left: tipStyle.left, right: tipStyle.right, top: tipStyle.top, bottom: tipStyle.bottom, transform: tipStyle.transform },
               wrapperStyle: { willChange: wrapperStyle.willChange, contain: wrapperStyle.contain, transform: wrapperStyle.transform },
             };
           };
@@ -359,28 +366,57 @@ export async function runFirefoxNativeUi(
           }
           const baseline = measure();
           const inlineBefore = { wrapper: wrapper.style.cssText, tip: tip.style.cssText };
+          const popoverOpenBefore = tip.matches(':popover-open');
           const variations = [];
-          const variation = (name, changes) => {
+          const settle = async () => {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            await new Promise(resolve => requestAnimationFrame(resolve));
+          };
+          const variation = async (name, changes) => {
             const original = changes.map(({ element, property }) => ({ element, property, value: element.style.getPropertyValue(property), priority: element.style.getPropertyPriority(property) }));
             try {
               for (const { element, property, value } of changes) element.style.setProperty(property, value);
+              await settle();
               variations.push({ name, measured: measure() });
             } finally {
               for (const { element, property, value, priority } of original) {
                 if (value) element.style.setProperty(property, value, priority);
                 else element.style.removeProperty(property);
               }
+              await settle();
             }
           };
-          variation('wrapper-will-change-auto', [{ element: wrapper, property: 'will-change', value: 'auto' }]);
-          variation('wrapper-contain-none', [{ element: wrapper, property: 'contain', value: 'none' }]);
-          variation('wrapper-combined', [{ element: wrapper, property: 'will-change', value: 'auto' }, { element: wrapper, property: 'contain', value: 'none' }]);
-          variation('tooltip-anchor-center', [{ element: tip, property: 'justify-self', value: 'anchor-center' }]);
-          variation('tooltip-ltr', [{ element: tip, property: 'direction', value: 'ltr' }]);
-          variation('tooltip-y-end', [{ element: tip, property: 'position-area', value: 'y-end span-all' }]);
+          await variation('wrapper-will-change-auto', [{ element: wrapper, property: 'will-change', value: 'auto' }]);
+          await variation('wrapper-contain-none', [{ element: wrapper, property: 'contain', value: 'none' }]);
+          await variation('wrapper-combined', [{ element: wrapper, property: 'will-change', value: 'auto' }, { element: wrapper, property: 'contain', value: 'none' }]);
+          await variation('tooltip-anchor-center', [{ element: tip, property: 'justify-self', value: 'anchor-center' }]);
+          await variation('tooltip-ltr', [{ element: tip, property: 'direction', value: 'ltr' }]);
+          await variation('tooltip-y-end', [{ element: tip, property: 'position-area', value: 'y-end span-all' }]);
+          await variation('native-anchor-insets', [
+            { element: tip, property: 'position-area', value: 'none' },
+            { element: tip, property: 'left', value: 'anchor(left)' },
+            { element: tip, property: 'right', value: 'auto' },
+            { element: tip, property: 'top', value: 'anchor(bottom)' },
+            { element: tip, property: 'bottom', value: 'auto' },
+            { element: tip, property: 'justify-self', value: 'auto' },
+            { element: tip, property: 'margin', value: '6px' },
+            { element: tip, property: 'transform', value: 'none' },
+          ]);
+          if (popoverOpenBefore && variations.every(({ measured }) => Math.abs(measured.tip.left - baseline.tip.left) < 0.5)) {
+            try {
+              tip.hidePopover();
+              await settle();
+              tip.showPopover();
+              await settle();
+              variations.push({ name: 'popover-reopen', measured: measure() });
+            } finally {
+              if (!tip.matches(':popover-open')) tip.showPopover();
+              await settle();
+            }
+          }
           const restored = measure();
           const inlineAfter = { wrapper: wrapper.style.cssText, tip: tip.style.cssText };
-          return { baseline, ancestors, variations, restored, inlineRestored: inlineBefore.wrapper === inlineAfter.wrapper && inlineBefore.tip === inlineAfter.tip };
+          return { baseline, ancestors, variations, restored, inlineRestored: inlineBefore.wrapper === inlineAfter.wrapper && inlineBefore.tip === inlineAfter.tip, popoverRestored: tip.matches(':popover-open') === popoverOpenBefore };
         })()`);
       } catch (error) {
         observations.rtlDiagnosticError =
@@ -396,6 +432,7 @@ export async function runFirefoxNativeUi(
     );
     observations.rtl = {
       language: 'ar',
+      immediate: rtlImmediate,
       tooltip: rtl,
       screenshot: await screenshot(session, output, 'firefox-native-ui-rtl.png'),
     };
