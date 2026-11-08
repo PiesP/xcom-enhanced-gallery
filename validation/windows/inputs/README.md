@@ -42,6 +42,27 @@ device-pixel ratio, CSS viewport size, tooltip/anchor geometry, description,
 anchor linkage, and tooltip-center hit target. The fixture restores tab zoom,
 viewport, and language before the wheel and close checks.
 
+For the bounded #509 native-scrollbar takeover observation in the same installed
+Chrome/Edge or temporary-installed Firefox session, use exactly:
+
+```json
+{"scenario":"native-browser-ui","scrollbarTakeover":true}
+```
+
+This extends the owned tall JPEG to 300×6000 pixels. The probe records the natural
+scroll behavior, then enables smooth behavior only on the fixture scrollport and
+uses real product Home/End input. It requires multiple moving frames, remaining
+distance, and no completion before input, then drags the actual native scrollbar
+gutter while holding the mouse button. It records bounded native events and the
+existing opt-in product alignment/viewport decisions; it never dispatches a
+synthetic scroll event or writes the scroll position. A height-only viewport
+change checks the later layout guard. `native-scrollbar-takeover.json` and PNGs
+retain both passing and failed observations. Programmatic ownership is inferred
+from the product's user/programmatic timestamps and independent media markers;
+native `scrollend` does not label its cancellation reason. This does not claim
+that the ordinary `auto` scrollport always animates, or qualify delayed HTTP
+response ordering, live X, or another browser/platform.
+
 
 For the bounded #502 installed-Edge image recovery comparison, create the
 ignored, exclusive `source-image-failures.json` selector:

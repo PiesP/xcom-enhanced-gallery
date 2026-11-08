@@ -21,7 +21,12 @@ import type { FileHandle } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import { startFirefoxNativeProxy } from './firefox-native-proxy.ts';
-import { prepareFirefoxNativeUiImages, runFirefoxNativeUi } from './firefox-native-ui.ts';
+import {
+  firefoxNativeKey,
+  prepareFirefoxNativeUiImages,
+  runFirefoxNativeUi,
+} from './firefox-native-ui.ts';
+import { runNativeScrollbarTakeover } from './native-scrollbar-takeover.ts';
 
 const EXTENSION_ID = 'xcom-enhanced-gallery@piesp.dev';
 const FIXTURE_URL = 'https://x.com/testuser/status/1234567890123456789';
@@ -586,9 +591,16 @@ export async function validateFirefoxSelectors(root: string) {
     'Firefox acceptance does not implement this selector'
   );
   const scenario = name === 'native-browser-ui.json' ? 'native-browser-ui' : 'attachment-filenames';
+  const selector: unknown = JSON.parse(await readFile(join(inputDirectory, name), 'utf8'));
+  const scrollbarTakeover =
+    scenario === 'native-browser-ui' &&
+    typeof selector === 'object' &&
+    selector !== null &&
+    'scrollbarTakeover' in selector &&
+    selector.scrollbarTakeover === true;
   assert.deepEqual(
-    JSON.parse(await readFile(join(inputDirectory, name), 'utf8')),
-    { scenario },
+    selector,
+    { scenario, ...(scrollbarTakeover ? { scrollbarTakeover: true } : {}) },
     'Firefox focused selector has unsupported options'
   );
   return scenario;
@@ -615,6 +627,11 @@ export async function runFirefoxInstallation({
   );
   assert.deepEqual(liveUrls, [], 'Firefox live original-post acceptance is not implemented');
   const selector = await validateFirefoxSelectors(root);
+  const scrollbarTakeover =
+    selector === 'native-browser-ui' &&
+    JSON.parse(
+      await readFile(join(root, 'validation/windows/inputs/native-browser-ui.json'), 'utf8')
+    ).scrollbarTakeover === true;
   await mkdir(output, { recursive: true });
   const source = join(root, 'dist-extension-firefox');
   const fixture = await readFile(
@@ -730,7 +747,7 @@ export async function runFirefoxInstallation({
               join(root, 'test/e2e/fixtures/installed-gallery-experience-page.html'),
               'utf8'
             ),
-            images: await prepareFirefoxNativeUiImages(session),
+            images: await prepareFirefoxNativeUiImages(session, scrollbarTakeover),
           }
         : undefined;
     intercept = await installFixtureIntercept(session, fixture, image, experience);
@@ -739,6 +756,9 @@ export async function runFirefoxInstallation({
     assert.equal(extensionId, EXTENSION_ID, 'Installed Firefox extension ID mismatch');
     if (selector === 'native-browser-ui') {
       assert(experience, 'Firefox UI fixture was not prepared');
+      if (scrollbarTakeover) {
+        experience.html = experience.html.replace('height="900"', 'height="6000"');
+      }
       receipt.fixture = {
         url: EXPERIENCE_URL,
         pageSha256: digest(Buffer.from(experience.html)),
@@ -752,7 +772,61 @@ export async function runFirefoxInstallation({
           ])
         ),
       };
-      receipt.nativeBrowserUi = await runFirefoxNativeUi(session, EXPERIENCE_URL, output);
+      receipt.nativeBrowserUi = await runFirefoxNativeUi(
+        session,
+        EXPERIENCE_URL,
+        output,
+        scrollbarTakeover
+          ? () =>
+              runNativeScrollbarTakeover(
+                {
+                  evaluate: (expression) => session!.evaluateJson(expression),
+                  waitFor: (expression, description, timeoutMs) =>
+                    session!.waitFor(expression, description, timeoutMs),
+                  press: (key) => firefoxNativeKey(session!, key === 'Home' ? '\uE011' : '\uE010'),
+                  drag: async (from, to, afterDown) => {
+                    const pointer = (actions: Array<Record<string, unknown>>) =>
+                      session!.command('input.performActions', {
+                        context: session!.context,
+                        actions: [
+                          {
+                            type: 'pointer',
+                            id: 'xeg-firefox-scrollbar',
+                            parameters: { pointerType: 'mouse' },
+                            actions,
+                          },
+                        ],
+                      });
+                    try {
+                      await pointer([
+                        { type: 'pointerMove', origin: 'viewport', ...from },
+                        { type: 'pointerDown', button: 0 },
+                      ]);
+                      await afterDown();
+                      await pointer([
+                        { type: 'pointerMove', origin: 'viewport', duration: 350, ...to },
+                        { type: 'pointerUp', button: 0 },
+                      ]);
+                    } finally {
+                      await session!.command('input.releaseActions', { context: session!.context });
+                    }
+                  },
+                  resize: async (width, height) => {
+                    await session!.command('browsingContext.setViewport', {
+                      context: session!.context,
+                      viewport: { width, height },
+                    });
+                  },
+                  screenshot: async (filename) => {
+                    await writeFile(join(output, filename), await session!.captureScreenshot(), {
+                      flag: 'wx',
+                    });
+                  },
+                },
+                output
+              )
+          : undefined
+      );
       assert((await readFile(sentinel)).equals(sentinelBytes), 'Preexisting sentinel changed');
       await intercept.stop();
       cleanup.fixtureIntercept = 'removed';

@@ -1738,7 +1738,10 @@ async function createServiceWorkerObserver(browserCdp: CDPSession, pageCdp: CDPS
   };
 }
 
-async function createExperienceImages(context: BrowserContext): Promise<Buffer[]> {
+async function createExperienceImages(
+  context: BrowserContext,
+  longScroll = false
+): Promise<Buffer[]> {
   const page = await context.newPage();
   try {
     await page.goto('about:blank');
@@ -1759,7 +1762,9 @@ async function createExperienceImages(context: BrowserContext): Promise<Buffer[]
           drawing.fillText(label, 10, Math.min(height - 10, 55));
           return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
         }),
-      EXPERIENCE_IMAGES
+      EXPERIENCE_IMAGES.map((image, index) =>
+        longScroll && index === 0 ? { ...image, height: 6000 } : image
+      )
     );
     const images = encoded.map((value) => Buffer.from(value ?? '', 'base64'));
     assert(images.length === EXPERIENCE_IMAGES.length && images.every((image) => image.length));
@@ -17728,7 +17733,7 @@ async function runNativeBrowserUiProbe({
   displayImages: ImageFixtures;
   scrollbarTakeover: boolean;
 }) {
-  const experienceImages = await createExperienceImages(context);
+  const experienceImages = await createExperienceImages(context, scrollbarTakeover);
   const routes = await installFixtureRoutes(
     context,
     root,
@@ -17794,6 +17799,9 @@ async function runNativeBrowserUiProbe({
     await page.goto(EXPERIENCE_FIXTURE_URL);
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
     const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    if (scrollbarTakeover) {
+      await trigger.evaluate((image) => image.setAttribute('height', '6000'));
+    }
     await trigger.scrollIntoViewIfNeeded();
     await trigger.focus();
     const hostScroll = await page.evaluate(() => window.scrollY);

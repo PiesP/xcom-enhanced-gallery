@@ -43,10 +43,13 @@ const EXPERIENCE_IMAGES = [
 
 /** Generated inside the installed Firefox session so intrinsic media sizes match the fixture. */
 export async function prepareFirefoxNativeUiImages(
-  session: FirefoxUiSession
+  session: FirefoxUiSession,
+  longScroll = false
 ): Promise<Record<string, Buffer>> {
   const images: Record<string, Buffer> = {};
-  for (const { path, width, height } of EXPERIENCE_IMAGES) {
+  for (const image of EXPERIENCE_IMAGES) {
+    const { path, width } = image;
+    const height = longScroll && image.path.endsWith('Tall.jpg') ? 6000 : image.height;
     const data = await session.evaluateJson(`(() => {
       const canvas = document.createElement('canvas');
       canvas.width = ${width}; canvas.height = ${height};
@@ -199,7 +202,8 @@ async function host(session: FirefoxUiSession): Promise<Host> {
 export async function runFirefoxNativeUi(
   session: FirefoxUiSession,
   url: string,
-  output: string
+  output: string,
+  afterUi?: () => Promise<Record<string, unknown>>
 ): Promise<Record<string, unknown>> {
   const observations: Record<string, unknown> = {};
   try {
@@ -454,6 +458,31 @@ export async function runFirefoxNativeUi(
       'help Escape ownership'
     );
     observations.helpEscape = true;
+    if (afterUi) {
+      // Restore the fixture's English/LTR controls before native right-gutter input.
+      await pointer(session, '#settings-button', true);
+      await session.waitFor(
+        "document.querySelector('#settings-button')?.getAttribute('aria-expanded') === 'true'",
+        'settings before scrollbar probe'
+      );
+      await pointer(session, '#settings-language-select', true);
+      await firefoxNativeKey(session, '\uE011');
+      await firefoxNativeKey(session, '\uE007');
+      await session.waitFor(
+        "document.querySelector('#settings-language-select')?.value === 'auto'",
+        'fixture language restoration'
+      );
+      await firefoxNativeKey(session, '\uE00C');
+      await session.waitFor(
+        "document.querySelector('#settings-button')?.getAttribute('aria-expanded') === 'false'",
+        'settings closed before native scrollbar input'
+      );
+      await session.command('browsingContext.setViewport', {
+        context: session.context,
+        viewport: { width: 900, height: 700 },
+      });
+      observations.scrollbarTakeover = await afterUi();
+    }
     await firefoxNativeKey(session, '\uE00C');
     await session.waitFor(
       "!document.querySelector('dialog[data-xeg-gallery-container]')",

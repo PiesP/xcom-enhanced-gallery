@@ -38,13 +38,20 @@ const INSTALL = `(() => {
   const snapshot = () => {
     const rect = items.getBoundingClientRect();
     const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
+    const media = [...items.querySelectorAll('[data-gallery-element="item"]')];
+    const active = media.filter(item => item.getAttribute('data-media-active') === 'true');
+    const focused = media.filter(item => item.getAttribute('data-media-focused') === 'true');
     return { at: performance.now(), top: items.scrollTop, height: items.clientHeight,
       scrollHeight: items.scrollHeight, width: innerWidth, viewportHeight: innerHeight,
-      current: toolbar?.getAttribute('data-current-index') ?? null,
-      focused: toolbar?.getAttribute('data-focused-index') ?? null,
-      itemRects: [...items.querySelectorAll('[data-gallery-element="item"]')].map(item => {
+      current: active.length === 1 ? active[0].getAttribute('data-index') : null,
+      focused: focused.length === 1 ? focused[0].getAttribute('data-index') : null,
+      identityValid: active.length === 1 && focused.length <= 1,
+      toolbarCurrent: toolbar?.getAttribute('data-current-index') ?? null,
+      toolbarDisplayed: toolbar?.getAttribute('data-focused-index') ?? null,
+      itemRects: media.map(item => {
         const box = item.getBoundingClientRect();
         return { index: item.getAttribute('data-index'), top: box.top, height: box.height,
+          id: item.getAttribute('data-media-id'),
           visible: Math.max(0, Math.min(box.bottom, rect.bottom) - Math.max(box.top, rect.top)) };
       }) };
   };
@@ -86,6 +93,7 @@ const INSTALL = `(() => {
       const clearance = parseFloat(getComputedStyle(items).scrollPaddingBlockStart) || 0;
       const target = last ? Math.min(max, items.scrollTop + last.top - rect.top - clearance) : max;
       return { gutter, max, target, top: items.scrollTop, scrollbarWidth: getComputedStyle(items).scrollbarWidth,
+        scrollendsBeforeInput: rows.filter(row => row.event === 'scrollend' && row.at >= this.programStart).length,
         from: { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
           y: Math.floor(rect.top + items.clientTop + track * items.scrollTop / max + length / 2) },
         to: { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
@@ -120,6 +128,7 @@ type Sample = {
   viewportHeight: number;
   current: string | null;
   focused: string | null;
+  identityValid: boolean;
 };
 
 type Tape = {
@@ -171,6 +180,7 @@ export async function runNativeScrollbarTakeover(
       max: number;
       target: number;
       top: number;
+      scrollendsBeforeInput: number;
       from: { x: number; y: number };
       to: { x: number; y: number };
     };
@@ -178,6 +188,11 @@ export async function runNativeScrollbarTakeover(
     assert(geometry.gutter > 0, 'No exposed native scrollbar gutter');
     assert(geometry.max > 1000, 'Fixture does not provide a sufficiently long scroll');
     assert(geometry.target - geometry.top > 300, 'Programmatic scroll finished before takeover');
+    assert.equal(
+      geometry.scrollendsBeforeInput,
+      0,
+      'Programmatic scroll completed before native input'
+    );
     await driver.evaluate(`window.${PROBE}.mark('dragStart')`);
     await driver.drag(geometry.from, geometry.to, async () => {
       await driver.evaluate(`window.${PROBE}.mark('pointerHeld')`);
@@ -227,21 +242,29 @@ export async function runNativeScrollbarTakeover(
       (row) => row.event === 'scroll' && row.at >= tape.dragMoveStart && row.at <= tape.dragEnd
     );
     const thumbReachedTarget = Math.abs(manual.top - geometry.max * 0.4) < geometry.max * 0.1;
-    const firstManual = tape.rows.find(
+    const firstDisplacement = tape.rows.find(
       (row) => row.event === 'scroll' && row.at >= tape.dragMoveStart
     );
     receipt.analysis = {
       scrollendEvents: tape.rows
         .filter((row) => row.event === 'scrollend' && row.at >= tape.programStart)
         .map((row) => ({ at: row.at, top: row.top, duringDrag: row.at <= tape.dragEnd })),
-      scrollendBeforeFirstManualMovement:
-        firstManual !== undefined &&
+      scrollendBeforePointerMove: tape.rows.some(
+        (row) =>
+          row.event === 'scrollend' && row.at >= tape.programStart && row.at < tape.dragMoveStart
+      ),
+      scrollendBeforeFirstDisplacementAfterPointerMove:
+        firstDisplacement !== undefined &&
         tape.rows.some(
           (row) =>
-            row.event === 'scrollend' && row.at >= tape.programStart && row.at < firstManual.at
+            row.event === 'scrollend' &&
+            row.at >= tape.programStart &&
+            row.at < firstDisplacement.at
         ),
+      nativeEventReason:
+        'scrollend has no programmatic/cancellation reason; raw tape retains ordering',
       wheelEvents: tape.rows.filter((row) => row.event === 'wheel').length,
-      manualDisplacementObserved: movedByDrag,
+      displacementDuringNativePointerMove: movedByDrag,
       nativeThumbReachedRequestedTrackFraction: thumbReachedTarget,
       userIntentProtected: protectedIntent,
       positionDeltaAfterResize: tape.current.top - manual.top,
@@ -253,12 +276,22 @@ export async function runNativeScrollbarTakeover(
     assert(movedByDrag, 'Native scrollbar drag did not establish manual displacement');
     assert(thumbReachedTarget, 'Pointer input did not establish the requested native thumb drag');
     assert.equal(tape.rows.filter((row) => row.event === 'wheel').length, 0);
+    assert(
+      manual.identityValid && tape.current.identityValid,
+      'Media ownership markers are ambiguous'
+    );
+    assert.notEqual(manual.focused, null, 'Manual thumb movement did not establish focused media');
     assert.notEqual(
       manual.focused,
       manual.current,
       'Manual thumb movement did not update displayed focus'
     );
     assert(protectedIntent, 'Native thumb takeover did not update the product user-intent guard');
+    assert.equal(
+      tape.current.focused,
+      manual.focused,
+      'Layout correction changed the displayed item'
+    );
     assert(
       Math.abs(tape.current.top - manual.top) <= 2,
       'Layout correction reclaimed the manual position'
