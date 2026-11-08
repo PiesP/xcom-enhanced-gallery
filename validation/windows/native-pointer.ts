@@ -172,6 +172,14 @@ export async function prepareNativeScrollbarPointer(
         if (!(await awaitStopped(1_000))) {
           throw new Error('Owned native pointer bridge did not close after termination');
         }
+        throw new Error(
+          'Native pointer bridge required termination; input restoration is unverified'
+        );
+      }
+      if (child.exitCode !== 0 || child.signalCode !== null) {
+        throw new Error(
+          `Native pointer cleanup failed (exit=${child.exitCode}, signal=${child.signalCode}): ${diagnostic}`
+        );
       }
     } finally {
       await restoreTitle();
@@ -259,7 +267,14 @@ export async function prepareNativeScrollbarPointer(
       close,
     };
   } catch (error) {
-    await close();
+    try {
+      await close();
+    } catch (cleanupError) {
+      throw new AggregateError(
+        [error, cleanupError],
+        `Native pointer preparation failed: ${String(error)}; cleanup failed: ${String(cleanupError)}`
+      );
+    }
     throw error;
   }
 }
