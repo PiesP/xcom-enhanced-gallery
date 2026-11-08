@@ -16,6 +16,7 @@
     top left,
     top right;
   margin: var(--xeg-tooltip-offset, 6px);
+  inline-size: max-content;
   max-inline-size: min(16em, calc(100vw - 1rem));
   overflow-wrap: anywhere;
   padding: 0.35em 0.65em;

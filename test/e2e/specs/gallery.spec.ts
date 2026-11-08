@@ -186,6 +186,13 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       'aria-describedby',
       (await tooltip.getAttribute('id'))!
     );
+    expect(
+      await tooltip.evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return range.getClientRects().length;
+      })
+    ).toBe(1);
     expect(await tooltip.evaluate((element) => element.closest('dialog') !== null)).toBe(true);
     const bounds = await tooltip.boundingBox();
     expect(bounds).not.toBeNull();
