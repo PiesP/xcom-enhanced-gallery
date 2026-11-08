@@ -66,8 +66,8 @@ owned browser window, one visible UI Automation document, and agreement between
 the document's physical rectangle and the native CSS viewport at the browser's
 reported pixel ratio. The optional Chromium route uses a separate fixture tab
 without a device viewport override and temporarily sizes its native window to
-540×450; the original UI tab retains its 1280×800 and zoom checks. Firefox
-uses a bounded 420×360 BiDi viewport. The
+540×850; the original UI tab retains its 1280×800 and zoom checks. Firefox
+uses a bounded 420×700 BiDi viewport. The
 helper rejects ambiguous or offscreen mapping
 instead of guessing. It records bounded native events and the
 existing opt-in product alignment/viewport decisions; it never dispatches a

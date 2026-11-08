@@ -790,7 +790,7 @@ export async function runFirefoxInstallation({
                     )) as { width: number; height: number };
                     await session!.command('browsingContext.setViewport', {
                       context: session!.context,
-                      viewport: { width: 420, height: 360 },
+                      viewport: { width: 420, height: 700 },
                     });
                     try {
                       nativePointer = await prepareNativeScrollbarPointer(

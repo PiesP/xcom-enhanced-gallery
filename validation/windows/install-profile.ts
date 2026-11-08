@@ -18039,7 +18039,7 @@ async function runNativeBrowserUiProbe({
               try {
                 await cdp.send('Browser.setWindowBounds', {
                   windowId: window.windowId,
-                  bounds: { windowState: 'normal', left: 0, top: 0, width: 540, height: 450 },
+                  bounds: { windowState: 'normal', left: 0, top: 0, width: 540, height: 850 },
                 });
                 await scrollPage.evaluate(
                   () =>

@@ -168,7 +168,7 @@ try {
         if ([XegScrollbarInput]::Foreground() -ne $window.Handle) { throw 'Owned browser lost foreground during input' }
         switch ([string]$request.command) {
             'move' { [XegScrollbarInput]::Move([int]$request.x, [int]$request.y) }
-            'down' { [XegScrollbarInput]::Button($true); $buttonDown = $true }
+            'down' { [XegScrollbarInput]::Move([int]$request.x, [int]$request.y); [XegScrollbarInput]::Button($true); $buttonDown = $true }
             'up' { if ($buttonDown) { [XegScrollbarInput]::Button($false); $buttonDown = $false } }
             'close' { [Console]::Out.WriteLine('{"status":"closed"}'); [Console]::Out.Flush(); break }
             default { throw 'Unknown native pointer command' }

@@ -236,8 +236,7 @@ export async function prepareNativeScrollbarPointer(
       drag: async (from, to, afterDown) => {
         const start = point(from);
         const end = point(to);
-        await command({ command: 'move', ...start });
-        await command({ command: 'down' });
+        await command({ command: 'down', ...start });
         try {
           await afterDown();
           for (let step = 1; step <= 10; step += 1) {
