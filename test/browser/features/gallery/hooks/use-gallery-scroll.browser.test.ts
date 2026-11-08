@@ -94,11 +94,14 @@ describe('gallery native scroll completion', () => {
 
   it('keeps programmatic scroll excluded while a newer wheel owns real displacement', () => {
     vi.useFakeTimers();
-    vi.spyOn(performance, 'now').mockReturnValue(100);
+    const now = vi.spyOn(performance, 'now').mockReturnValue(105);
     const { items, tracking, onScrollEnd, dispose } = startTracking(() => 100);
+    items.dispatchEvent(new Event('scroll'));
+    now.mockReturnValue(300);
     items.dispatchEvent(new Event('scroll'));
     items.dispatchEvent(new Event('scrollend'));
     expect(tracking.isScrolling()).toBe(false);
+    expect(tracking.lastScrollTime()).toBe(0);
     expect(onScrollEnd).not.toHaveBeenCalled();
 
     items.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: 40 }));

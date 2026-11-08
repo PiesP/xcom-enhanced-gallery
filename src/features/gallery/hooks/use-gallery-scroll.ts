@@ -75,6 +75,7 @@ export function useGalleryScroll({
   const wheelIdleTimer = createTimeout();
   let wheelAwaitingMovement = false;
   let userScrollObserved = false;
+  let programmaticScrollActive = false;
 
   const markScrolling = (): void => {
     setIsScrolling(true);
@@ -137,6 +138,7 @@ export function useGalleryScroll({
     }
 
     markScrolling();
+    programmaticScrollActive = false;
     if (userScrollObserved) {
       // A displaced scroll already has a native completion event. Boundary
       // wheel input must not replace that ownership with an idle deadline.
@@ -151,7 +153,17 @@ export function useGalleryScroll({
   };
 
   const handleScroll = (): void => {
-    if (!isGalleryOpen() || (shouldIgnoreScroll() && !wheelAwaitingMovement)) {
+    if (!isGalleryOpen()) {
+      return;
+    }
+    if (
+      !wheelAwaitingMovement &&
+      !userScrollObserved &&
+      (programmaticScrollActive || shouldIgnoreScroll())
+    ) {
+      // Smooth programmatic scrolling can outlive the timestamp window.
+      // Its native completion, or a later wheel, releases this ownership.
+      programmaticScrollActive = true;
       return;
     }
     wheelAwaitingMovement = false;
@@ -161,6 +173,10 @@ export function useGalleryScroll({
   };
 
   const handleScrollEnd = (): void => {
+    if (programmaticScrollActive) {
+      programmaticScrollActive = false;
+      return;
+    }
     if (isGalleryOpen() && userScrollObserved) {
       settleScroll();
     }
@@ -177,6 +193,7 @@ export function useGalleryScroll({
       wheelIdleTimer.clear();
       wheelAwaitingMovement = false;
       userScrollObserved = false;
+      programmaticScrollActive = false;
       return;
     }
 
@@ -203,6 +220,7 @@ export function useGalleryScroll({
       wheelIdleTimer.clear();
       wheelAwaitingMovement = false;
       userScrollObserved = false;
+      programmaticScrollActive = false;
       setIsScrolling(false);
     });
 
