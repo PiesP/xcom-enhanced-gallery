@@ -253,7 +253,7 @@ test('Firefox install copy retains every production byte and isolates diagnostic
   }
 });
 
-test('Firefox selector gate accepts only the implemented isolated filename input', async () => {
+test('Firefox selector gate accepts exact isolated filename or native UI input', async () => {
   const root = await mkdtemp(join(tmpdir(), 'xeg-firefox-selector-test-'));
   try {
     assert.equal(await validateFirefoxSelectors(root), 'default');
@@ -264,6 +264,19 @@ test('Firefox selector gate accepts only the implemented isolated filename input
       '{"scenario":"attachment-filenames"}\n'
     );
     assert.equal(await validateFirefoxSelectors(root), 'attachment-filenames');
+    await rm(join(inputs, 'attachment-filenames.json'));
+    await writeFile(join(inputs, 'native-browser-ui.json'), '{"scenario":"native-browser-ui"}\n');
+    assert.equal(await validateFirefoxSelectors(root), 'native-browser-ui');
+    await writeFile(
+      join(inputs, 'native-browser-ui.json'),
+      '{"scenario":"native-browser-ui","extra":true}\n'
+    );
+    await assert.rejects(validateFirefoxSelectors(root), /unsupported options/u);
+    await rm(join(inputs, 'native-browser-ui.json'));
+    await writeFile(
+      join(inputs, 'attachment-filenames.json'),
+      '{"scenario":"attachment-filenames"}\n'
+    );
     await writeFile(join(inputs, 'gallery-experience.json'), '{"scenario":"gallery-experience"}\n');
     await assert.rejects(validateFirefoxSelectors(root));
     await rm(join(inputs, 'gallery-experience.json'));
