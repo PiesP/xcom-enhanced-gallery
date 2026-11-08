@@ -58,11 +58,41 @@ unchanged. This is one timing discriminator, not replacement acceptance or a
 product wait. The diagnostic source revisions and the comparison findings are
 recorded in [#502](https://github.com/PiesP/xcom-enhanced-gallery/issues/502).
 
-A separate prerequisite for another controlled #502 comparison remains:
-demonstrate stable selected-item alignment while neighbor index 2 is held,
-accounting for other fixture image loads, including index 0. Identity-contract
-tests do not establish that layout condition, a native event order, or installed
-Edge acceptance.
+For the late-index-0 layout transition and the same full three-fault contract,
+use this exclusive input:
+
+```json
+{"scenario":"source-image-failures","trace":true,"lateIndex0":true}
+```
+
+This mode requires the unchanged generated JPEG fixtures. It holds the first
+original responses for indices 0 and 2, while the selected index-1 fault is also
+pending. After actual initial product alignment and stable matching identities,
+it releases index 0. A trusted native 480×320 completion, semantic loaded state
+and two subsequent stable frames must show matching pending/loaded row and
+wrapper sizes, with the selected item still aligned while index 2 stays held.
+The existing identity and geometric tolerances and trace-start + 5,000ms bound
+remain in force. A new post-load alignment event is unnecessary when sizing
+preserves the already aligned position; an observed anchor change requires an
+eligible product-owned repair.
+
+Once that transition passes, the helper releases index 2 and the unchanged
+selected fault response, then executes the existing visibility/hit checks,
+two retries, healthy-neighbor navigation and same-document healthy reopen for
+404, empty and corrupt inputs. Each case records its initial/post-load layout,
+native image events, relevant response hashes and owned cleanup in
+`focused-source-image-failures.json`. The original five-second paint deadlines
+remain separate from layout readiness. No assertion scroll, synthetic load or
+viewport callback is used. This mode cannot share another fault-release
+discriminator. A failed prerequisite or incomplete/overflowed observation is
+a failure, not a successful ordering comparison or historical attribution.
+
+A controlled event-order comparison requires its own fresh layout readiness,
+accounting for index 0 and other fixture loads while neighbor index 2 stays
+held. Identity-contract tests alone do not establish that condition or native
+event order. A further pair is conditional on the remaining question recorded
+in [#502](https://github.com/PiesP/xcom-enhanced-gallery/issues/502); the layout
+acceptance mode does not automatically start one.
 
 Keep original failures failed. Passing a new comparison does not establish the
 cause of an older visibility failure. Remove only the task-owned selector after

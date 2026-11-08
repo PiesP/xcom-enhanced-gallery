@@ -41,7 +41,26 @@ function tracePage() {
     removeAttribute: (name: string) => attributes.delete(name),
   };
   vi.stubGlobal('window', win);
-  vi.stubGlobal('document', { documentElement: root, querySelector: () => null });
+  const documentTarget = new EventTarget();
+  const documentListeners = new Map<string, Set<EventListenerOrEventListenerObject>>();
+  const documentAdd = documentTarget.addEventListener.bind(documentTarget);
+  const documentRemove = documentTarget.removeEventListener.bind(documentTarget);
+  const doc = Object.assign(documentTarget, {
+    documentElement: root,
+    querySelector: () => null,
+    querySelectorAll: () => [],
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject) {
+      const members = documentListeners.get(type) ?? new Set();
+      members.add(listener);
+      documentListeners.set(type, members);
+      documentAdd(type, listener);
+    },
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject) {
+      documentListeners.get(type)?.delete(listener);
+      documentRemove(type, listener);
+    },
+  });
+  vi.stubGlobal('document', doc);
   vi.stubGlobal('performance', { timeOrigin: origin, now: () => Date.now() - origin });
   vi.stubGlobal('requestAnimationFrame', win.requestAnimationFrame);
   vi.stubGlobal('scrollX', 0);
@@ -67,7 +86,7 @@ function tracePage() {
   } as unknown as Page;
   const emit = (detail: string) =>
     win.dispatchEvent(new CustomEvent('xeg:gallery-scroll-trace', { detail }));
-  return { page, win, attributes, listeners, emit };
+  return { page, win, attributes, listeners, emit, doc, documentListeners };
 }
 
 beforeEach(() => {
@@ -252,5 +271,143 @@ test('DOM sample cap stops the actual owner and leaves no observation timers', a
   assert.equal(trace.stopReason, 'sample-overflow');
   assert.equal(attributes.size, 0);
   assert.equal(listeners.get('xeg:gallery-scroll-trace')?.size, 0);
+  assert.equal(vi.getTimerCount(), 0);
+});
+
+test('readiness image observer records capture and microtask phases and removes listeners', async () => {
+  const { page, doc, documentListeners } = tracePage();
+  await startSourceImageTrace(page, 1, true);
+  const image = Object.assign(new HTMLImageElement(), {
+    src: 'https://pbs.twimg.com/media/test?name=orig',
+    currentSrc: '',
+    complete: false,
+    naturalWidth: 0,
+    naturalHeight: 0,
+    closest: () => null,
+  });
+  const event = new Event('load');
+  Object.defineProperty(event, 'target', { value: image });
+  doc.dispatchEvent(event);
+  Object.assign(image, {
+    currentSrc: image.src,
+    complete: true,
+    naturalWidth: 480,
+    naturalHeight: 320,
+  });
+  await Promise.resolve();
+  const trace = await finishSourceImageTrace(page);
+  assert.deepEqual(
+    trace.imageEvents.map(({ phase, complete, trusted }) => ({ phase, complete, trusted })),
+    [
+      { phase: 'capture', complete: false, trusted: false },
+      { phase: 'microtask', complete: true, trusted: false },
+    ]
+  );
+  assert.equal(documentListeners.get('load')?.size, 0);
+  assert.equal(documentListeners.get('error')?.size, 0);
+  assert.equal(vi.getTimerCount(), 0);
+  // Synthetic events test the observer lifecycle, never native product acceptance.
+  assert.equal(trace.zeroReadyAtMs, null);
+});
+
+test('initial readiness inventory overflow disarms before scheduling any observation work', async () => {
+  const { page, doc, attributes, documentListeners } = tracePage();
+  Object.assign(doc, {
+    querySelectorAll: () =>
+      Array.from({ length: 33 }, () => ({
+        src: 'fixture',
+        currentSrc: '',
+        complete: false,
+        naturalWidth: 0,
+        naturalHeight: 0,
+      })),
+  });
+  await startSourceImageTrace(page, 1, true);
+  const trace = await finishSourceImageTrace(page);
+  assert.equal(trace.overflow, true);
+  assert.equal(trace.imageOverflow, true);
+  assert.equal(trace.stopReason, 'image-inventory-overflow');
+  assert.equal(trace.coverageComplete, false);
+  assert.equal(attributes.size, 0);
+  assert.equal(documentListeners.get('load')?.size, 0);
+  assert.equal(documentListeners.get('error')?.size, 0);
+  assert.equal(vi.getTimerCount(), 0);
+});
+
+test('semantic image mutation timestamps observed readiness before a later frame and disconnects', async () => {
+  const { page, doc } = tracePage();
+  let loaded = 'false';
+  const image = Object.assign(new HTMLImageElement(), {
+    src: 'https://pbs.twimg.com/media/zero?name=orig',
+    currentSrc: 'https://pbs.twimg.com/media/zero?name=orig',
+    complete: true,
+    naturalWidth: 480,
+    naturalHeight: 320,
+    getAttribute: () => null,
+    getBoundingClientRect: () => ({
+      left: 0,
+      top: 0,
+      right: 480,
+      bottom: 320,
+      width: 480,
+      height: 320,
+    }),
+  });
+  class ObservedElement {
+    firstElementChild = null;
+    getAttribute(name: string) {
+      return name === 'data-gallery-element'
+        ? 'item'
+        : name === 'data-index'
+          ? '0'
+          : name === 'data-media-loaded'
+            ? loaded
+            : name === 'data-media-id'
+              ? 'zero'
+              : null;
+    }
+    querySelector() {
+      return image;
+    }
+    getBoundingClientRect() {
+      return { left: 0, top: 0, right: 480, bottom: 320, width: 480, height: 320 };
+    }
+  }
+  const item = new ObservedElement();
+  const gallery = { querySelector: () => null, querySelectorAll: () => [item] };
+  Object.assign(doc, { querySelector: () => gallery });
+  vi.stubGlobal('Element', ObservedElement);
+  vi.stubGlobal('getComputedStyle', () => ({ zoom: '1', getPropertyValue: () => '' }));
+  let notify: MutationCallback | undefined;
+  const disconnect = vi.fn();
+  vi.stubGlobal(
+    'MutationObserver',
+    class {
+      constructor(callback: MutationCallback) {
+        notify = callback;
+      }
+      observe() {}
+      disconnect = disconnect;
+    }
+  );
+  await startSourceImageTrace(page, 1, true);
+  loaded = 'true';
+  vi.setSystemTime(origin + 101);
+  assert(notify);
+  notify([{ target: item } as unknown as MutationRecord], {} as MutationObserver);
+  const zeroAt = await page.evaluate(
+    () =>
+      (window as Window & { __xegSourceImageTrace?: { zeroReadyAtMs: number | null } })
+        .__xegSourceImageTrace?.zeroReadyAtMs
+  );
+  assert.equal(zeroAt, 101);
+  const trace = await finishSourceImageTrace(page);
+  assert.equal(trace.zeroReadyAtMs, 101);
+  assert.equal(
+    trace.imageEvents.length,
+    0,
+    'a semantic DOM change does not invent a native load event'
+  );
+  assert.equal(disconnect.mock.calls.length, 1);
   assert.equal(vi.getTimerCount(), 0);
 });

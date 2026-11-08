@@ -46,6 +46,10 @@ type TraceOwner = Window & {
     productLimit: number;
     lifetimeLimitMs: number;
     frameCount: number;
+    imageEvents: Array<Record<string, unknown>>;
+    imageOverflow: boolean;
+    zeroReadyAtMs: number | null;
+    readinessFrames: Array<{ atMs: number; state: unknown }>;
     samples: Array<{ atMs: number; event: string; state: unknown }>;
     productEvents: Array<Record<string, unknown>>;
     productOverflow: boolean;
@@ -131,8 +135,10 @@ export function observedSelectedAlignment(
 }
 
 /** Diagnostic-only DOM observations. Extension content-script decisions need their own source probe. */
-export async function startSourceImageTrace(page: Page, index: number) {
-  await page.evaluate((itemIndex) => {
+export async function startSourceImageTrace(page: Page, index: number, observeImages = false) {
+  const configuration = { itemIndex: index, observeImages };
+  await page.evaluate((input) => {
+    const { itemIndex, observeImages } = input;
     const limit = 192;
     const frameLimit = 1_800;
     const productLimit = 512;
@@ -147,6 +153,10 @@ export async function startSourceImageTrace(page: Page, index: number) {
       lifetimeLimitMs,
       overflow: false,
       samples: [] as Array<{ atMs: number; event: string; state: unknown }>,
+      imageEvents: [] as Array<Record<string, unknown>>,
+      imageOverflow: false,
+      zeroReadyAtMs: null as number | null,
+      readinessFrames: [] as Array<{ atMs: number; state: unknown }>,
       alignmentFrames: [] as AlignmentFrame[],
       productEvents: [] as Array<Record<string, unknown>>,
       productOverflow: false,
@@ -241,7 +251,59 @@ export async function startSourceImageTrace(page: Page, index: number) {
       const selectedMediaId = mediaIdAt(String(itemIndex));
       const identityValid =
         activeMediaId !== null && focusedMediaId !== null && selectedMediaId !== null;
+      const hostImages = observeImages
+        ? Array.from(document.querySelectorAll('img')).filter((img) => !gallery?.contains(img))
+        : [];
       return {
+        ...(observeImages
+          ? {
+              items: items.slice(0, 16).map((candidate) => {
+                const img = candidate.querySelector('img');
+                const style = getComputedStyle(candidate);
+                const wrap = candidate.firstElementChild;
+                const wrapStyle = wrap ? getComputedStyle(wrap) : null;
+                return {
+                  index: candidate.getAttribute('data-index'),
+                  mediaId: candidate.getAttribute('data-media-id'),
+                  loaded: candidate.getAttribute('data-media-loaded'),
+                  hasIntrinsicSize: candidate.getAttribute('data-has-intrinsic-size'),
+                  imageRect: bounds(img),
+                  imageWidthAttribute: img?.getAttribute('width') ?? null,
+                  imageHeightAttribute: img?.getAttribute('height') ?? null,
+                  image:
+                    img instanceof HTMLImageElement
+                      ? {
+                          src: img.src,
+                          currentSrc: img.currentSrc,
+                          complete: img.complete,
+                          naturalWidth: img.naturalWidth,
+                          naturalHeight: img.naturalHeight,
+                        }
+                      : null,
+                  item: bounds(candidate),
+                  wrapper: bounds(wrap),
+                  style: {
+                    width: style.width,
+                    height: style.height,
+                    contentVisibility: style.contentVisibility,
+                    containIntrinsicSize: style.containIntrinsicSize,
+                    intrinsicRatio: style.getPropertyValue('--xeg-gallery-item-intrinsic-ratio'),
+                    wrapperAspectRatio: wrapStyle?.aspectRatio ?? null,
+                    wrapperMinHeight: wrapStyle?.minHeight ?? null,
+                  },
+                };
+              }),
+              hostImageCount: hostImages.length,
+              hostImages: hostImages.slice(0, 32).map((img) => ({
+                src: img.src,
+                currentSrc: img.currentSrc,
+                complete: img.complete,
+                naturalWidth: img.naturalWidth,
+                naturalHeight: img.naturalHeight,
+              })),
+              itemCount: items.length,
+            }
+          : {}),
         currentIndex,
         focusedIndex,
         toolbarCurrentIndex: toolbar?.getAttribute('data-current-index') ?? null,
@@ -323,10 +385,28 @@ export async function startSourceImageTrace(page: Page, index: number) {
           : null,
       };
     };
+    let imageMutationObserver: MutationObserver | null = null;
     let previous = '';
     const record = (event: string, current = snapshot()) => {
       if (state.stopped && event !== 'stop') {
         return;
+      }
+      if (observeImages && ((current.itemCount ?? 0) > 16 || (current.hostImageCount ?? 0) > 32)) {
+        state.imageOverflow = true;
+        state.overflow = true;
+        state.stop('image-inventory-overflow');
+        return;
+      }
+      if (observeImages && state.zeroReadyAtMs === null) {
+        const preceding = current.items?.find((item) => item.index === '0');
+        if (
+          preceding?.loaded === 'true' &&
+          preceding.image?.complete &&
+          preceding.image.naturalWidth > 0 &&
+          preceding.image.naturalHeight > 0
+        ) {
+          state.zeroReadyAtMs = performance.now();
+        }
       }
       const signature = JSON.stringify(current);
       if (event === 'frame' && signature === previous) {
@@ -340,6 +420,40 @@ export async function startSourceImageTrace(page: Page, index: number) {
       }
       state.samples.push({ atMs: performance.now(), event, state: current });
     };
+    const onImageEvent = (event: Event) => {
+      const img = event.target;
+      if (state.stopped || !(img instanceof HTMLImageElement)) {
+        return;
+      }
+      const capture = (phase: 'capture' | 'microtask') => {
+        if (state.stopped) {
+          return;
+        }
+        if (state.imageEvents.length >= 64) {
+          state.imageOverflow = true;
+          state.overflow = true;
+          state.stop('image-overflow');
+          return;
+        }
+        const item = img.closest('[data-gallery-element="item"]');
+        state.imageEvents.push({
+          atMs: performance.now(),
+          event: event.type,
+          phase,
+          trusted: event.isTrusted,
+          index: item?.getAttribute('data-index') ?? null,
+          mediaId: item?.getAttribute('data-media-id') ?? null,
+          src: img.src,
+          currentSrc: img.currentSrc,
+          complete: img.complete,
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+        });
+        record(`image-${event.type}-${phase}`);
+      };
+      capture('capture');
+      queueMicrotask(() => capture('microtask'));
+    };
     const frame = () => {
       if (state.stopped) {
         return;
@@ -351,12 +465,19 @@ export async function startSourceImageTrace(page: Page, index: number) {
         return;
       }
       const current = snapshot();
+      const atMs = performance.now();
+      if (observeImages) {
+        state.readinessFrames.push({ atMs, state: current });
+        if (state.readinessFrames.length > 2) {
+          state.readinessFrames.shift();
+        }
+      }
       state.alignmentFrames.push({
         identityValid: current.identityValid,
         selectedMediaId: current.selectedMediaId,
         activeMediaId: current.activeMediaId,
         focusedMediaId: current.focusedMediaId,
-        atMs: performance.now(),
+        atMs,
         selectedIndex: current.selectedIndex,
         currentIndex: current.currentIndex,
         focusedIndex: current.focusedIndex,
@@ -387,14 +508,43 @@ export async function startSourceImageTrace(page: Page, index: number) {
       window.cancelAnimationFrame(state.frame);
       document.documentElement.removeAttribute('data-xeg-scroll-trace');
       window.removeEventListener('xeg:gallery-scroll-trace', onProductEvent);
+      if (observeImages) {
+        document.removeEventListener('load', onImageEvent, true);
+        document.removeEventListener('error', onImageEvent, true);
+        imageMutationObserver?.disconnect();
+      }
       if (state.samples.length < limit) {
         record('stop');
       }
     };
+    if (observeImages) {
+      document.addEventListener('load', onImageEvent, true);
+      document.addEventListener('error', onImageEvent, true);
+      if (typeof MutationObserver !== 'undefined') {
+        imageMutationObserver = new MutationObserver((records) => {
+          if (
+            !state.stopped &&
+            records.some(
+              ({ target }) =>
+                target instanceof Element && target.getAttribute('data-gallery-element') === 'item'
+            )
+          ) {
+            record('image-semantic-change');
+          }
+        });
+        imageMutationObserver.observe(document.documentElement, {
+          attributes: true,
+          subtree: true,
+          attributeFilter: ['data-media-loaded'],
+        });
+      }
+    }
     record('before-click');
-    state.timer = window.setTimeout(() => state.stop('lifetime-bound'), lifetimeLimitMs);
-    state.frame = window.requestAnimationFrame(frame);
-  }, index);
+    if (!state.stopped) {
+      state.timer = window.setTimeout(() => state.stop('lifetime-bound'), lifetimeLimitMs);
+      state.frame = window.requestAnimationFrame(frame);
+    }
+  }, configuration);
 }
 
 /** Mark the actual assertion interval without changing its wait budget. */
@@ -482,6 +632,10 @@ export async function finishSourceImageTrace(page: Page) {
       stopReason: current.stopReason,
       stoppedAtMs: current.stoppedAtMs,
       samples: current.samples,
+      imageEvents: current.imageEvents,
+      imageOverflow: current.imageOverflow,
+      zeroReadyAtMs: current.zeroReadyAtMs,
+      readinessFrames: current.readinessFrames,
       productEvents: current.productEvents,
       productOverflow: current.productOverflow,
       productMalformedCount: current.productMalformedCount,

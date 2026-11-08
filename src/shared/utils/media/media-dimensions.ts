@@ -212,20 +212,25 @@ export function createIntrinsicSizingStyle(dimensions: DimensionPair): Record<st
   return {
     '--xeg-aspect-default': `${dimensions.width} / ${dimensions.height}`,
     '--xeg-gallery-item-intrinsic-width': toRem(dimensions.width),
+    '--xeg-gallery-item-natural-width': `${dimensions.width}px`,
     '--xeg-gallery-item-intrinsic-height': toRem(dimensions.height),
     '--xeg-gallery-item-intrinsic-ratio': ratio.toFixed(6),
   };
 }
 
 export interface ContainIntrinsicSizeOverrideInput {
-  /** Image intrinsic width in CSS pixels */
+  /** Media intrinsic width in CSS pixels */
   readonly intrinsicWidth: number;
-  /** Image intrinsic height in CSS pixels */
+  /** Media intrinsic height in CSS pixels */
   readonly intrinsicHeight: number;
   /** Whether intrinsic dimensions are available */
   readonly hasIntrinsicSize: boolean;
   /** Current image fit mode */
   readonly fitMode: ImageFitMode;
+  /** Images scale down to intrinsic width; videos retain full-width fit. */
+  readonly mediaKind: 'image' | 'video';
+  /** A failed image retains the recovery panel's existing layout. */
+  readonly imageFailed?: boolean;
 }
 
 /**
@@ -236,9 +241,9 @@ export interface ContainIntrinsicSizeOverrideInput {
  * `auto none auto 300px` ignored the fit mode and actual image dimensions,
  * causing off-screen items to all render at 300px height.
  *
- * This function returns a CSS value using `calc()` expressions that reference
- * viewport custom properties (`--xeg-viewport-w`, `--xeg-viewport-height-constrained`)
- * so the sizing updates on viewport resize without JS recomputation.
+ * This function returns CSS expressions using container-query width and, for
+ * height-constrained modes, viewport height. The image fitWidth reservation
+ * subtracts row padding and borders before applying its intrinsic size cap.
  *
  * Returns `null` when intrinsic size is unavailable — the CSS falls back to the
  * default `auto none auto 300px`.
@@ -246,7 +251,8 @@ export interface ContainIntrinsicSizeOverrideInput {
 export function computeContainIntrinsicSizeOverride(
   input: ContainIntrinsicSizeOverrideInput
 ): string | null {
-  const { intrinsicWidth, intrinsicHeight, hasIntrinsicSize, fitMode } = input;
+  const { intrinsicWidth, intrinsicHeight, hasIntrinsicSize, fitMode, mediaKind, imageFailed } =
+    input;
 
   if (!hasIntrinsicSize) {
     return null;
@@ -261,6 +267,10 @@ export function computeContainIntrinsicSizeOverride(
 
   switch (fitMode) {
     case 'fitWidth': {
+      if (mediaKind === 'image' && !imageFailed) {
+        const contentWidth = `min(${intrinsicWidth}px, max(0px, calc(${aw} - var(--xeg-gallery-item-inline-insets))))`;
+        return `auto ${contentWidth} auto calc(${contentWidth} / ${ratioStr})`;
+      }
       const hCalc = `calc(${aw} / ${ratioStr})`;
       return `auto ${aw} auto ${hCalc}`;
     }

@@ -8,6 +8,9 @@
  */
 
 .container {
+  /* Shared with the image-only off-screen reservation calculation. */
+  --xeg-gallery-item-inline-insets: calc(var(--xeg-spacing-sm) * 2 + 0.125rem);
+
   position: relative;
   margin-bottom: var(--xeg-spacing-md);
   margin-inline: auto;
@@ -327,12 +330,38 @@
   );
 }
 
-/* Loading state — fitWidth: force full width so container fills
-   available space. The intrinsic ratio on .imageWrapper ensures
-   correct height. */
+/* Loading fitWidth video and failed-image rows retain their full-width policy. */
 .container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth'] {
   inline-size: 100%;
   max-inline-size: 100%;
+}
+
+/* A known-size pending image reserves its eventual scale-down footprint.
+   The cap is border-box while the image and wrapper occupy its content box. */
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth']:not(
+    [data-video-admitted]
+  ):not([data-media-error='true']) {
+  box-sizing: border-box;
+  inline-size: min(
+    100%,
+    calc(var(--xeg-gallery-item-natural-width) + var(--xeg-gallery-item-inline-insets))
+  );
+}
+
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth']:not(
+    [data-video-admitted]
+  ):not([data-media-error='true'])
+  :is(.imageWrapper, .placeholder) {
+  /* The general loading minimum would inflate or clip a small known image. */
+  min-block-size: 0;
+}
+
+.container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth']:not(
+    [data-video-admitted]
+  ):not([data-media-error='true'])
+  .loadingSpinner {
+  max-inline-size: 100%;
+  max-block-size: 100%;
 }
 
 .container[data-media-loaded='false'][data-has-intrinsic-size='true'][data-fit-mode='fitWidth']
