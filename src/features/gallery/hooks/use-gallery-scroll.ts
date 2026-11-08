@@ -27,7 +27,7 @@ interface UseGalleryScrollOptions {
   readonly onScrollEnd?: () => void;
   /** Whether scroll handling is enabled */
   readonly enabled?: MaybeAccessor<boolean>;
-  /** Timestamp of last programmatic scroll (events within 100ms ignored) */
+  /** Timestamp used to recognize the start of a programmatic scroll sequence */
   readonly programmaticScrollTimestamp?: Accessor<number>;
 }
 
@@ -35,12 +35,16 @@ interface UseGalleryScrollOptions {
 interface UseGalleryScrollReturn {
   readonly isScrolling: Accessor<boolean>;
   readonly lastScrollTime: Accessor<number>;
+  /** Explicit navigation supersedes earlier wheel or displaced scroll activity. */
+  readonly beginProgrammaticScroll: () => void;
+  /** Gallery-background wheel is redirected before reaching the scrollport. */
+  readonly claimRedirectedWheel: () => void;
 }
 
 /** Bounds wheel activity when no scroll position changes and scrollend cannot fire. */
 const WHEEL_IDLE_TIMEOUT = SCROLL_IDLE_TIMEOUT_MS;
 
-/** Window to ignore programmatic scroll events (ms) */
+/** Window to recognize the first event in a programmatic scroll sequence. */
 const PROGRAMMATIC_SCROLL_WINDOW = PROGRAMMATIC_SCROLL_WINDOW_MS;
 
 /** Listener context prefix used for managed EventManager entries */
@@ -117,26 +121,7 @@ export function useGalleryScroll({
     );
   };
 
-  const handleWheel = (event: WheelEvent): void => {
-    if (!isGalleryOpen()) {
-      return;
-    }
-
-    // Check if the event originated from a gallery-internal element.
-    // Uses composedPath() for robustness with Shadow DOM and nested components.
-    const path = typeof event.composedPath === 'function' ? event.composedPath() : [event.target];
-    const isInternal =
-      Array.isArray(path) &&
-      path.some((el) => el instanceof HTMLElement && isGalleryInternalElement(el));
-    if (!isInternal) {
-      return;
-    }
-
-    // Ignore wheel events from toolbar and its panels
-    if (isToolbarScroll(event)) {
-      return;
-    }
-
+  const claimWheel = (): void => {
     markScrolling();
     programmaticScrollActive = false;
     if (userScrollObserved) {
@@ -150,6 +135,31 @@ export function useGalleryScroll({
         settleScroll();
       }
     }, WHEEL_IDLE_TIMEOUT);
+  };
+
+  const handleWheel = (event: WheelEvent): void => {
+    if (!isGalleryOpen()) {
+      return;
+    }
+
+    // Check if the event originated from a gallery-internal element.
+    // Uses composedPath() for robustness with Shadow DOM and nested components.
+    const path = typeof event.composedPath === 'function' ? event.composedPath() : [event.target];
+    const isInternal =
+      Array.isArray(path) &&
+      path.some((el) => el instanceof HTMLElement && isGalleryInternalElement(el));
+    if (!isInternal || isToolbarScroll(event)) {
+      return;
+    }
+    claimWheel();
+  };
+
+  const beginProgrammaticScroll = (): void => {
+    wheelIdleTimer.clear();
+    wheelAwaitingMovement = false;
+    userScrollObserved = false;
+    programmaticScrollActive = false;
+    setIsScrolling(false);
   };
 
   const handleScroll = (): void => {
@@ -227,5 +237,14 @@ export function useGalleryScroll({
     // wheelIdleTimer auto-cleans up via createTimeout's onCleanup.
   });
 
-  return { isScrolling, lastScrollTime };
+  return {
+    isScrolling,
+    lastScrollTime,
+    beginProgrammaticScroll,
+    claimRedirectedWheel: () => {
+      if (isGalleryOpen()) {
+        claimWheel();
+      }
+    },
+  };
 }

@@ -19,15 +19,20 @@ interface UseGalleryWheelRedirectOptions {
   readonly containerEl: () => HTMLDivElement | null;
   /** Scrollable items container element ref */
   readonly itemsContainerEl: () => HTMLElement | null;
+  /** Notify the scroll owner before a background wheel mutates the scrollport. */
+  readonly onRedirectedWheel: () => void;
 }
 
 /**
  * Handles wheel event redirection from gallery container to items container.
- * When the user scrolls outside the items area (e.g. on the toolbar or
- * empty space), the scroll is redirected to prevent the underlying Twitter
- * page from scrolling.
+ * When the user scrolls empty gallery space outside the items and toolbar
+ * panels, the scroll is redirected to the items container.
  */
-function handleContainerWheel(event: WheelEvent, itemsContainerEl: () => HTMLElement | null): void {
+function handleContainerWheel(
+  event: WheelEvent,
+  itemsContainerEl: () => HTMLElement | null,
+  onRedirectedWheel: () => void
+): void {
   const itemsContainer = itemsContainerEl();
   if (!itemsContainer) {
     return;
@@ -43,6 +48,17 @@ function handleContainerWheel(event: WheelEvent, itemsContainerEl: () => HTMLEle
     return;
   }
 
+  // Nested toolbar/panel controls own their wheel activity. Their listeners
+  // normally stop propagation; retain this guard at the redirect boundary.
+  if (
+    target.closest(
+      '[data-gallery-element="toolbar"], [data-gallery-element="settings-panel"], [data-gallery-element="tweet-panel"], [data-gallery-element="keyboard-help-panel"]'
+    )
+  ) {
+    event.stopPropagation();
+    return;
+  }
+
   // For events outside the items container, redirect scroll to items container
   event.preventDefault();
   event.stopPropagation();
@@ -55,14 +71,17 @@ function handleContainerWheel(event: WheelEvent, itemsContainerEl: () => HTMLEle
     return;
   } // not scrollable
   const clampedDelta = Math.max(-150, Math.min(150, event.deltaY));
+  if (clampedDelta === 0) {
+    return;
+  }
+  onRedirectedWheel();
   itemsContainer.scrollTop += clampedDelta;
 }
 
 /**
  * Sets up wheel event redirection from the gallery container to the
- * items container. When the user scrolls outside the items area
- * (e.g. on the toolbar or empty space), the scroll is redirected so
- * the underlying Twitter page does not scroll.
+ * items container. Empty gallery space redirects to the items container;
+ * toolbar and nested-panel wheel input remains owned by those controls.
  *
  * Uses a non-passive event listener via EventManager to allow
  * preventDefault() on the wheel event.
@@ -70,7 +89,7 @@ function handleContainerWheel(event: WheelEvent, itemsContainerEl: () => HTMLEle
  * @param options - Hook configuration with element refs
  */
 export function useGalleryWheelRedirect(options: UseGalleryWheelRedirectOptions): void {
-  const { containerEl, itemsContainerEl } = options;
+  const { containerEl, itemsContainerEl, onRedirectedWheel } = options;
 
   createEffect(() => {
     const container = containerEl();
@@ -80,7 +99,7 @@ export function useGalleryWheelRedirect(options: UseGalleryWheelRedirectOptions)
 
     const eventManager = getEventManager();
     const listener: EventListener = (event) => {
-      handleContainerWheel(event as WheelEvent, itemsContainerEl);
+      handleContainerWheel(event as WheelEvent, itemsContainerEl, onRedirectedWheel);
     };
 
     eventManager.addEventListener(container, 'wheel', listener, {

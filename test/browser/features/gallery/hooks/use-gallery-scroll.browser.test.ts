@@ -113,4 +113,48 @@ describe('gallery native scroll completion', () => {
     expect(onScrollEnd).toHaveBeenCalledOnce();
     dispose();
   });
+
+  it('lets explicit navigation supersede a boundary wheel before its idle deadline', () => {
+    vi.useFakeTimers();
+    const now = vi.spyOn(performance, 'now').mockReturnValue(100);
+    let programmaticAt = 0;
+    const { items, tracking, onScrollEnd, dispose } = startTracking(() => programmaticAt);
+    items.dispatchEvent(new WheelEvent('wheel', { bubbles: true, deltaY: 40 }));
+    expect(tracking.isScrolling()).toBe(true);
+    expect(tracking.lastScrollTime()).toBe(100);
+
+    tracking.beginProgrammaticScroll();
+    programmaticAt = 110;
+    now.mockReturnValue(115);
+    items.dispatchEvent(new Event('scroll'));
+    now.mockReturnValue(300);
+    items.dispatchEvent(new Event('scroll'));
+    items.dispatchEvent(new Event('scrollend'));
+    vi.runAllTimers();
+
+    expect(tracking.isScrolling()).toBe(false);
+    expect(tracking.lastScrollTime()).toBeLessThan(programmaticAt);
+    expect(onScrollEnd).not.toHaveBeenCalled();
+    dispose();
+  });
+
+  it('lets redirected background wheel reclaim a smooth programmatic scroll', () => {
+    vi.useFakeTimers();
+    const now = vi.spyOn(performance, 'now').mockReturnValue(105);
+    const programmaticAt = 100;
+    const { items, tracking, onScrollEnd, dispose } = startTracking(() => programmaticAt);
+    items.dispatchEvent(new Event('scroll'));
+    expect(tracking.isScrolling()).toBe(false);
+
+    now.mockReturnValue(120);
+    tracking.claimRedirectedWheel();
+    items.dispatchEvent(new Event('scroll'));
+    vi.runAllTimers();
+    expect(tracking.isScrolling()).toBe(true);
+    expect(tracking.lastScrollTime()).toBeGreaterThan(programmaticAt);
+    items.dispatchEvent(new Event('scrollend'));
+    expect(tracking.isScrolling()).toBe(false);
+    expect(onScrollEnd).toHaveBeenCalledOnce();
+    dispose();
+  });
 });
