@@ -16,6 +16,41 @@ type AlignmentFrame = {
   clearance: number | null;
 };
 
+type PaintAssertion = {
+  id: string;
+  startedAtEpochMs: number;
+  deadlineAtEpochMs: number;
+  beganAtMs: number;
+  activeAtStart: boolean;
+  endedAtEpochMs: number | null;
+  endedAtMs: number | null;
+  activeAtEnd: boolean | null;
+  status: 'passed' | 'failed' | null;
+};
+
+type TraceOwner = Window & {
+  __xegSourceImageTrace?: {
+    stop: (reason?: string) => void;
+    stopped: boolean;
+    stopReason: string | null;
+    stoppedAtMs: number | null;
+    overflow: boolean;
+    timeOrigin: number;
+    startedAtMs: number;
+    limit: number;
+    frameLimit: number;
+    productLimit: number;
+    lifetimeLimitMs: number;
+    frameCount: number;
+    samples: Array<{ atMs: number; event: string; state: unknown }>;
+    productEvents: Array<Record<string, unknown>>;
+    productOverflow: boolean;
+    productMalformedCount: number;
+    alignmentFrames: AlignmentFrame[];
+    paintAssertions: PaintAssertion[];
+  };
+};
+
 export function observedSelectedAlignment(
   productEvents: ReadonlyArray<Record<string, unknown>>,
   frames: ReadonlyArray<AlignmentFrame>,
@@ -23,7 +58,10 @@ export function observedSelectedAlignment(
 ) {
   const guards = productEvents.filter(
     (event) =>
-      event.event === 'viewport-realign-guard' &&
+      (event.event === 'viewport-realign-guard' ||
+        (event.event === 'viewport-decision' &&
+          event.decision === 'accepted' &&
+          event.reason === 'eligible')) &&
       event.visible === true &&
       event.currentIndex === 1 &&
       event.focusedIndex === 1 &&
@@ -86,40 +124,62 @@ export function observedSelectedAlignment(
 export async function startSourceImageTrace(page: Page, index: number) {
   await page.evaluate((itemIndex) => {
     const limit = 192;
+    const frameLimit = 1_800;
+    const productLimit = 512;
+    const lifetimeLimitMs = 15_000;
     const start = performance.now();
     const state = {
       timeOrigin: performance.timeOrigin,
       startedAtMs: start,
       limit,
+      frameLimit,
+      productLimit,
+      lifetimeLimitMs,
       overflow: false,
       samples: [] as Array<{ atMs: number; event: string; state: unknown }>,
       alignmentFrames: [] as AlignmentFrame[],
       productEvents: [] as Array<Record<string, unknown>>,
       productOverflow: false,
+      productMalformedCount: 0,
+      paintAssertions: [] as PaintAssertion[],
       frameCount: 0,
       stopped: false,
+      stopReason: null as string | null,
+      stoppedAtMs: null as number | null,
       timer: 0,
       frame: 0,
       mark: (_event: string) => {},
-      stop: () => {},
+      stop: (_reason?: string) => {},
     };
-    const owner = window as Window & { __xegSourceImageTrace?: typeof state };
+    const owner = window as TraceOwner;
     if (owner.__xegSourceImageTrace) {
       throw new Error('Source image trace already installed');
     }
     owner.__xegSourceImageTrace = state;
     document.documentElement.setAttribute('data-xeg-scroll-trace', '');
     const onProductEvent = (event: Event) => {
+      if (state.stopped) {
+        return;
+      }
       if (!(event instanceof CustomEvent) || typeof event.detail !== 'string') {
         return;
       }
-      if (state.productEvents.length === 256) {
+      if (state.productEvents.length === productLimit) {
         state.productOverflow = true;
+        state.stop('product-overflow');
         return;
       }
-      const parsed: unknown = JSON.parse(event.detail);
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(event.detail);
+      } catch {
+        state.productMalformedCount += 1;
+        state.stop('malformed-product');
+        return;
+      }
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        state.productOverflow = true;
+        state.productMalformedCount += 1;
+        state.stop('malformed-product');
         return;
       }
       state.productEvents.push(parsed as Record<string, unknown>);
@@ -130,7 +190,14 @@ export async function startSourceImageTrace(page: Page, index: number) {
         return null;
       }
       const rect = element.getBoundingClientRect();
-      return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+      return {
+        left: rect.left,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        width: rect.width,
+        height: rect.height,
+      };
     };
     const snapshot = () => {
       const gallery = document.querySelector('[data-xeg-gallery-container]');
@@ -220,6 +287,9 @@ export async function startSourceImageTrace(page: Page, index: number) {
     };
     let previous = '';
     const record = (event: string, current = snapshot()) => {
+      if (state.stopped && event !== 'stop') {
+        return;
+      }
       const signature = JSON.stringify(current);
       if (event === 'frame' && signature === previous) {
         return;
@@ -227,7 +297,7 @@ export async function startSourceImageTrace(page: Page, index: number) {
       previous = signature;
       if (state.samples.length === limit) {
         state.overflow = true;
-        state.stop();
+        state.stop('sample-overflow');
         return;
       }
       state.samples.push({ atMs: performance.now(), event, state: current });
@@ -237,9 +307,9 @@ export async function startSourceImageTrace(page: Page, index: number) {
         return;
       }
       state.frameCount += 1;
-      if (state.frameCount > 720) {
+      if (state.frameCount > frameLimit) {
         state.overflow = true;
-        state.stop();
+        state.stop('frame-bound');
         return;
       }
       const current = snapshot();
@@ -259,58 +329,119 @@ export async function startSourceImageTrace(page: Page, index: number) {
         state.alignmentFrames.shift();
       }
       record('frame', current);
-      state.frame = requestAnimationFrame(frame);
+      if (!state.stopped) {
+        state.frame = requestAnimationFrame(frame);
+      }
     };
     state.mark = record;
-    state.stop = () => {
+    state.stop = (reason = 'finished') => {
       if (state.stopped) {
         return;
       }
       state.stopped = true;
+      state.stopReason = reason;
+      state.stoppedAtMs = performance.now();
       window.clearTimeout(state.timer);
       window.cancelAnimationFrame(state.frame);
       document.documentElement.removeAttribute('data-xeg-scroll-trace');
       window.removeEventListener('xeg:gallery-scroll-trace', onProductEvent);
-      record('stop');
+      if (state.samples.length < limit) {
+        record('stop');
+      }
     };
     record('before-click');
-    state.timer = window.setTimeout(state.stop, 5_000);
+    state.timer = window.setTimeout(() => state.stop('lifetime-bound'), lifetimeLimitMs);
     state.frame = window.requestAnimationFrame(frame);
   }, index);
 }
 
+/** Mark the actual assertion interval without changing its wait budget. */
+export async function beginSourceImagePaintAssertion(
+  page: Page,
+  interval: { id: string; startedAtEpochMs: number; deadlineAtEpochMs: number }
+): Promise<void> {
+  await page.evaluate((input) => {
+    const state = (window as TraceOwner).__xegSourceImageTrace;
+    if (!state) {
+      throw new Error('Source image paint assertion has no trace');
+    }
+    if (state.paintAssertions.some((assertion) => assertion.id === input.id)) {
+      throw new Error(`Duplicate source image paint assertion: ${input.id}`);
+    }
+    state.paintAssertions.push({
+      ...input,
+      beganAtMs: performance.now(),
+      activeAtStart: !state.stopped,
+      endedAtEpochMs: null,
+      endedAtMs: null,
+      activeAtEnd: null,
+      status: null,
+    });
+  }, interval);
+}
+
+export async function endSourceImagePaintAssertion(
+  page: Page,
+  result: { id: string; endedAtEpochMs: number; status: 'passed' | 'failed' }
+): Promise<void> {
+  await page.evaluate((input) => {
+    const state = (window as TraceOwner).__xegSourceImageTrace;
+    if (!state) {
+      throw new Error('Source image paint assertion has no trace');
+    }
+    const assertion = state.paintAssertions.find((entry) => entry.id === input.id);
+    if (!assertion || assertion.endedAtMs !== null) {
+      throw new Error(`Source image paint assertion cannot end: ${input.id}`);
+    }
+    assertion.endedAtEpochMs = input.endedAtEpochMs;
+    assertion.endedAtMs = performance.now();
+    assertion.activeAtEnd = !state.stopped;
+    assertion.status = input.status;
+  }, result);
+}
+
 export async function finishSourceImageTrace(page: Page) {
   const trace = await page.evaluate(() => {
-    const owner = window as Window & {
-      __xegSourceImageTrace?: {
-        stop: () => void;
-        overflow: boolean;
-        timeOrigin: number;
-        startedAtMs: number;
-        limit: number;
-        frameCount: number;
-        samples: Array<{ atMs: number; event: string; state: unknown }>;
-        productEvents: Array<Record<string, unknown>>;
-        productOverflow: boolean;
-        alignmentFrames: AlignmentFrame[];
-      };
-    };
+    const owner = window as TraceOwner;
     const current = owner.__xegSourceImageTrace;
     if (!current) {
       throw new Error('Source image trace was not installed');
     }
     current.stop();
     delete owner.__xegSourceImageTrace;
+    const paintAssertions = current.paintAssertions.map((assertion) => ({
+      ...assertion,
+      coverageComplete:
+        assertion.activeAtStart &&
+        assertion.activeAtEnd === true &&
+        assertion.endedAtMs !== null &&
+        assertion.endedAtMs >= assertion.beganAtMs &&
+        assertion.endedAtEpochMs !== null &&
+        assertion.endedAtEpochMs >= assertion.startedAtEpochMs &&
+        !current.overflow &&
+        !current.productOverflow &&
+        current.productMalformedCount === 0,
+    }));
     return {
       timeOrigin: current.timeOrigin,
       startedAtMs: current.startedAtMs,
       limit: current.limit,
+      frameLimit: current.frameLimit,
+      productLimit: current.productLimit,
+      lifetimeLimitMs: current.lifetimeLimitMs,
       frameCount: current.frameCount,
       overflow: current.overflow,
+      stopReason: current.stopReason,
+      stoppedAtMs: current.stoppedAtMs,
       samples: current.samples,
       productEvents: current.productEvents,
       productOverflow: current.productOverflow,
+      productMalformedCount: current.productMalformedCount,
       alignmentFrames: current.alignmentFrames,
+      paintAssertions,
+      coverageComplete:
+        paintAssertions.length > 0 &&
+        paintAssertions.every((assertion) => assertion.coverageComplete),
     };
   });
   return trace;
