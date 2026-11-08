@@ -44,8 +44,8 @@ rules, and [video click policy](video-click-policy.md) owns click behavior.
 [`GalleryContainer.tsx`](../src/shared/components/isolation/GalleryContainer.tsx)
 activates the modal host state; [`gallery-host-state.ts`](../src/shared/components/isolation/gallery-host-state.ts)
 captures and restores the connected opener's focus, host scroll, and history
-scroll-restoration value. The lifecycle listener and focus tracker remove their
-listeners and observers on cleanup. The maintained
+scroll-restoration value. The lifecycle listener removes its listeners on
+cleanup; the focus tracker cancels scheduled measurement and clears item references. The maintained
 [`keyboard-navigation.spec.ts`](../test/e2e/specs/keyboard-navigation.spec.ts)
 exercises the rendered userscript flow; browser component tests and the Windows
 profile cover their own narrower environments. Installed extension and live X
