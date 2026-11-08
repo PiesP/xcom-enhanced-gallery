@@ -8,7 +8,6 @@ import {
   beginSourceImagePaintAssertion,
   endSourceImagePaintAssertion,
   finishSourceImageTrace,
-  observedSelectedAlignment,
   startSourceImageTrace,
 } from './source-image-trace.ts';
 
@@ -276,45 +275,4 @@ test('DOM sample cap stops the actual owner and leaves no observation timers', a
   assert.equal(attributes.size, 0);
   assert.equal(listeners.get('xeg:gallery-scroll-trace')?.size, 0);
   assert.equal(vi.getTimerCount(), 0);
-});
-
-test('alignment gate accepts actual eligible viewport decisions but rejects rejected decisions', () => {
-  const decision = (at: number, accepted: boolean) => ({
-    event: 'viewport-decision',
-    decision: accepted ? 'accepted' : 'rejected',
-    reason: 'eligible',
-    visible: true,
-    currentIndex: 1,
-    focusedIndex: 1,
-    userAt: 0,
-    programmaticAt: 1,
-    at,
-  });
-  const frame = (atMs: number) => ({
-    atMs,
-    selectedIndex: '1',
-    currentIndex: '1',
-    focusedIndex: '1',
-    imageSrc: 'original',
-    itemTop: 20,
-    portTop: 10,
-    portBottom: 100,
-    scrollTop: 0,
-    clearance: 10,
-  });
-  const frames = [frame(22), frame(23)];
-  assert.equal(
-    observedSelectedAlignment(
-      [decision(10, true), decision(20, false), { event: 'align-done', index: 1, at: 21 }],
-      frames,
-      'original'
-    ),
-    null
-  );
-  const observed = observedSelectedAlignment(
-    [decision(10, true), decision(20, true), { event: 'align-done', index: 1, at: 21 }],
-    frames,
-    'original'
-  );
-  assert.equal(observed?.secondGuardAtMs, 20);
 });

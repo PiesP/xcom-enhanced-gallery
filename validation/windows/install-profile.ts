@@ -65,6 +65,8 @@ import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './
 import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import {
+  beginSourceImagePaintAssertion,
+  endSourceImagePaintAssertion,
   finishSourceImageTrace,
   startSourceImageTrace,
   waitForSelectedAlignmentBeforeFault,
@@ -720,16 +722,68 @@ async function captureRecoveryPaint(page: Page, index: number) {
   }, index);
 }
 
-async function waitForRecoveryPaint(page: Page, index: number, description: string) {
-  const deadline = Date.now() + 5_000;
-  let last = await captureRecoveryPaint(page, index);
-  while (!last.painted && Date.now() < deadline) {
-    await delay(50);
+async function waitForRecoveryPaint(
+  page: Page,
+  index: number,
+  description: string,
+  traceAssertionId?: string
+) {
+  const startedAtEpochMs = Date.now();
+  const deadline = startedAtEpochMs + 5_000;
+  let traceStarted = false;
+  let passed = false;
+  let primaryError: unknown;
+  let failed = false;
+  let last: Awaited<ReturnType<typeof captureRecoveryPaint>> | undefined;
+  try {
+    if (traceAssertionId) {
+      await beginSourceImagePaintAssertion(page, {
+        id: traceAssertionId,
+        startedAtEpochMs,
+        deadlineAtEpochMs: deadline,
+      });
+      traceStarted = true;
+    }
     last = await captureRecoveryPaint(page, index);
+    while (!last.painted && Date.now() < deadline) {
+      await delay(50);
+      last = await captureRecoveryPaint(page, index);
+    }
+    if (!last.painted) {
+      throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(last)}`);
+    }
+    passed = true;
+  } catch (error) {
+    failed = true;
+    primaryError = error;
   }
-  if (!last.painted) {
-    throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(last)}`);
+  let traceFailed = false;
+  let traceError: unknown;
+  if (traceAssertionId && traceStarted) {
+    try {
+      await endSourceImagePaintAssertion(page, {
+        id: traceAssertionId,
+        endedAtEpochMs: Date.now(),
+        status: passed ? 'passed' : 'failed',
+      });
+    } catch (error) {
+      traceFailed = true;
+      traceError = error;
+    }
   }
+  if (failed && traceFailed) {
+    throw new AggregateError(
+      [primaryError, traceError],
+      'Recovery paint and trace finalization failed'
+    );
+  }
+  if (failed) {
+    throw primaryError;
+  }
+  if (traceFailed) {
+    throw traceError;
+  }
+  assert(last);
   return last;
 }
 
@@ -859,6 +913,7 @@ type SourceImageFailureEvidence = {
     host?: unknown;
     failed?: unknown;
     failedPaint?: Awaited<ReturnType<typeof captureRecoveryPaint>>;
+    diagnosticErrors?: string[];
     neighbor?: unknown;
     returned?: unknown;
     retries?: unknown[];
@@ -13970,6 +14025,11 @@ async function runSourceImageFailureCases({
       receipt.traceNetwork = [];
     }
     const apiMark = qualityApiResponses.length;
+    const diagnosticFailure = (error: unknown): void => {
+      (receipt.diagnosticErrors ??= []).push(safeError(error));
+      failures.push(error);
+      receipt.status = 'failed';
+    };
     const onConsole = (message: ConsoleMessage) => {
       if (message.type() !== 'error') {
         return;
@@ -14160,7 +14220,8 @@ async function runSourceImageFailureCases({
       receipt.failedPaint = await waitForRecoveryPaint(
         owned,
         1,
-        `${kind}: failed image recovery text and actions painted inside the viewport`
+        `${kind}: failed image recovery text and actions painted inside the viewport`,
+        traceArmed ? `${kind}:initial` : undefined
       );
       if (kind === 'corrupt') {
         const screenshot = `src01-${kind}-error.png`;
@@ -14252,7 +14313,8 @@ async function runSourceImageFailureCases({
       receipt.exhaustedPaint = await waitForRecoveryPaint(
         owned,
         1,
-        `${kind}: exhausted image recovery text and action painted inside the viewport`
+        `${kind}: exhausted image recovery text and action painted inside the viewport`,
+        traceArmed ? `${kind}:exhausted` : undefined
       );
       await owned.screenshot({ path: join(output, `recovery-image-${kind}-exhausted.png`) });
       await owned.keyboard.press('Escape');
@@ -14398,19 +14460,35 @@ async function runSourceImageFailureCases({
           try {
             receipt.trace = await finishSourceImageTrace(owned);
             traceArmed = false;
-            assert.equal(
-              receipt.trace.overflow,
-              false,
-              'Source image trace observation exceeded its bound'
-            );
-            assert.equal(
-              receipt.trace.productOverflow,
-              false,
-              'Source image product event observation exceeded its bound'
-            );
           } catch (error) {
             receipt.cleanup.errors.push(safeError(error));
             failures.push(error);
+          }
+          if (receipt.trace) {
+            try {
+              assert.equal(
+                receipt.trace.overflow,
+                false,
+                'Source image trace observation exceeded its bound'
+              );
+              assert.equal(
+                receipt.trace.productOverflow,
+                false,
+                'Source image product event observation exceeded its bound'
+              );
+              assert.equal(
+                receipt.trace.productMalformedCount,
+                0,
+                'Source image product trace was malformed'
+              );
+              assert.equal(
+                receipt.trace.coverageComplete,
+                true,
+                'Source image trace did not cover the complete paint assertion intervals'
+              );
+            } catch (error) {
+              diagnosticFailure(error);
+            }
           }
         }
         if (!receipt.cleanup.routeRemoved) {
@@ -14451,7 +14529,7 @@ async function runSourceImageFailureCases({
         receipt.status = 'failed';
       }
     }
-    if (receipt.cleanup.errors.length) {
+    if (receipt.cleanup.errors.length || receipt.diagnosticErrors?.length) {
       break;
     }
   }

@@ -58,10 +58,7 @@ export function observedSelectedAlignment(
 ) {
   const guards = productEvents.filter(
     (event) =>
-      (event.event === 'viewport-realign-guard' ||
-        (event.event === 'viewport-decision' &&
-          event.decision === 'accepted' &&
-          event.reason === 'eligible')) &&
+      event.event === 'viewport-realign-guard' &&
       event.visible === true &&
       event.currentIndex === 1 &&
       event.focusedIndex === 1 &&
