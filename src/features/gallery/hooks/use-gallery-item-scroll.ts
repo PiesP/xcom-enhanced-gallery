@@ -9,6 +9,7 @@ import type { MaybeAccessor } from '@shared/utils/solid/accessor-utils';
 import { toAccessor } from '@shared/utils/solid/accessor-utils';
 import type { Accessor } from 'solid-js';
 import { createEffect, onCleanup, untrack } from 'solid-js';
+import { traceItemAlignment } from './gallery-scroll-diagnostic';
 
 /** Configuration for item scroll behavior. */
 interface UseGalleryItemScrollOptions {
@@ -108,6 +109,7 @@ export function useGalleryItemScroll(
         block: alignToCenter() ? 'center' : block(),
         inline: 'nearest',
       });
+      traceItemAlignment(index);
     } else {
       // Retry once if not found (e.g. virtual scrolling or render delay)
       const rafId = requestAnimationFrame(() => {
@@ -123,6 +125,7 @@ export function useGalleryItemScroll(
             block: alignToCenter() ? 'center' : block(),
             inline: 'nearest',
           });
+          traceItemAlignment(index);
         }
       });
       pendingRafIds.add(rafId);

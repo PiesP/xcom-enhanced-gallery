@@ -367,6 +367,9 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
       aria-posinset={local.index + 1}
       aria-setsize={totalItems()}
       data-gallery-element="item"
+      data-media-id={local.media.id}
+      data-media-active={local.isActive ? 'true' : undefined}
+      data-media-focused={isFocused() ? 'true' : undefined}
       data-testid={__DEV__ ? local['data-testid'] : undefined}
     >
       <div class={styles.imageWrapper}>

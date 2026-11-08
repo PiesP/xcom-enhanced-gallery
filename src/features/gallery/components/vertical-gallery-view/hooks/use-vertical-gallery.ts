@@ -10,6 +10,7 @@
 import { useGalleryFocusTracker } from '@features/gallery/hooks/use-gallery-focus-tracker';
 import { useGalleryItemScroll } from '@features/gallery/hooks/use-gallery-item-scroll';
 import { useGalleryScroll } from '@features/gallery/hooks/use-gallery-scroll';
+import { traceViewportDecision } from '@features/gallery/hooks/gallery-scroll-diagnostic';
 import type { NavigationSource } from '@shared/state/signals/gallery.signals';
 import type { Accessor } from 'solid-js';
 import { createEffect } from 'solid-js';
@@ -193,10 +194,36 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     toolbarWrapperEl,
     isVisible,
     onViewportApplied: (): void => {
-      if (!isVisible() || lastScrollTime() > navigationState.programmaticScrollTimestamp()) {
+      const visible = isVisible();
+      if (!visible) {
+        traceViewportDecision(() => ({ decision: 'rejected', reason: 'hidden', visible }));
         return;
       }
-      realignToItem(focusedIndex() ?? currentIndex());
+      const userAt = lastScrollTime();
+      const programmaticAt = navigationState.programmaticScrollTimestamp();
+      if (userAt > programmaticAt) {
+        traceViewportDecision(() => ({
+          decision: 'rejected',
+          reason: 'user-scroll',
+          visible,
+          userAt,
+          programmaticAt,
+        }));
+        return;
+      }
+      const focused = focusedIndex();
+      const index = focused ?? currentIndex();
+      traceViewportDecision(() => ({
+        decision: 'accepted',
+        reason: 'eligible',
+        visible,
+        userAt,
+        programmaticAt,
+        index,
+        currentIndex: currentIndex(),
+        focusedIndex: focused,
+      }));
+      realignToItem(index);
     },
   });
 

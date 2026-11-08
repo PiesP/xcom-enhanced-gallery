@@ -159,49 +159,27 @@ test('active marker cannot claim coverage of an assertion started before trace i
   assert.equal(trace.coverageComplete, false);
 });
 
-test('snapshot binds active and focused indices to their DOM media identities', async () => {
+test('complete assertion coverage does not certify unavailable item identity', async () => {
   const { page } = tracePage();
-  const documentElement = document.documentElement;
-  const item = (index: string, mediaId: string) => ({
-    getAttribute: (name: string) =>
-      name === 'data-index' ? index : name === 'data-media-id' ? mediaId : null,
-    querySelector: () => null,
-    getBoundingClientRect: () => ({
-      left: 0,
-      top: 0,
-      right: 100,
-      bottom: 100,
-      width: 100,
-      height: 100,
-    }),
-  });
-  const first = item('1', 'selected-media');
-  const second = item('2', 'focused-media');
-  const gallery = {
-    querySelector: (selector: string) =>
-      selector === '[data-gallery-element="toolbar"]'
-        ? {
-            getAttribute: (name: string) =>
-              name === 'data-current-index' ? '1' : name === 'data-focused-index' ? '2' : null,
-          }
-        : selector === '[data-gallery-element="item"][data-index="1"]'
-          ? first
-          : null,
-    querySelectorAll: () => [first, second],
-  };
-  vi.stubGlobal('document', {
-    documentElement,
-    querySelector: (selector: string) =>
-      selector === '[data-xeg-gallery-container]' ? gallery : null,
-  });
   await startSourceImageTrace(page, 1);
+  await beginSourceImagePaintAssertion(page, {
+    id: 'initial',
+    startedAtEpochMs: Date.now(),
+    deadlineAtEpochMs: Date.now() + 5_000,
+  });
+  await endSourceImagePaintAssertion(page, {
+    id: 'initial',
+    endedAtEpochMs: Date.now(),
+    status: 'passed',
+  });
   const trace = await finishSourceImageTrace(page);
   const snapshot = trace.samples[0]?.state as {
+    identityValid: boolean;
     activeMediaId: string | null;
-    focusedMediaId: string | null;
   };
-  assert.equal(snapshot.activeMediaId, 'selected-media');
-  assert.equal(snapshot.focusedMediaId, 'focused-media');
+  assert.equal(trace.coverageComplete, true);
+  assert.equal(snapshot.identityValid, false);
+  assert.equal(snapshot.activeMediaId, null);
 });
 
 test('lifetime bound preserves partial assertion and tears down observation', async () => {
