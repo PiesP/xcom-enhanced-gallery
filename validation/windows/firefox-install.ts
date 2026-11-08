@@ -825,6 +825,38 @@ export async function runFirefoxInstallation({
                   waitFor: (expression, description, timeoutMs) =>
                     session!.waitFor(expression, description, timeoutMs),
                   press: (key) => firefoxNativeKey(session!, key === 'Home' ? '\uE011' : '\uE010'),
+                  wheel: async (deltaY) => {
+                    const point = (await session!.evaluateJson(`(() => {
+                      const items = document.querySelector('[data-gallery-element="items"]');
+                      if (!(items instanceof HTMLElement)) throw new Error('Missing native scrollport');
+                      const rect = items.getBoundingClientRect();
+                      return { x: Math.floor(rect.left + rect.width / 2),
+                        y: Math.floor(rect.top + rect.height / 2) };
+                    })()`)) as { x: number; y: number };
+                    try {
+                      await session!.command('input.performActions', {
+                        context: session!.context,
+                        actions: [
+                          {
+                            type: 'wheel',
+                            id: 'xeg-firefox-baseline-wheel',
+                            actions: [
+                              {
+                                type: 'scroll',
+                                origin: 'viewport',
+                                ...point,
+                                deltaX: 0,
+                                deltaY,
+                                duration: 200,
+                              },
+                            ],
+                          },
+                        ],
+                      });
+                    } finally {
+                      await session!.command('input.releaseActions', { context: session!.context });
+                    }
+                  },
                   drag: async (from, to, afterDown) => {
                     assert(nativePointer, 'Native pointer bridge was not prepared');
                     await nativePointer.drag(from, to, afterDown);

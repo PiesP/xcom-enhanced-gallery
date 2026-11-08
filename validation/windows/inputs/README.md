@@ -59,7 +59,10 @@ input and does not qualify takeover. Only the optional takeover selector starts
 Chrome with its existing `--enable-smooth-scrolling` setting in the owned
 temporary profile. The receipt records this launch condition, so this controlled
 run is distinct from an unmodified default Chrome session. The probe requires
-multiple moving frames, remaining distance, and no completion before input,
+one real wheel input to place the native thumb below the gallery's toolbar hover
+strip before programmatic navigation. That wheel is outside the takeover interval.
+The probe requires two distinct moving frames after End, remaining distance,
+an exposed scrollport hit target, and no completion before input,
 then uses a task-owned, DPI-aware Windows input helper to drag the actual native
 scrollbar gutter while holding the mouse button. The helper requires a unique
 owned browser window, one visible UI Automation document, and agreement between
@@ -69,7 +72,8 @@ without a device viewport override and temporarily sizes its native window to
 540×850; the original UI tab retains its 1280×800 and zoom checks. Firefox
 uses a bounded 420×700 BiDi viewport. The
 helper rejects ambiguous or offscreen mapping
-instead of guessing. It records bounded native events and the
+instead of guessing. It records bounded native events, including gallery-capture
+pointer and click targets, and the
 existing opt-in product alignment/viewport decisions; it never dispatches a
 synthetic scroll event or writes the scroll position. A height-only viewport
 change checks the later layout guard. `native-scrollbar-takeover.json` and PNGs

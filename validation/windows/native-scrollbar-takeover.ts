@@ -12,6 +12,7 @@ export interface NativeScrollbarDriver {
   evaluate(expression: string): Promise<unknown>;
   waitFor(expression: string, description: string, timeoutMs?: number): Promise<void>;
   press(key: 'Home' | 'End'): Promise<void>;
+  wheel(deltaY: number): Promise<void>;
   drag(
     from: { x: number; y: number },
     to: { x: number; y: number },
@@ -118,10 +119,12 @@ const INSTALL = `(() => {
     try { append(product, JSON.parse(e.detail), 128); }
     catch { overflow = true; }
   };
-  for (const name of ['scroll', 'scrollend', 'pointerdown', 'pointerup', 'wheel']) {
+  for (const name of ['scroll', 'scrollend', 'wheel']) {
     items.addEventListener(name, event, { capture: true, passive: true });
   }
-  gallery.addEventListener('click', event, { capture: true, passive: true });
+  for (const name of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click']) {
+    gallery.addEventListener(name, event, { capture: true, passive: true });
+  }
   window.addEventListener('xeg:gallery-scroll-trace', trace);
   document.documentElement.setAttribute('data-xeg-scroll-trace', '');
   const sample = () => {
@@ -136,7 +139,7 @@ const INSTALL = `(() => {
   raf = requestAnimationFrame(sample);
   const probe = { rows, frames, product, snapshot,
     naturalBehavior: getComputedStyle(items).scrollBehavior,
-    programStart: 0, dragStart: 0, pointerHeld: 0, dragMoveStart: 0, dragEnd: 0,
+    baselineWheelStart: 0, programStart: 0, dragStart: 0, pointerHeld: 0, dragMoveStart: 0, dragEnd: 0,
     mark(name) { this[name] = performance.now(); append(rows, { event: name, ...snapshot() }, 256); return null; },
     geometry() {
       const rect = items.getBoundingClientRect();
@@ -148,10 +151,19 @@ const INSTALL = `(() => {
       const last = media.item(media.length - 1)?.getBoundingClientRect();
       const clearance = parseFloat(getComputedStyle(items).scrollPaddingBlockStart) || 0;
       const target = last ? Math.min(max, items.scrollTop + last.top - rect.top - clearance) : max;
+      const from = { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
+        y: Math.floor(rect.top + items.clientTop + track * items.scrollTop / max + length / 2) };
+      const hit = document.elementFromPoint(from.x, from.y);
+      const hoverZone = gallery.querySelector('[data-gallery-element="toolbar-hover-zone"]');
+      const hoverRect = hoverZone?.getBoundingClientRect();
       return { gutter, max, target, top: items.scrollTop, scrollbarWidth: getComputedStyle(items).scrollbarWidth,
         scrollendsBeforeInput: rows.filter(row => row.event === 'scrollend' && row.at >= this.programStart).length,
-        from: { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
-          y: Math.floor(rect.top + items.clientTop + track * items.scrollTop / max + length / 2) },
+        from, fromHit: { tag: hit?.tagName ?? null,
+          galleryElement: hit?.closest?.('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+          scrollport: hit === items || items.contains(hit),
+          hoverZone: !!hoverZone?.contains(hit) },
+        hoverZone: hoverRect ? { top: hoverRect.top, bottom: hoverRect.bottom,
+          pointerEvents: getComputedStyle(hoverZone).pointerEvents } : null,
         to: { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
           y: Math.floor(rect.top + items.clientTop + track * 0.4 + length / 2) } };
     },
@@ -159,16 +171,19 @@ const INSTALL = `(() => {
       return { inlineBehavior: items.style.scrollBehavior,
         computedBehavior: getComputedStyle(items).scrollBehavior,
         reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }; },
-    read() { return { naturalBehavior: this.naturalBehavior, programStart: this.programStart,
+    read() { return { naturalBehavior: this.naturalBehavior,
+      baselineWheelStart: this.baselineWheelStart, programStart: this.programStart,
       dragStart: this.dragStart, pointerHeld: this.pointerHeld, dragMoveStart: this.dragMoveStart,
       dragEnd: this.dragEnd, rows, frames, product, overflow,
       current: snapshot() }; },
     stop() {
       stopped = true; cancelAnimationFrame(raf);
-      for (const name of ['scroll', 'scrollend', 'pointerdown', 'pointerup', 'wheel']) {
+      for (const name of ['scroll', 'scrollend', 'wheel']) {
         items.removeEventListener(name, event, true);
       }
-      gallery.removeEventListener('click', event, true);
+      for (const name of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click']) {
+        gallery.removeEventListener(name, event, true);
+      }
       window.removeEventListener('xeg:gallery-scroll-trace', trace);
       items.style.scrollBehavior = prior.behavior;
       if (prior.marker === null) document.documentElement.removeAttribute('data-xeg-scroll-trace');
@@ -194,6 +209,7 @@ type Sample = {
 
 type Tape = {
   naturalBehavior: string;
+  baselineWheelStart: number;
   programStart: number;
   dragStart: number;
   pointerHeld: number;
@@ -240,15 +256,40 @@ export async function runNativeScrollbarTakeover(
         return p.snapshot().current === '0' && performance.now() - (last?.at ?? 0) > 180; })()`,
       'initial product Home identity and settled position'
     );
-    receipt.baseline = await driver.evaluate(`window.${PROBE}.snapshot()`);
+    const home = (await driver.evaluate(`window.${PROBE}.snapshot()`)) as Sample;
+    receipt.home = home;
+    const initialGeometry = (await driver.evaluate(`window.${PROBE}.geometry()`)) as {
+      max: number;
+      top: number;
+    };
+    const baselineWheelDelta = Math.round(initialGeometry.max * 0.5 - initialGeometry.top);
+    assert(initialGeometry.max > 5000, 'Fixture cannot expose the thumb below the toolbar');
+    assert(baselineWheelDelta > 2000, 'Baseline wheel has insufficient travel');
+    receipt.phase = 'baseline-native-wheel';
+    await driver.evaluate(`window.${PROBE}.mark('baselineWheelStart')`);
+    await driver.wheel(baselineWheelDelta);
+    await driver.waitFor(
+      `(() => { const p = window.${PROBE}; const last = p.rows.filter(row => row.event === 'scroll').at(-1);
+        const end = p.rows.filter(row => row.event === 'scrollend' && row.at >= p.baselineWheelStart).at(-1);
+        return last && end && end.at >= last.at && performance.now() - last.at > 180; })()`,
+      'baseline native wheel completion'
+    );
+    const baseline = (await driver.evaluate(`window.${PROBE}.snapshot()`)) as Sample;
+    receipt.baselineWheel = { deltaY: baselineWheelDelta, before: home.top, after: baseline.top };
+    receipt.baseline = baseline;
+    assert(
+      baseline.top >= 2000 && baseline.top <= 4500,
+      'Baseline wheel missed the exposed thumb range'
+    );
+    assert.equal(baseline.current, '0', 'Baseline wheel changed the selected media');
     receipt.enabledSmoothStyle = await driver.evaluate(`window.${PROBE}.enableSmooth()`);
     await driver.screenshot('native-scrollbar-before.png');
     receipt.phase = 'programmatic-smooth-scroll';
     await driver.evaluate(`window.${PROBE}.mark('programStart')`);
     await driver.press('End');
     await driver.waitFor(
-      `window.${PROBE}.frames.filter(row => row.at > window.${PROBE}.programStart && row.top > 10).length >= 3`,
-      'native smooth scroll across multiple frames',
+      `window.${PROBE}.frames.filter(row => row.at > window.${PROBE}.programStart && row.top > ${baseline.top}).length >= 2`,
+      'two distinct moving frames after programmatic navigation',
       2000
     );
     const geometry = (await driver.evaluate(`window.${PROBE}.geometry()`)) as {
@@ -258,12 +299,23 @@ export async function runNativeScrollbarTakeover(
       top: number;
       scrollendsBeforeInput: number;
       from: { x: number; y: number };
+      fromHit: {
+        tag: string | null;
+        galleryElement: string | null;
+        scrollport: boolean;
+        hoverZone: boolean;
+      };
+      hoverZone: { top: number; bottom: number; pointerEvents: string } | null;
       to: { x: number; y: number };
     };
     receipt.dragGeometry = geometry;
     assert(geometry.gutter > 0, 'No exposed native scrollbar gutter');
     assert(geometry.max > 1000, 'Fixture does not provide a sufficiently long scroll');
     assert(geometry.target - geometry.top > 300, 'Programmatic scroll finished before takeover');
+    assert(
+      geometry.fromHit.scrollport && !geometry.fromHit.hoverZone,
+      'Native thumb start is obscured outside the gallery scrollport'
+    );
     assert.equal(
       geometry.scrollendsBeforeInput,
       0,
@@ -303,7 +355,8 @@ export async function runNativeScrollbarTakeover(
     receipt.fixtureCondition = {
       naturalScrollBehavior: tape.naturalBehavior,
       smoothScroll: 'fixture scrollport CSS; product Home/End input invokes native scrollIntoView',
-      input: 'native scrollbar gutter pointer drag; no wheel or scroll-position writes',
+      input:
+        'baseline real wheel before programmatic navigation; native scrollbar gutter pointer drag during takeover',
     };
     const decisions = tape.product.filter(
       (row) => row.event === 'viewport-decision' && row.at > resizeAt
@@ -344,7 +397,12 @@ export async function runNativeScrollbarTakeover(
         ),
       nativeEventReason:
         'scrollend has no programmatic/cancellation reason; raw tape retains ordering',
-      wheelEvents: tape.rows.filter((row) => row.event === 'wheel').length,
+      baselineWheelEvents: tape.rows.filter(
+        (row) => row.event === 'wheel' && row.at < tape.programStart
+      ).length,
+      takeoverWheelEvents: tape.rows.filter(
+        (row) => row.event === 'wheel' && row.at >= tape.programStart
+      ).length,
       displacementDuringNativePointerMove: movedByDrag,
       nativeThumbReachedRequestedTrackFraction: thumbReachedTarget,
       userIntentProtected: protectedIntent,
@@ -356,7 +414,10 @@ export async function runNativeScrollbarTakeover(
     assert(!tape.overflow, 'Native scrollbar observation exceeded its bounds');
     assert(movedByDrag, 'Native scrollbar drag did not establish manual displacement');
     assert(thumbReachedTarget, 'Pointer input did not establish the requested native thumb drag');
-    assert.equal(tape.rows.filter((row) => row.event === 'wheel').length, 0);
+    assert.equal(
+      tape.rows.filter((row) => row.event === 'wheel' && row.at >= tape.programStart).length,
+      0
+    );
     assert(
       manual.identityValid && tape.current.identityValid,
       'Media ownership markers are ambiguous'

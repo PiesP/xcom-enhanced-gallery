@@ -18084,6 +18084,12 @@ async function runNativeBrowserUiProbe({
               await scrollPage.waitForFunction(expression, undefined, { timeout: timeoutMs });
             },
             press: (key) => scrollPage.keyboard.press(key),
+            wheel: async (deltaY) => {
+              const box = await scrollPage.locator('[data-gallery-element="items"]').boundingBox();
+              assert(box, 'Native scrollport has no visible wheel target');
+              await scrollPage.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+              await scrollPage.mouse.wheel(0, deltaY);
+            },
             drag: async (from, to, afterDown) => {
               assert(nativePointer, 'Native pointer bridge was not prepared');
               await nativePointer.drag(from, to, afterDown);
