@@ -120,21 +120,49 @@ describe('Tooltip accessibility and native presentation', () => {
       const tooltip = dialog.querySelector<HTMLElement>('[role="tooltip"]');
       expect(tooltip).not.toBeNull();
       await vi.waitFor(() => expect(tooltip?.matches(':popover-open')).toBe(true));
-      const triggerRect = button.getBoundingClientRect();
-      const tooltipRect = tooltip!.getBoundingClientRect();
-      const horizontalGap = Math.max(
-        triggerRect.left - tooltipRect.right,
-        tooltipRect.left - triggerRect.right,
-        0
-      );
       expect(getComputedStyle(tooltip!).direction).toBe('rtl');
       expect(getComputedStyle(tooltip!).positionAnchor).toBe(
         button.style.getPropertyValue('anchor-name')
       );
       expect(button.getAttribute('aria-describedby')).toContain(tooltip!.id);
-      expect(horizontalGap).toBeLessThanOrEqual(12);
-      expect(tooltipRect.left).toBeGreaterThanOrEqual(0);
-      expect(tooltipRect.right).toBeLessThanOrEqual(420);
+      for (const { left, top, side } of [
+        { left: 186, top: 120, side: 'below' },
+        { left: 0, top: 120, side: 'below' },
+        { left: 376, top: 120, side: 'below' },
+        { left: 186, top: 550, side: 'above' },
+      ] as const) {
+        button.style.left = `${left}px`;
+        button.style.top = `${top}px`;
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+        const triggerRect = button.getBoundingClientRect();
+        const tooltipRect = tooltip!.getBoundingClientRect();
+        const textRange = document.createRange();
+        textRange.selectNodeContents(tooltip!);
+        const horizontalGap = Math.max(
+          triggerRect.left - tooltipRect.right,
+          tooltipRect.left - triggerRect.right,
+          0
+        );
+        const verticalGap = Math.max(
+          triggerRect.top - tooltipRect.bottom,
+          tooltipRect.top - triggerRect.bottom,
+          0
+        );
+        expect(horizontalGap, `${side} at x=${left}`).toBeLessThanOrEqual(12);
+        expect(verticalGap, `${side} at y=${top}`).toBeLessThanOrEqual(12);
+        expect(tooltipRect.left).toBeGreaterThanOrEqual(0);
+        expect(tooltipRect.right).toBeLessThanOrEqual(420);
+        expect(tooltipRect.top).toBeGreaterThanOrEqual(0);
+        expect(tooltipRect.bottom).toBeLessThanOrEqual(600);
+        expect(tooltipRect.width).toBeGreaterThanOrEqual(triggerRect.width);
+        expect(textRange.getClientRects().length).toBeLessThanOrEqual(3);
+        if (side === 'above') {
+          expect(tooltipRect.bottom).toBeLessThanOrEqual(triggerRect.top);
+        } else {
+          expect(tooltipRect.top).toBeGreaterThanOrEqual(triggerRect.bottom);
+        }
+      }
     } finally {
       dispose?.();
       if (dialog.open) {

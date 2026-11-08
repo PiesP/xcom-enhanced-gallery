@@ -8,13 +8,12 @@
 .content {
   position: fixed;
   inset: auto;
-  position-area: bottom span-all;
+  top: anchor(bottom);
+  left: anchor(left);
   position-try-fallbacks:
     flip-block,
-    bottom left,
-    bottom right,
-    top left,
-    top right;
+    flip-inline,
+    flip-block flip-inline;
   margin: var(--xeg-tooltip-offset, 6px);
   inline-size: max-content;
   max-inline-size: min(16em, calc(100vw - 1rem));
@@ -38,7 +37,8 @@
 }
 
 .content[data-placement='top'] {
-  position-area: top span-all;
+  top: auto;
+  bottom: anchor(top);
 }
 
 @media (prefers-reduced-motion: reduce) {
