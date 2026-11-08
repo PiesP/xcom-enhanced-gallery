@@ -209,9 +209,20 @@ export async function startSourceImageTrace(page: Page, index: number) {
       const image = item?.querySelector('img');
       const alert = item?.querySelector('[role="alert"]');
       const wrapper = alert?.parentElement ?? null;
+      const currentIndex = toolbar?.getAttribute('data-current-index') ?? null;
+      const focusedIndex = toolbar?.getAttribute('data-focused-index') ?? null;
+      const items = Array.from(gallery?.querySelectorAll('[data-gallery-element="item"]') ?? []);
+      const mediaIdAt = (index: string | null) =>
+        index === null
+          ? null
+          : (items
+              .find((candidate) => candidate.getAttribute('data-index') === index)
+              ?.getAttribute('data-media-id') ?? null);
       return {
-        currentIndex: toolbar?.getAttribute('data-current-index') ?? null,
-        focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+        currentIndex,
+        focusedIndex,
+        activeMediaId: mediaIdAt(currentIndex),
+        focusedMediaId: mediaIdAt(focusedIndex),
         selectedIndex: item?.getAttribute('data-index') ?? null,
         fitMode: item?.getAttribute('data-fit-mode') ?? null,
         displayUrl: item?.getAttribute('data-media-display-url') ?? null,
@@ -411,9 +422,15 @@ export async function finishSourceImageTrace(page: Page) {
     delete owner.__xegSourceImageTrace;
     const paintAssertions = current.paintAssertions.map((assertion) => ({
       ...assertion,
+      budgetMs: assertion.deadlineAtEpochMs - assertion.startedAtEpochMs,
+      deadlineReached:
+        assertion.endedAtEpochMs !== null &&
+        assertion.endedAtEpochMs >= assertion.deadlineAtEpochMs,
+      traceStartedAtEpochMs: current.timeOrigin + current.startedAtMs,
       coverageComplete:
         assertion.activeAtStart &&
         assertion.activeAtEnd === true &&
+        assertion.startedAtEpochMs >= current.timeOrigin + current.startedAtMs &&
         assertion.endedAtMs !== null &&
         assertion.endedAtMs >= assertion.beganAtMs &&
         assertion.endedAtEpochMs !== null &&

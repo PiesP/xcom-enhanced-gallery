@@ -126,6 +126,10 @@ test('actual trace covers a paint deadline that extends beyond the old before-cl
     ]
   );
   assert.equal(trace.paintAssertions[0]?.deadlineAtEpochMs, origin + 10_500);
+  assert.equal(trace.paintAssertions[0]?.traceStartedAtEpochMs, origin);
+  assert.equal(trace.paintAssertions[0]?.budgetMs, 5_000);
+  assert.equal(trace.paintAssertions[0]?.deadlineReached, true);
+  assert.equal(trace.paintAssertions[1]?.deadlineReached, false);
   assert.deepEqual(trace.productEvents, [{ event: 'viewport-realign-guard', index: 1 }]);
   assert.equal(attributes.size, 0);
   assert.equal(listeners.get('xeg:gallery-scroll-trace')?.size, 0);
@@ -134,6 +138,71 @@ test('actual trace covers a paint deadline that extends beyond the old before-cl
     (win as typeof win & { __xegSourceImageTrace?: unknown }).__xegSourceImageTrace,
     undefined
   );
+});
+
+test('active marker cannot claim coverage of an assertion started before trace installation', async () => {
+  const { page } = tracePage();
+  await startSourceImageTrace(page, 1);
+  await beginSourceImagePaintAssertion(page, {
+    id: 'initial',
+    startedAtEpochMs: origin - 1,
+    deadlineAtEpochMs: origin + 4_999,
+  });
+  await endSourceImagePaintAssertion(page, {
+    id: 'initial',
+    endedAtEpochMs: Date.now(),
+    status: 'passed',
+  });
+  const trace = await finishSourceImageTrace(page);
+  assert.equal(trace.paintAssertions[0]?.activeAtStart, true);
+  assert.equal(trace.paintAssertions[0]?.activeAtEnd, true);
+  assert.equal(trace.paintAssertions[0]?.coverageComplete, false);
+  assert.equal(trace.coverageComplete, false);
+});
+
+test('snapshot binds active and focused indices to their DOM media identities', async () => {
+  const { page } = tracePage();
+  const documentElement = document.documentElement;
+  const item = (index: string, mediaId: string) => ({
+    getAttribute: (name: string) =>
+      name === 'data-index' ? index : name === 'data-media-id' ? mediaId : null,
+    querySelector: () => null,
+    getBoundingClientRect: () => ({
+      left: 0,
+      top: 0,
+      right: 100,
+      bottom: 100,
+      width: 100,
+      height: 100,
+    }),
+  });
+  const first = item('1', 'selected-media');
+  const second = item('2', 'focused-media');
+  const gallery = {
+    querySelector: (selector: string) =>
+      selector === '[data-gallery-element="toolbar"]'
+        ? {
+            getAttribute: (name: string) =>
+              name === 'data-current-index' ? '1' : name === 'data-focused-index' ? '2' : null,
+          }
+        : selector === '[data-gallery-element="item"][data-index="1"]'
+          ? first
+          : null,
+    querySelectorAll: () => [first, second],
+  };
+  vi.stubGlobal('document', {
+    documentElement,
+    querySelector: (selector: string) =>
+      selector === '[data-xeg-gallery-container]' ? gallery : null,
+  });
+  await startSourceImageTrace(page, 1);
+  const trace = await finishSourceImageTrace(page);
+  const snapshot = trace.samples[0]?.state as {
+    activeMediaId: string | null;
+    focusedMediaId: string | null;
+  };
+  assert.equal(snapshot.activeMediaId, 'selected-media');
+  assert.equal(snapshot.focusedMediaId, 'focused-media');
 });
 
 test('lifetime bound preserves partial assertion and tears down observation', async () => {
