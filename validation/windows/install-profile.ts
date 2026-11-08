@@ -64,6 +64,7 @@ import {
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
 import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
+import { createLateImageLayoutProbe, type LateLayoutReceipt } from './late-image-layout.ts';
 import {
   beginSourceImagePaintAssertion,
   endSourceImagePaintAssertion,
@@ -722,7 +723,7 @@ async function captureRecoveryPaint(page: Page, index: number) {
   }, index);
 }
 
-async function waitForRecoveryPaint(
+export async function waitForRecoveryPaint(
   page: Page,
   index: number,
   description: string,
@@ -750,7 +751,10 @@ async function waitForRecoveryPaint(
       last = await captureRecoveryPaint(page, index);
     }
     if (!last.painted) {
-      throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(last)}`);
+      throw Object.assign(
+        new Error(`Timed out waiting for ${description}: ${JSON.stringify(last)}`),
+        { paintSnapshot: last, paintAssertionId: traceAssertionId ?? null }
+      );
     }
     passed = true;
   } catch (error) {
@@ -913,7 +917,15 @@ type SourceImageFailureEvidence = {
     host?: unknown;
     failed?: unknown;
     failedPaint?: Awaited<ReturnType<typeof captureRecoveryPaint>>;
+    paintFailure?: {
+      id: string | null;
+      snapshot: Awaited<ReturnType<typeof captureRecoveryPaint>>;
+    };
     diagnosticErrors?: string[];
+    lateLayout?: LateLayoutReceipt;
+    lateLayoutCleanup?: LateLayoutReceipt;
+    layoutFixtureImages?: Array<ReturnType<typeof imageReceipt>>;
+    layoutImageRequests?: QualityRequest[];
     neighbor?: unknown;
     returned?: unknown;
     retries?: unknown[];
@@ -13985,6 +13997,7 @@ async function runSourceImageFailureCases({
   qualityRequests,
   trace = false,
   faultRelease = 'immediate',
+  lateIndex0 = false,
 }: {
   context: BrowserContext;
   evidence: SourceImageFailureEvidence;
@@ -13995,6 +14008,7 @@ async function runSourceImageFailureCases({
   qualityRequests: QualityRequest[];
   trace?: boolean;
   faultRelease?: 'immediate' | 'after-initial-alignment';
+  lateIndex0?: boolean;
 }) {
   const originalUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=orig`;
   const displayUrl = `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[1]}?format=jpg&name=small`;
@@ -14021,10 +14035,17 @@ async function runSourceImageFailureCases({
     let observationOverflow = false;
     let faultActive = false;
     let traceArmed = false;
+    let layoutProbe: ReturnType<typeof createLateImageLayoutProbe> | undefined;
+    const faultTasks = new Set<Promise<void>>();
+    const faultTaskErrors: string[] = [];
     if (trace) {
       receipt.traceNetwork = [];
     }
     const apiMark = qualityApiResponses.length;
+    const qualityMark = qualityRequests.length;
+    if (lateIndex0) {
+      receipt.layoutFixtureImages = images.map(imageReceipt);
+    }
     const diagnosticFailure = (error: unknown): void => {
       (receipt.diagnosticErrors ??= []).push(safeError(error));
       failures.push(error);
@@ -14075,7 +14096,7 @@ async function runSourceImageFailureCases({
         observationOverflow = true;
       }
     };
-    const faultRoute = async (route: Route) => {
+    const serveFault = async (route: Route) => {
       assert.equal(route.request().url(), originalUrl);
       const firstFault = receipt.faultRequests.length === 0;
       if (traceArmed) {
@@ -14089,6 +14110,22 @@ async function runSourceImageFailureCases({
         bytes: body.length,
         resourceType: route.request().resourceType(),
       });
+      if (firstFault && layoutProbe) {
+        receipt.lateLayout = await layoutProbe.waitForTransition();
+        if (receipt.lateLayout.status === 'passed') {
+          if (kind === '404') {
+            try {
+              await owned!.screenshot({
+                path: join(output, 'late-index0-aligned.png'),
+                timeout: 1_000,
+              });
+            } catch (error) {
+              diagnosticFailure(error);
+            }
+          }
+          layoutProbe.releaseNeighbor();
+        }
+      }
       if (firstFault && faultRelease === 'after-initial-alignment') {
         const routeAtEpochMs = Date.now();
         try {
@@ -14119,6 +14156,18 @@ async function runSourceImageFailureCases({
         assert(receipt.traceNetwork && receipt.traceNetwork.length < 16);
         receipt.traceNetwork.push({ event: 'fault-fulfilled', atEpochMs: Date.now() });
       }
+    };
+    const faultRoute = (route: Route): Promise<void> => {
+      const task = serveFault(route);
+      faultTasks.add(task);
+      void task.then(
+        () => faultTasks.delete(task),
+        (error) => {
+          faultTasks.delete(task);
+          faultTaskErrors.push(safeError(error));
+        }
+      );
+      return task;
     };
     const failedSelection = async () =>
       waitForValue(async () => {
@@ -14159,6 +14208,26 @@ async function runSourceImageFailureCases({
           : undefined;
       }, `selected ${kind} image native failure`);
     try {
+      if (lateIndex0) {
+        assert.deepEqual(
+          receipt.layoutFixtureImages,
+          [
+            {
+              bytes: 4237,
+              sha256: '991f60cfda525c43bfdb510bb8e363d79da0cdcade09e0a960c98a7b88365ade',
+            },
+            {
+              bytes: 4711,
+              sha256: 'bd8bb9ae1f472bc782773cffa26cc45cf2eb31ac553c93ebf4311558e7e9a258',
+            },
+            {
+              bytes: 4795,
+              sha256: '3b89f353723b57190cafa7694d3bbe28d23d328d2be5f0caa3332e7a4a469c6a',
+            },
+          ],
+          'Late-index0 acceptance must preserve the retained healthy-image bytes'
+        );
+      }
       owned = await context.newPage();
       owned.on('console', onConsole);
       owned.on('pageerror', onPageError);
@@ -14192,14 +14261,38 @@ async function runSourceImageFailureCases({
       await owned.route(originalUrl, faultRoute);
       faultActive = true;
       if (trace) {
-        await startSourceImageTrace(owned, 1);
+        await startSourceImageTrace(owned, 1, lateIndex0);
         traceArmed = true;
+      }
+      if (lateIndex0) {
+        layoutProbe = createLateImageLayoutProbe({
+          page: owned,
+          urls: [
+            `https://pbs.twimg.com/media/${QUALITY_IMAGE_PATHS[0]}?format=jpg&name=orig`,
+            originalUrl,
+            neighborUrl,
+          ],
+          mediaIds: [
+            `${QUALITY_TWEET_ID}_api_0`,
+            `${QUALITY_TWEET_ID}_api_1`,
+            `${QUALITY_TWEET_ID}_api_2`,
+          ],
+        });
+        await layoutProbe.install();
       }
       await trigger.click();
       const gallery = owned.locator('[data-xeg-gallery-container]');
       await gallery.waitFor({ state: 'visible' });
       const failed = await failedSelection();
       receipt.failed = failed;
+      if (lateIndex0) {
+        assert.equal(
+          receipt.lateLayout?.status,
+          'passed',
+          `Late-index0 transition not qualified: ${JSON.stringify(receipt.lateLayout)}`
+        );
+        assert.deepEqual(receipt.diagnosticErrors ?? [], [], 'Late-index0 observation failed');
+      }
       if (faultRelease === 'after-initial-alignment') {
         assert.equal(
           receipt.faultReleaseGate?.status,
@@ -14442,6 +14535,13 @@ async function runSourceImageFailureCases({
       failures.push(error);
       receipt.status = 'failed';
       receipt.error = safeError(error);
+      if (error instanceof Error && 'paintSnapshot' in error) {
+        const measured = error as Error & {
+          paintSnapshot: Awaited<ReturnType<typeof captureRecoveryPaint>>;
+          paintAssertionId: string | null;
+        };
+        receipt.paintFailure = { id: measured.paintAssertionId, snapshot: measured.paintSnapshot };
+      }
       if (owned && !owned.isClosed() && !receipt.screenshot) {
         const screenshot = `src01-${kind}-error.png`;
         await owned
@@ -14491,6 +14591,26 @@ async function runSourceImageFailureCases({
             }
           }
         }
+        if (layoutProbe) {
+          try {
+            receipt.lateLayoutCleanup = await layoutProbe.close();
+            assert.deepEqual(receipt.lateLayoutCleanup.errors, []);
+            assert.equal(receipt.lateLayoutCleanup.pendingRoutes, 0);
+            assert(
+              receipt.lateLayoutCleanup.routes.every((route) => !route.installed || route.removed)
+            );
+          } catch (error) {
+            receipt.cleanup.errors.push(safeError(error));
+            failures.push(error);
+          }
+        }
+        await Promise.allSettled([...faultTasks]);
+        if (faultTaskErrors.length) {
+          receipt.cleanup.errors.push(...faultTaskErrors);
+          failures.push(
+            new Error(`Selected fault response task failed: ${faultTaskErrors.join('; ')}`)
+          );
+        }
         if (!receipt.cleanup.routeRemoved) {
           try {
             await owned.unroute(originalUrl, faultRoute);
@@ -14524,6 +14644,9 @@ async function runSourceImageFailureCases({
           pageClosed: true,
           errors: [],
         };
+      }
+      if (lateIndex0) {
+        receipt.layoutImageRequests = qualityRequests.slice(qualityMark);
       }
       if (receipt.cleanup.errors.length) {
         receipt.status = 'failed';
@@ -20578,6 +20701,7 @@ async function runSourceImageFailureFocusedProbe({
   root,
   trace,
   faultRelease,
+  lateIndex0,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -20588,6 +20712,7 @@ async function runSourceImageFailureFocusedProbe({
   root: string;
   trace: boolean;
   faultRelease: 'immediate' | 'after-initial-alignment';
+  lateIndex0: boolean;
 }) {
   const evidence: SourceImageFailureEvidence = { status: 'pending', cases: [] };
   let routes: Awaited<ReturnType<typeof installFixtureRoutes>> | undefined;
@@ -20609,6 +20734,7 @@ async function runSourceImageFailureFocusedProbe({
       qualityRequests: routes.qualityRequests,
       trace,
       faultRelease,
+      lateIndex0,
     });
     assert.deepEqual(routes.unhandledRequests, [], 'Source image fixture left a request unhandled');
     const transport = nativeLoopback.snapshot();
@@ -20854,10 +20980,20 @@ export async function run({
     'Source image fault release selector is unsupported'
   );
   const sourceImageFaultRelease = configuredFaultRelease ?? 'immediate';
+  const sourceImageLateIndex0 = sourceImageSelector?.lateIndex0 === true;
+  assert(
+    sourceImageSelector?.lateIndex0 === undefined || sourceImageLateIndex0,
+    'Late-index0 selector is unsupported'
+  );
+  assert(
+    !sourceImageLateIndex0 || (sourceImageTrace && configuredFaultRelease === undefined),
+    'Late-index0 requires trace without another release discriminator'
+  );
   if (sourceImageSelectorText !== null) {
     assert.deepEqual(sourceImageSelector, {
       scenario: 'source-image-failures',
       ...(sourceImageTrace ? { trace: true } : {}),
+      ...(sourceImageLateIndex0 ? { lateIndex0: true } : {}),
       ...(configuredFaultRelease !== undefined ? { faultRelease: configuredFaultRelease } : {}),
     });
     assert(
@@ -21378,6 +21514,7 @@ export async function run({
           root,
           trace: sourceImageTrace,
           faultRelease: sourceImageFaultRelease,
+          lateIndex0: sourceImageLateIndex0,
         });
       } else if (failedEntryProbe) {
         result.failedEntryRecovery = await runFailedEntryRecoveryProbe({

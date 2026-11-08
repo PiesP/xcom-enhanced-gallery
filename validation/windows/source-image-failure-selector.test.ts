@@ -189,3 +189,29 @@ test('Windows source bundle includes the trace helper and quality fixture', asyn
   assert(manifest.installation.assets.includes('test/e2e/fixtures/installed-gallery-page.html'));
   assert(manifest.assets.includes('validation/windows/inputs'));
 });
+
+test('late-index0 admission keeps trace and release ownership strict', async () => {
+  const { chromium } = installedBrowser();
+  for (const text of [
+    '{"scenario":"source-image-failures","lateIndex0":true}',
+    '{"scenario":"source-image-failures","trace":true,"lateIndex0":true,"faultRelease":"after-initial-alignment"}',
+  ]) {
+    await writeFile(selector, text);
+    await assert.rejects(run(options(chromium)), /Late-index0 requires trace/);
+  }
+  assert.equal(chromium.launchPersistentContext.mock.calls.length, 0);
+  await writeFile(selector, '{"scenario":"source-image-failures","trace":true,"lateIndex0":true}');
+  await assert.rejects(run(options(chromium)), /Selected image failure validation/);
+  const evidence = JSON.parse(
+    await readFile(join(output, 'focused-source-image-failures.json'), 'utf8')
+  );
+  assert.deepEqual(
+    evidence.cases.map((item: { kind: string }) => item.kind),
+    ['404', 'empty', 'corrupt']
+  );
+  assert(
+    evidence.cases.every((item: { error: string }) =>
+      item.error.includes('preserve the retained healthy-image bytes')
+    )
+  );
+});
