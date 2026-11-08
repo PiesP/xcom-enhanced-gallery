@@ -26,6 +26,8 @@ type Tooltip = {
   anchorName: string;
   positionAnchor: string;
   lines: number;
+  fontLineHeight: string;
+  lineBoxes: Array<{ left: number; top: number; width: number; height: number }>;
   rect: { left: number; top: number; right: number; bottom: number; width: number; height: number };
   trigger: { left: number; top: number; right: number; bottom: number };
   hit: boolean;
@@ -143,15 +145,19 @@ async function tooltip(session: FirefoxUiSession, trigger: string): Promise<Tool
     const tip = button?.parentElement?.querySelector('[role="tooltip"]:popover-open');
     if (!(button instanceof HTMLElement) || !(tip instanceof HTMLElement)) throw new Error('Focused tooltip is absent');
     const range = document.createRange(); range.selectNodeContents(tip);
+    const lineBoxes = Array.from(range.getClientRects());
+    const style = getComputedStyle(tip);
     const rect = tip.getBoundingClientRect(), anchor = button.getBoundingClientRect();
     return {
       text: tip.textContent?.trim() ?? '',
-      direction: getComputedStyle(tip).direction,
+      direction: style.direction,
       describedBy: button.getAttribute('aria-describedby')?.split(/\\s+/).includes(tip.id) ?? false,
       inDialog: Boolean(tip.closest('dialog[data-xeg-gallery-container]')),
       anchorName: getComputedStyle(button).getPropertyValue('anchor-name').trim(),
       positionAnchor: getComputedStyle(tip).getPropertyValue('position-anchor').trim(),
-      lines: range.getClientRects().length,
+      lines: lineBoxes.length,
+      fontLineHeight: style.lineHeight,
+      lineBoxes: lineBoxes.map(box => ({ left: box.left, top: box.top, width: box.width, height: box.height })),
       rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height },
       trigger: { left: anchor.left, top: anchor.top, right: anchor.right, bottom: anchor.bottom },
       hit: document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2) === tip,
@@ -236,10 +242,12 @@ export async function runFirefoxNativeUi(
       bodyPosition: string;
       toolbarTransforms: string[];
     };
+    observations.opening = opening;
     assert(
       opening.modal && opening.focusInDialog && opening.hostInert,
       'Firefox native modal focus or inertness failed'
     );
+    assert.equal(opening.initialFocus.tag, 'DIALOG', 'Gallery did not initially focus its dialog');
     assert(
       opening.openingScrollY > 0 && opening.bodyPosition === 'fixed',
       'Host scroll lock did not engage'
@@ -249,19 +257,18 @@ export async function runFirefoxNativeUi(
         opening.toolbarTransforms.every((value) => value === 'none'),
       'Toolbar transform is not neutral'
     );
-    observations.opening = opening;
-
     await firefoxNativeKey(session, '\uE004');
     const tab = await session.evaluateJson(
       "Boolean(document.activeElement?.closest('dialog[data-xeg-gallery-container]'))"
     );
+    observations.keyboardFocus = { tab };
     assert.equal(tab, true, 'Tab escaped native modal');
     await firefoxNativeKey(session, '\uE004', '\uE008');
     const shiftTab = await session.evaluateJson(
       "Boolean(document.activeElement?.closest('dialog[data-xeg-gallery-container]') || document.activeElement === document.body || document.activeElement === document.documentElement)"
     );
-    assert.equal(shiftTab, true, 'Shift+Tab focused background content');
     observations.keyboardFocus = { tab, shiftTab };
+    assert.equal(shiftTab, true, 'Shift+Tab focused background content');
 
     await pointer(session, '#settings-button', false);
     await session.waitFor(
@@ -269,8 +276,8 @@ export async function runFirefoxNativeUi(
       'settings tooltip'
     );
     const wide = await tooltip(session, '#settings-button');
-    assertTooltip(wide, 'scrolled host');
     observations.scrolledTooltip = wide;
+    assertTooltip(wide, 'scrolled host');
     observations.scrolledScreenshot = await screenshot(
       session,
       output,
@@ -282,8 +289,8 @@ export async function runFirefoxNativeUi(
       viewport: { width: 420, height: 600 },
     });
     const resized = await tooltip(session, '#settings-button');
-    assertTooltip(resized, 'resized viewport');
     observations.resizedTooltip = resized;
+    assertTooltip(resized, 'resized viewport');
     await pointer(session, '#settings-button', true);
     await session.waitFor(
       "document.querySelector('#settings-button')?.getAttribute('aria-expanded') === 'true'",
@@ -312,8 +319,14 @@ export async function runFirefoxNativeUi(
       'RTL settings tooltip'
     );
     const rtl = await tooltip(session, '#settings-button');
+    observations.rtl = { language: 'ar', tooltip: rtl };
     assertTooltip(rtl, 'Arabic narrow viewport');
     assert.equal(rtl.direction, 'rtl', 'Arabic tooltip did not inherit RTL');
+    assert(rtl.lines <= 3, 'Arabic tooltip wrapped into too many lines');
+    assert(
+      rtl.rect.width + 1 >= rtl.trigger.right - rtl.trigger.left,
+      'Arabic tooltip is narrower than its trigger'
+    );
     observations.rtl = {
       language: 'ar',
       tooltip: rtl,
