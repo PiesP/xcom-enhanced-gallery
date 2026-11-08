@@ -17751,8 +17751,11 @@ async function runNativeBrowserUiProbe({
       const anchor = document.activeElement;
       const anchorRect = anchor?.getBoundingClientRect();
       const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      const textRange = document.createRange();
+      textRange.selectNodeContents(element);
       return {
         text: element.textContent?.trim() ?? '',
+        textLines: textRange.getClientRects().length,
         rect: rect.toJSON(),
         anchor: anchorRect?.toJSON() ?? null,
         viewport: {
@@ -17770,6 +17773,9 @@ async function runNativeBrowserUiProbe({
       };
     });
     assert(geometry.text, 'Focused tooltip has no text');
+    if (geometry.text === 'Open Settings') {
+      assert.equal(geometry.textLines, 1, 'Short English help must fit on one line');
+    }
     assert(geometry.anchor, 'Focused tooltip has no anchor rectangle');
     assert(geometry.inDialog && geometry.described, 'Focused tooltip lost its modal description');
     assert(geometry.anchorName && geometry.positionAnchor === geometry.anchorName);
