@@ -633,6 +633,12 @@ export async function runFirefoxInstallation({
     JSON.parse(
       await readFile(join(root, 'validation/windows/inputs/native-browser-ui.json'), 'utf8')
     ).scrollbarTakeover === true;
+  const takeoverPreferences = scrollbarTakeover
+    ? {
+        'ui.prefersReducedMotion': 0,
+        'layout.css.scroll-snap.spring-constant': '20.0',
+      }
+    : {};
   await mkdir(output, { recursive: true });
   const source = join(root, 'dist-extension-firefox');
   const fixture = await readFile(
@@ -669,6 +675,7 @@ export async function runFirefoxInstallation({
       activeSuggestion: 'not-run',
     },
     selector,
+    takeoverPreferences,
     scenarios: [],
     live: { status: 'not-requested' },
     cleanup: {},
@@ -711,7 +718,7 @@ export async function runFirefoxInstallation({
       headless,
       acceptInsecureCerts: true,
       preferences: {
-        ...(scrollbarTakeover ? { 'ui.prefersReducedMotion': 0 } : {}),
+        ...takeoverPreferences,
         'browser.download.dir': downloads,
         'browser.download.folderList': 2,
         'browser.download.useDownloadDir': true,
@@ -786,7 +793,7 @@ export async function runFirefoxInstallation({
               return runNativeScrollbarTakeover(
                 {
                   launchCondition:
-                    'ui.prefersReducedMotion=0 in this owned temporary Firefox profile',
+                    'ui.prefersReducedMotion=0; layout.css.scroll-snap.spring-constant="20.0" in this owned temporary Firefox profile',
                   prepareInput: async () => {
                     const viewport = (await session!.evaluateJson(
                       '(() => ({ width: innerWidth, height: innerHeight }))()'

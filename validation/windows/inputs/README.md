@@ -59,10 +59,14 @@ input and does not qualify takeover. Only the optional takeover selector starts
 Chrome with its existing `--enable-smooth-scrolling` setting in the owned
 temporary profile. The receipt records this launch condition, so this controlled
 run is distinct from an unmodified default Chrome session. Firefox's optional
-takeover profile sets its existing `ui.prefersReducedMotion` override to `0`;
-the calibration records the effective media query and actual movement. Ordinary
-Firefox UI runs retain the OS preference. An instant reduced-motion run does not
-qualify an in-flight takeover observation. A visible, isolated
+takeover profile sets `ui.prefersReducedMotion=0` and the CSSOM smooth-scroll
+spring constant `layout.css.scroll-snap.spring-constant="20.0"` (a Firefox float
+preference stored as a string, versus the engine's `250.0` default). This lengthens
+the native animation so the thumb can be captured while moving; it does not
+alter product scrolling calls. The calibration records the effective media query
+and actual movement. Ordinary Firefox UI runs retain the OS preference and
+default spring constant. An instant reduced-motion run does not qualify an
+in-flight takeover observation. A visible, isolated
 native scrollbar control first verifies that the OS pointer bridge can drag a
 thumb to half its track; this control is removed before the product observation.
 For current engines with overlay scrollbars, the bridge hovers over the inside
