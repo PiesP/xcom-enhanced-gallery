@@ -68,6 +68,16 @@ async function deferGalleryImages(page: Page): Promise<DeferredActiveImage> {
   };
 }
 
+async function useStableGalleryImages(page: Page): Promise<void> {
+  await page.route('https://pbs.twimg.com/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'image/svg+xml',
+      body: '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" />',
+    })
+  );
+}
+
 async function setupGalleryPage(page: Page): Promise<void> {
   await page.route('**/*.x.com/**', async (route) => {
     const url = route.request().url();
@@ -345,6 +355,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
   test('navigation commands return to the displayed item after manual scrolling', async ({
     page,
   }) => {
+    await useStableGalleryImages(page);
     await setupGalleryPage(page);
     await openGallery(page, 8);
 
@@ -637,6 +648,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
   });
 
   test('toolbar boundaries follow the item currently focused by scrolling', async ({ page }) => {
+    await useStableGalleryImages(page);
     await setupGalleryPage(page);
     await openGallery(page);
 
