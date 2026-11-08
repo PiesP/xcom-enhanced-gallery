@@ -307,6 +307,20 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
+  test('focused native video control owns Escape while the modal stays open', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const video = page.locator('[data-gallery-element="item"] video').first();
+    await video.focus();
+    await expect(video).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog[data-xeg-gallery-container]')).toBeVisible();
+
+    await video.evaluate((element) => (element as HTMLElement).blur());
+    await closeGallery(page);
+  });
+
   test('Toolbar controls use group semantics and native Tab navigation', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);

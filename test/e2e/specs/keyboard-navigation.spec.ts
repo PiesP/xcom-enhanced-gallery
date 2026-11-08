@@ -769,9 +769,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     expect(itemGeometry.every(({ intrinsicSizeSupported }) => intrinsicSizeSupported)).toBe(true);
   });
 
-  test('Escape leaves focused form and native video controls in their gallery', async ({
-    page,
-  }) => {
+  test('Escape does not close gallery when editing form fields', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
     await page.evaluate(() => {
@@ -783,11 +781,6 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     expect(
       await page.evaluate(() => document.activeElement === document.getElementById('test-textarea'))
     ).toBe(true);
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
-    const video = page.locator('[data-gallery-element="item"] video').first();
-    await video.focus();
-    await expect(video).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-xeg-gallery-container]')).toBeVisible();
   });
