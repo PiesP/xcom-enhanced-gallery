@@ -7,6 +7,7 @@ import { join } from 'node:path';
 
 /** Small input seam shared by the installed Chromium and Firefox transports. */
 export interface NativeScrollbarDriver {
+  readonly launchCondition?: string;
   evaluate(expression: string): Promise<unknown>;
   waitFor(expression: string, description: string, timeoutMs?: number): Promise<void>;
   press(key: 'Home' | 'End'): Promise<void>;
@@ -20,6 +21,56 @@ export interface NativeScrollbarDriver {
 }
 
 const PROBE = '__xegNativeScrollbarTakeover';
+
+/** Isolated fixture scrollport; its animation never substitutes for gallery movement. */
+const CALIBRATE = `(async () => {
+  const gallery = document.querySelector('dialog[data-xeg-gallery-container]');
+  if (!(gallery instanceof HTMLDialogElement)) throw new Error('Calibration requires the gallery');
+  const scroller = document.createElement('div');
+  scroller.setAttribute('aria-hidden', 'true');
+  scroller.style.cssText = 'position:fixed;top:0;left:0;width:24px;height:96px;overflow:auto;scroll-behavior:smooth;pointer-events:none;opacity:.01';
+  const track = document.createElement('div');
+  track.style.cssText = 'position:relative;height:6000px';
+  const target = document.createElement('div');
+  target.style.cssText = 'position:absolute;top:5999px;height:1px';
+  track.append(target);
+  scroller.append(track);
+  gallery.append(scroller);
+  const events = [];
+  for (const name of ['scroll', 'scrollend']) {
+    scroller.addEventListener(name, () => events.push({ event: name, at: performance.now(), top: scroller.scrollTop }));
+  }
+  const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+  const hostBefore = window.scrollY;
+  try {
+    const computedBehavior = getComputedStyle(scroller).scrollBehavior;
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const run = async behavior => {
+      scroller.scrollTo({ top: 0, behavior: 'instant' });
+      await frame();
+      await frame();
+      if (scroller.scrollTop !== 0) throw new Error('Calibration reset did not settle');
+      const start = performance.now();
+      const eventStart = events.length;
+      const positions = [{ at: start, top: scroller.scrollTop }];
+      target.scrollIntoView({ behavior, block: 'end', inline: 'nearest' });
+      for (let count = 0; count < 90 && performance.now() - start < 1200; count++) {
+        await frame();
+        if (scroller.scrollTop !== positions.at(-1).top) {
+          positions.push({ at: performance.now(), top: scroller.scrollTop });
+        }
+      }
+      return { behavior, positions, events: events.slice(eventStart, eventStart + 120),
+        finalTop: scroller.scrollTop };
+    };
+    const auto = await run('auto');
+    const smooth = await run('smooth');
+    return { computedBehavior, reducedMotion, hostBefore, hostAfter: window.scrollY,
+      max: scroller.scrollHeight - scroller.clientHeight, auto, smooth };
+  } finally {
+    scroller.remove();
+  }
+})()`;
 
 /** Fixture-only observation: no product state, wheel, or scroll-position writes. */
 const INSTALL = `(() => {
@@ -98,7 +149,10 @@ const INSTALL = `(() => {
         to: { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
           y: Math.floor(rect.top + items.clientTop + track * 0.4 + length / 2) } };
     },
-    enableSmooth() { items.style.scrollBehavior = 'smooth'; return null; },
+    enableSmooth() { items.style.scrollBehavior = 'smooth';
+      return { inlineBehavior: items.style.scrollBehavior,
+        computedBehavior: getComputedStyle(items).scrollBehavior,
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }; },
     read() { return { naturalBehavior: this.naturalBehavior, programStart: this.programStart,
       dragStart: this.dragStart, pointerHeld: this.pointerHeld, dragMoveStart: this.dragMoveStart,
       dragEnd: this.dragEnd, rows, frames, product, overflow,
@@ -162,6 +216,10 @@ export async function runNativeScrollbarTakeover(
   let failure: unknown;
   let installed = false;
   try {
+    receipt.launchCondition = driver.launchCondition ?? 'browser default';
+    receipt.calibration = await driver.evaluate(CALIBRATE);
+    const calibration = receipt.calibration as { hostBefore: number; hostAfter: number };
+    assert.equal(calibration.hostAfter, calibration.hostBefore, 'Calibration moved the host page');
     viewport = (await driver.evaluate(INSTALL)) as Sample;
     installed = true;
     receipt.phase = 'baseline-navigation';
@@ -172,7 +230,7 @@ export async function runNativeScrollbarTakeover(
       'initial product Home identity and settled position'
     );
     receipt.baseline = await driver.evaluate(`window.${PROBE}.snapshot()`);
-    await driver.evaluate(`window.${PROBE}.enableSmooth()`);
+    receipt.enabledSmoothStyle = await driver.evaluate(`window.${PROBE}.enableSmooth()`);
     await driver.screenshot('native-scrollbar-before.png');
     receipt.phase = 'programmatic-smooth-scroll';
     await driver.evaluate(`window.${PROBE}.mark('programStart')`);

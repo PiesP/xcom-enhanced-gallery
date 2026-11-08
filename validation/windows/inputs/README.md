@@ -51,8 +51,16 @@ Chrome/Edge or temporary-installed Firefox session, use exactly:
 
 This extends the owned tall JPEG to 300×6000 pixels. The probe records the natural
 scroll behavior, then enables smooth behavior only on the fixture scrollport and
-uses real product Home/End input. It requires multiple moving frames, remaining
-distance, and no completion before input, then drags the actual native scrollbar
+uses real product Home/End input. Before that input, an isolated temporary
+scrollport records computed behavior, reduced-motion state, and frame/event
+positions for one `auto` and one explicit `smooth` call. This calibration only
+diagnoses whether that browser session animates; it is removed before product
+input and does not qualify takeover. Only the optional takeover selector starts
+Chrome with its existing `--enable-smooth-scrolling` setting in the owned
+temporary profile. The receipt records this launch condition, so this controlled
+run is distinct from an unmodified default Chrome session. The probe requires
+multiple moving frames, remaining distance, and no completion before input,
+then drags the actual native scrollbar
 gutter while holding the mouse button. It records bounded native events and the
 existing opt-in product alignment/viewport decisions; it never dispatches a
 synthetic scroll event or writes the scroll position. A height-only viewport

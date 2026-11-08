@@ -17716,6 +17716,7 @@ async function runUxDetailsProbe({
 /** Focused installed-extension check for native modal, anchor and scroll completion. */
 async function runNativeBrowserUiProbe({
   context,
+  browserName,
   extensionId,
   nativeLoopback,
   output,
@@ -17725,6 +17726,7 @@ async function runNativeBrowserUiProbe({
   scrollbarTakeover,
 }: {
   context: BrowserContext;
+  browserName: string;
   extensionId: string;
   nativeLoopback: NativeLoopback;
   output: string;
@@ -17996,6 +17998,10 @@ async function runNativeBrowserUiProbe({
     if (scrollbarTakeover) {
       observations.scrollbarTakeover = await runNativeScrollbarTakeover(
         {
+          launchCondition:
+            browserName === 'chrome'
+              ? '--enable-smooth-scrolling in this owned temporary Chrome profile'
+              : 'browser default',
           evaluate: (expression) => page.evaluate(expression),
           waitFor: async (expression, _description, timeoutMs = 5000) => {
             await page.waitForFunction(expression, undefined, { timeout: timeoutMs });
@@ -21818,6 +21824,9 @@ export async function run({
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
+        ...(nativeScrollbarTakeover && browserName === 'chrome'
+          ? ['--enable-smooth-scrolling']
+          : []),
         `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP x.com:443 127.0.0.1:${nativeLoopback.port}`,
         `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`,
       ],
@@ -21953,6 +21962,7 @@ export async function run({
       } else if (nativeUiProbe) {
         result.nativeBrowserUi = await runNativeBrowserUiProbe({
           context,
+          browserName,
           extensionId,
           nativeLoopback,
           output,
