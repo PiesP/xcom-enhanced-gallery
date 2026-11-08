@@ -51,6 +51,7 @@ import { withFilenameCorrelation } from './filename-correlation.ts';
 import { admitReportedLiveFilenameInstall } from './live-filename-target.ts';
 import { flattenUserscriptLiveEvidence } from './userscript-live-output.ts';
 import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
+import { runNativeScrollbarTakeover } from './native-scrollbar-takeover.ts';
 import {
   createControlledVideoSettings,
   decodeStoredValue,
@@ -17716,6 +17717,7 @@ async function runNativeBrowserUiProbe({
   root,
   images,
   displayImages,
+  scrollbarTakeover,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -17724,6 +17726,7 @@ async function runNativeBrowserUiProbe({
   root: string;
   images: ImageFixtures;
   displayImages: ImageFixtures;
+  scrollbarTakeover: boolean;
 }) {
   const experienceImages = await createExperienceImages(context);
   const routes = await installFixtureRoutes(
@@ -17981,6 +17984,40 @@ async function runNativeBrowserUiProbe({
       after,
       nativeScrollEnds: await items.getAttribute('data-native-scroll-ends'),
     };
+
+    if (scrollbarTakeover) {
+      observations.scrollbarTakeover = await runNativeScrollbarTakeover(
+        {
+          evaluate: (expression) => page.evaluate(expression),
+          waitFor: async (expression, _description, timeoutMs = 5000) => {
+            await page.waitForFunction(expression, undefined, { timeout: timeoutMs });
+          },
+          press: (key) => page.keyboard.press(key),
+          drag: async (from, to, afterDown) => {
+            await page.mouse.move(from.x, from.y);
+            await page.mouse.down();
+            try {
+              await afterDown();
+              for (let step = 1; step <= 10; step += 1) {
+                await page.mouse.move(
+                  from.x + ((to.x - from.x) * step) / 10,
+                  from.y + ((to.y - from.y) * step) / 10
+                );
+                // A held native gesture, rather than instantaneous position injection.
+                await page.waitForTimeout(35);
+              }
+            } finally {
+              await page.mouse.up();
+            }
+          },
+          resize: (width, height) => page.setViewportSize({ width, height }),
+          screenshot: async (filename) => {
+            await page.screenshot({ path: join(output, filename) });
+          },
+        },
+        output
+      );
+    }
 
     await page.keyboard.press('Escape');
     await gallery.waitFor({ state: 'detached' });
@@ -21552,8 +21589,18 @@ export async function run({
     throw failure;
   });
   const nativeUiProbe = nativeUiSelectorText !== null;
+  let nativeScrollbarTakeover = false;
   if (nativeUiSelectorText !== null) {
-    assert.deepEqual(JSON.parse(nativeUiSelectorText), { scenario: 'native-browser-ui' });
+    const selector: unknown = JSON.parse(nativeUiSelectorText);
+    nativeScrollbarTakeover =
+      typeof selector === 'object' &&
+      selector !== null &&
+      'scrollbarTakeover' in selector &&
+      selector.scrollbarTakeover === true;
+    assert.deepEqual(selector, {
+      scenario: 'native-browser-ui',
+      ...(nativeScrollbarTakeover ? { scrollbarTakeover: true } : {}),
+    });
     assert.equal(installation, 'extension', 'Native UI probe requires the installed extension');
     assert.equal(liveUrls.length, 0, 'Native UI probe uses only the owned fixture');
     assert.equal(liveObservation, null);
@@ -21904,6 +21951,7 @@ export async function run({
           root,
           images,
           displayImages,
+          scrollbarTakeover: nativeScrollbarTakeover,
         });
       } else if (experienceProbe) {
         result.galleryExperience = await runGalleryExperienceProbe({
