@@ -50,8 +50,23 @@ public static class XegScrollbarInput {
     public static IntPtr Foreground() { return GetForegroundWindow(); }
     public static bool Focus(IntPtr handle) { return SetForegroundWindow(handle); }
     public static POINT Cursor() { POINT point; if (!GetCursorPos(out point)) throw new InvalidOperationException("GetCursorPos failed"); return point; }
-    public static void Move(int x, int y) { if (!SetCursorPos(x, y)) throw new InvalidOperationException("SetCursorPos failed"); }
+    public static void RestoreCursor(int x, int y) { if (!SetCursorPos(x, y)) throw new InvalidOperationException("SetCursorPos failed"); }
     public static int Metric(int index) { return GetSystemMetrics(index); }
+    public static void Move(int x, int y) {
+        var left = Metric(76);
+        var top = Metric(77);
+        var width = Metric(78);
+        var height = Metric(79);
+        if (width <= 0 || height <= 0 || (long)x < left || (long)x >= (long)left + width ||
+            (long)y < top || (long)y >= (long)top + height) {
+            throw new InvalidOperationException("Native pointer target is outside the physical virtual desktop");
+        }
+        var absoluteX = Math.Min(65535, (int)Math.Floor(((double)x - left + 0.5) * 65536 / width));
+        var absoluteY = Math.Min(65535, (int)Math.Floor(((double)y - top + 0.5) * 65536 / height));
+        var input = new INPUT[] { new INPUT { type = 0, mouse = new MOUSEINPUT {
+            dx = absoluteX, dy = absoluteY, flags = 0x0001u | 0x8000u | 0x4000u } } };
+        if (SendInput(1, input, Marshal.SizeOf(typeof(INPUT))) != 1) throw new InvalidOperationException("SendInput mouse move failed");
+    }
     public static void Button(bool down) {
         var input = new INPUT[] { new INPUT { type = 0, mouse = new MOUSEINPUT { flags = down ? 0x0002u : 0x0004u } } };
         if (SendInput(1, input, Marshal.SizeOf(typeof(INPUT))) != 1) throw new InvalidOperationException("SendInput failed");
@@ -182,7 +197,7 @@ try {
         if ($buttonDown) { [XegScrollbarInput]::Button($false) }
     } finally {
         try {
-            [XegScrollbarInput]::Move($previousCursor.X, $previousCursor.Y)
+            [XegScrollbarInput]::RestoreCursor($previousCursor.X, $previousCursor.Y)
         } finally {
             if ($previousForeground -ne [IntPtr]::Zero -and $previousForeground -ne $window.Handle) {
                 [void][XegScrollbarInput]::Focus($previousForeground)

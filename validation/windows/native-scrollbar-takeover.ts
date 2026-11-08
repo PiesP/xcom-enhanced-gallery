@@ -85,7 +85,7 @@ const INSTALL = `(() => {
   const prior = { behavior: items.style.scrollBehavior,
     marker: document.documentElement.getAttribute('data-xeg-scroll-trace') };
   const rows = [], frames = [], product = [];
-  let overflow = false, stopped = false, raf = 0, lastTop = null;
+  let overflow = false, stopped = false, raf = 0, lastTop = null, heldMoves = 0;
   const started = performance.now();
   const snapshot = () => {
     const rect = items.getBoundingClientRect();
@@ -110,11 +110,18 @@ const INSTALL = `(() => {
   const append = (list, row, cap) => {
     if (list.length < cap) list.push(row); else overflow = true;
   };
-  const event = e => append(rows, { event: e.type, trusted: e.isTrusted,
-    targetTag: e.target?.tagName ?? null,
-    targetGalleryElement: e.target?.closest?.('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
-    clientX: e.clientX ?? null, clientY: e.clientY ?? null,
-    dialogOpen: gallery.open, ...snapshot() }, 256);
+  const event = e => {
+    if (e.type === 'pointermove' || e.type === 'mousemove') {
+      if (!probe.pointerHeld || probe.dragEnd || heldMoves >= 20) return;
+      heldMoves++;
+    }
+    append(rows, { event: e.type, trusted: e.isTrusted,
+      targetTag: e.target?.tagName ?? null,
+      targetGalleryElement: e.target?.closest?.('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
+      clientX: e.clientX ?? null, clientY: e.clientY ?? null,
+      buttons: e.buttons ?? null, defaultPrevented: e.defaultPrevented ?? null,
+      dialogOpen: gallery.open, ...snapshot() }, 256);
+  };
   const trace = e => {
     try { append(product, JSON.parse(e.detail), 128); }
     catch { overflow = true; }
@@ -122,7 +129,7 @@ const INSTALL = `(() => {
   for (const name of ['scroll', 'scrollend', 'wheel']) {
     items.addEventListener(name, event, { capture: true, passive: true });
   }
-  for (const name of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click']) {
+  for (const name of ['pointerdown', 'pointerup', 'pointermove', 'mousedown', 'mouseup', 'mousemove', 'click']) {
     gallery.addEventListener(name, event, { capture: true, passive: true });
   }
   window.addEventListener('xeg:gallery-scroll-trace', trace);
@@ -181,7 +188,7 @@ const INSTALL = `(() => {
       for (const name of ['scroll', 'scrollend', 'wheel']) {
         items.removeEventListener(name, event, true);
       }
-      for (const name of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click']) {
+      for (const name of ['pointerdown', 'pointerup', 'pointermove', 'mousedown', 'mouseup', 'mousemove', 'click']) {
         gallery.removeEventListener(name, event, true);
       }
       window.removeEventListener('xeg:gallery-scroll-trace', trace);
