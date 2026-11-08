@@ -303,8 +303,8 @@ export async function runFirefoxNativeUi(
     const settingsTransform = await session.evaluateJson(
       "getComputedStyle(document.querySelector('#toolbar-settings-panel')).transform"
     );
-    assert.equal(settingsTransform, 'none', 'Settings panel transform is not neutral');
     observations.settingsTransform = settingsTransform;
+    assert.equal(settingsTransform, 'none', 'Settings panel transform is not neutral');
 
     await pointer(session, '#settings-language-select', true);
     await firefoxNativeKey(session, '\uE010'); // End selects Arabic, the final native option.
@@ -324,6 +324,69 @@ export async function runFirefoxNativeUi(
     );
     const rtl = await tooltip(session, '#settings-button');
     observations.rtl = { language: 'ar', tooltip: rtl };
+    if (
+      rtl.horizontalGap > 12 ||
+      rtl.rect.left < -1 ||
+      rtl.rect.right > rtl.viewport.width + 1 ||
+      rtl.rect.top < -1 ||
+      rtl.rect.bottom > rtl.viewport.height + 1
+    ) {
+      try {
+        observations.rtlDiagnostic = await session.evaluateJson(`(() => {
+          const button = document.querySelector('#settings-button');
+          const tip = button?.parentElement?.querySelector('[role="tooltip"]:popover-open');
+          const toolbar = button?.closest('[data-gallery-element="toolbar"]');
+          const wrapper = toolbar?.parentElement;
+          if (!(button instanceof HTMLElement) || !(tip instanceof HTMLElement) || !(wrapper instanceof HTMLElement)) {
+            throw new Error('RTL diagnostic elements are missing');
+          }
+          const measure = () => {
+            const rect = tip.getBoundingClientRect(), anchor = button.getBoundingClientRect();
+            const tipStyle = getComputedStyle(tip), wrapperStyle = getComputedStyle(wrapper);
+            return {
+              tip: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom },
+              anchor: { left: anchor.left, top: anchor.top, right: anchor.right, bottom: anchor.bottom },
+              horizontalGap: Math.max(anchor.left - rect.right, rect.left - anchor.right, 0),
+              tipStyle: { direction: tipStyle.direction, positionArea: tipStyle.getPropertyValue('position-area'), justifySelf: tipStyle.justifySelf, positionTryFallbacks: tipStyle.getPropertyValue('position-try-fallbacks'), transform: tipStyle.transform },
+              wrapperStyle: { willChange: wrapperStyle.willChange, contain: wrapperStyle.contain, transform: wrapperStyle.transform },
+            };
+          };
+          const ancestors = [];
+          for (let element = button; element && ancestors.length < 10; element = element.parentElement) {
+            const style = getComputedStyle(element), rect = element.getBoundingClientRect();
+            ancestors.push({ tag: element.tagName, className: String(element.className).slice(0, 120), direction: style.direction, position: style.position, willChange: style.willChange, contain: style.contain, transform: style.transform, rect: { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom } });
+            if (element.matches('dialog[data-xeg-gallery-container]')) break;
+          }
+          const baseline = measure();
+          const inlineBefore = { wrapper: wrapper.style.cssText, tip: tip.style.cssText };
+          const variations = [];
+          const variation = (name, changes) => {
+            const original = changes.map(({ element, property }) => ({ element, property, value: element.style.getPropertyValue(property), priority: element.style.getPropertyPriority(property) }));
+            try {
+              for (const { element, property, value } of changes) element.style.setProperty(property, value);
+              variations.push({ name, measured: measure() });
+            } finally {
+              for (const { element, property, value, priority } of original) {
+                if (value) element.style.setProperty(property, value, priority);
+                else element.style.removeProperty(property);
+              }
+            }
+          };
+          variation('wrapper-will-change-auto', [{ element: wrapper, property: 'will-change', value: 'auto' }]);
+          variation('wrapper-contain-none', [{ element: wrapper, property: 'contain', value: 'none' }]);
+          variation('wrapper-combined', [{ element: wrapper, property: 'will-change', value: 'auto' }, { element: wrapper, property: 'contain', value: 'none' }]);
+          variation('tooltip-anchor-center', [{ element: tip, property: 'justify-self', value: 'anchor-center' }]);
+          variation('tooltip-ltr', [{ element: tip, property: 'direction', value: 'ltr' }]);
+          variation('tooltip-y-end', [{ element: tip, property: 'position-area', value: 'y-end span-all' }]);
+          const restored = measure();
+          const inlineAfter = { wrapper: wrapper.style.cssText, tip: tip.style.cssText };
+          return { baseline, ancestors, variations, restored, inlineRestored: inlineBefore.wrapper === inlineAfter.wrapper && inlineBefore.tip === inlineAfter.tip };
+        })()`);
+      } catch (error) {
+        observations.rtlDiagnosticError =
+          error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+      }
+    }
     assertTooltip(rtl, 'Arabic narrow viewport');
     assert.equal(rtl.direction, 'rtl', 'Arabic tooltip did not inherit RTL');
     assert(rtl.lines <= 3, 'Arabic tooltip wrapped into too many lines');
@@ -360,11 +423,11 @@ export async function runFirefoxNativeUi(
       'gallery Escape'
     );
     const closed = await host(session);
+    observations.closed = closed;
     assert.equal(closed.scrollY, opening.openingScrollY, 'Host scroll position was not restored');
     assert.equal(closed.bodyStyle, '', 'Host body inline state was not restored');
     assert.equal(closed.scrollRestoration, 'auto', 'History scroll restoration was not restored');
     assert(closed.opener, 'Native dialog did not restore opener focus');
-    observations.closed = closed;
 
     await pointer(session, '[data-testid="tweetPhoto"] img', true);
     await session.waitFor(
