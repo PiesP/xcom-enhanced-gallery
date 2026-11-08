@@ -49,10 +49,9 @@ export async function handleMediaClick(
     return;
   }
 
-  // Gallery is open — close on outside click (defensive: the fixed overlay covers
-  // the viewport, so this fires only if an element behind the overlay receives a
-  // click via higher z-index or click-through. The primary close mechanism for
-  // gallery background clicks is handleBackgroundClick in the bubble phase.)
+  // The native modal owns gallery input and makes the host page inert. Reject
+  // its media here; retain the outside-target guard for event routing that
+  // precedes modal presentation. handleBackgroundClick owns gallery background clicks.
   if (gallerySignals.isOpen) {
     if (isGalleryInternalElement(target)) {
       return;
