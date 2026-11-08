@@ -18090,6 +18090,10 @@ async function runNativeBrowserUiProbe({
               await scrollPage.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
               await scrollPage.mouse.wheel(0, deltaY);
             },
+            hover: async (at) => {
+              assert(nativePointer, 'Native pointer bridge was not prepared');
+              await nativePointer.hover(at);
+            },
             drag: async (from, to, afterDown) => {
               assert(nativePointer, 'Native pointer bridge was not prepared');
               await nativePointer.drag(from, to, afterDown);

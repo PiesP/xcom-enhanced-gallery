@@ -13,6 +13,7 @@ export interface NativeScrollbarDriver {
   waitFor(expression: string, description: string, timeoutMs?: number): Promise<void>;
   press(key: 'Home' | 'End'): Promise<void>;
   wheel(deltaY: number): Promise<void>;
+  hover(at: { x: number; y: number }): Promise<void>;
   drag(
     from: { x: number; y: number },
     to: { x: number; y: number },
@@ -51,14 +52,20 @@ const INSTALL_CONTROL = `(() => {
     events: events.slice(), connected: scroller.isConnected });
   const rect = scroller.getBoundingClientRect();
   const gutter = scroller.offsetWidth - scroller.clientWidth;
+  const direction = getComputedStyle(scroller).direction;
+  const overlay = gutter === 0;
   const length = Math.max(20, scroller.clientHeight * scroller.clientHeight / scroller.scrollHeight);
   const track = scroller.clientHeight - length;
-  const from = { x: Math.floor(rect.left + scroller.clientLeft + scroller.clientWidth + gutter / 2),
+  const edgeX = direction === 'rtl'
+    ? Math.floor(rect.left + (overlay ? 1 : gutter / 2))
+    : overlay ? Math.floor(rect.right - 1)
+      : Math.floor(rect.left + scroller.clientLeft + scroller.clientWidth + gutter / 2);
+  const from = { x: edgeX,
     y: Math.floor(rect.top + scroller.clientTop + length / 2) };
   const to = { x: from.x, y: Math.floor(rect.top + scroller.clientTop + track * 0.5 + length / 2) };
   const hit = document.elementFromPoint(from.x, from.y);
   window.${CONTROL} = { read, stop() { scroller.remove(); delete window.${CONTROL}; } };
-  return { ...read(), gutter, from, to, hitTag: hit?.tagName ?? null,
+  return { ...read(), gutter, overlay, direction, from, to, hitTag: hit?.tagName ?? null,
     hitControl: hit === scroller };
 })()`;
 
@@ -190,18 +197,24 @@ const INSTALL = `(() => {
       const rect = items.getBoundingClientRect();
       const max = items.scrollHeight - items.clientHeight;
       const gutter = items.offsetWidth - items.clientWidth;
+      const direction = getComputedStyle(items).direction;
+      const overlay = gutter === 0;
       const length = Math.max(20, items.clientHeight * items.clientHeight / items.scrollHeight);
       const track = items.clientHeight - length;
       const media = items.querySelectorAll('[data-gallery-element="item"]');
       const last = media.item(media.length - 1)?.getBoundingClientRect();
       const clearance = parseFloat(getComputedStyle(items).scrollPaddingBlockStart) || 0;
       const target = last ? Math.min(max, items.scrollTop + last.top - rect.top - clearance) : max;
-      const from = { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
+      const edgeX = direction === 'rtl'
+        ? Math.floor(rect.left + (overlay ? 1 : gutter / 2))
+        : overlay ? Math.floor(rect.right - 1)
+          : Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2);
+      const from = { x: edgeX,
         y: Math.floor(rect.top + items.clientTop + track * items.scrollTop / max + length / 2) };
       const hit = document.elementFromPoint(from.x, from.y);
       const hoverZone = gallery.querySelector('[data-gallery-element="toolbar-hover-zone"]');
       const hoverRect = hoverZone?.getBoundingClientRect();
-      return { gutter, max, target, top: items.scrollTop, scrollbarWidth: getComputedStyle(items).scrollbarWidth,
+      return { gutter, overlay, direction, max, target, top: items.scrollTop, scrollbarWidth: getComputedStyle(items).scrollbarWidth,
         scrollendsBeforeInput: rows.filter(row => row.event === 'scrollend' && row.at >= this.programStart).length,
         from, fromHit: { tag: hit?.tagName ?? null,
           galleryElement: hit?.closest?.('[data-gallery-element]')?.getAttribute('data-gallery-element') ?? null,
@@ -209,7 +222,7 @@ const INSTALL = `(() => {
           hoverZone: !!hoverZone?.contains(hit) },
         hoverZone: hoverRect ? { top: hoverRect.top, bottom: hoverRect.bottom,
           pointerEvents: getComputedStyle(hoverZone).pointerEvents } : null,
-        to: { x: Math.floor(rect.left + items.clientLeft + items.clientWidth + gutter / 2),
+        to: { x: edgeX,
           y: Math.floor(rect.top + items.clientTop + track * 0.4 + length / 2) } };
     },
     enableSmooth() { items.style.scrollBehavior = 'smooth';
@@ -283,6 +296,7 @@ export async function runNativeScrollbarTakeover(
   let viewport: Sample | undefined;
   let failure: unknown;
   let installed = false;
+  let nativeOverlayControlProven = false;
   let preparedInput: { mapping: Record<string, unknown>; close: () => Promise<void> } | undefined;
   try {
     receipt.launchCondition = driver.launchCondition ?? 'browser default';
@@ -295,13 +309,18 @@ export async function runNativeScrollbarTakeover(
         top: number;
         max: number;
         gutter: number;
+        overlay: boolean;
         from: { x: number; y: number };
         to: { x: number; y: number };
         hitControl: boolean;
       };
       receipt.nativeControlBefore = control;
-      assert(control.gutter > 0 && control.hitControl, 'Native control scrollbar is not exposed');
+      assert(
+        control.gutter >= 0 && control.hitControl,
+        'Native control scrollbar edge is obscured'
+      );
       assert(control.max > 1000, 'Native control is too short');
+      await driver.hover(control.from);
       await driver.screenshot('native-scrollbar-control-before.png');
       await driver.drag(control.from, control.to, async () => {});
       await driver.waitFor(
@@ -311,6 +330,7 @@ export async function runNativeScrollbarTakeover(
         1200
       );
       receipt.nativeControlAfter = await driver.evaluate(`window.${CONTROL}.read()`);
+      nativeOverlayControlProven = control.overlay;
     } finally {
       try {
         receipt.nativeControlFinal = await driver.evaluate(`window.${CONTROL}?.read() ?? null`);
@@ -370,6 +390,11 @@ export async function runNativeScrollbarTakeover(
     );
     assert.equal(baseline.current, '0', 'Baseline wheel changed the selected media');
     receipt.enabledSmoothStyle = await driver.evaluate(`window.${PROBE}.enableSmooth()`);
+    const baselineGeometry = (await driver.evaluate(`window.${PROBE}.geometry()`)) as {
+      from: { x: number; y: number };
+    };
+    await driver.hover(baselineGeometry.from);
+    receipt.baselineScrollbarHover = baselineGeometry.from;
     await driver.screenshot('native-scrollbar-before.png');
     receipt.phase = 'programmatic-smooth-scroll';
     await driver.evaluate(`window.${PROBE}.mark('programStart')`);
@@ -381,6 +406,8 @@ export async function runNativeScrollbarTakeover(
     );
     const geometry = (await driver.evaluate(`window.${PROBE}.geometry()`)) as {
       gutter: number;
+      overlay: boolean;
+      direction: string;
       max: number;
       target: number;
       top: number;
@@ -396,7 +423,10 @@ export async function runNativeScrollbarTakeover(
       to: { x: number; y: number };
     };
     receipt.dragGeometry = geometry;
-    assert(geometry.gutter > 0, 'No exposed native scrollbar gutter');
+    assert(
+      geometry.gutter > 0 || (geometry.overlay && nativeOverlayControlProven),
+      'No proven native scrollbar gutter or overlay edge'
+    );
     assert(geometry.max > 1000, 'Fixture does not provide a sufficiently long scroll');
     assert(geometry.target - geometry.top > 300, 'Programmatic scroll finished before takeover');
     assert(

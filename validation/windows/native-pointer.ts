@@ -35,6 +35,7 @@ export async function prepareNativeScrollbarPointer(
   image: BrowserImage
 ): Promise<{
   mapping: Record<string, unknown>;
+  hover: (at: Point) => Promise<void>;
   drag: (from: Point, to: Point, afterDown: () => Promise<void>) => Promise<void>;
   close: () => Promise<void>;
 }> {
@@ -232,6 +233,10 @@ export async function prepareNativeScrollbarPointer(
         documentPhysical: bounds,
         desktopPhysical: desktop,
         viewportCss: viewport,
+      },
+      hover: async (at) => {
+        await command({ command: 'move', ...point(at) });
+        await delay(200);
       },
       drag: async (from, to, afterDown) => {
         const start = point(from);

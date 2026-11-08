@@ -58,13 +58,18 @@ diagnoses whether that browser session animates; it is removed before product
 input and does not qualify takeover. Only the optional takeover selector starts
 Chrome with its existing `--enable-smooth-scrolling` setting in the owned
 temporary profile. The receipt records this launch condition, so this controlled
-run is distinct from an unmodified default Chrome session. The probe requires
-one real wheel input to place the native thumb below the gallery's toolbar hover
+run is distinct from an unmodified default Chrome session. A visible, isolated
+native scrollbar control first verifies that the OS pointer bridge can drag a
+thumb to half its track; this control is removed before the product observation.
+For current engines with overlay scrollbars, the bridge hovers over the inside
+edge before pressing the thumb and records the zero layout gutter. The probe
+requires one real wheel input to place the native thumb below the gallery's toolbar hover
 strip before programmatic navigation. That wheel is outside the takeover interval.
 The probe requires two distinct moving frames after End, remaining distance,
 an exposed scrollport hit target, and no completion before input,
 then uses a task-owned, DPI-aware Windows input helper to drag the actual native
-scrollbar gutter while holding the mouse button. The helper requires a unique
+scrollbar gutter or exposed overlay edge while holding the mouse button. The
+helper requires a unique
 owned browser window, one visible UI Automation document, and agreement between
 the document's physical rectangle and the native CSS viewport at the browser's
 reported pixel ratio. The optional Chromium route uses a separate fixture tab

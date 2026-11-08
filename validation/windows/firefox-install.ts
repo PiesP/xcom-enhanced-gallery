@@ -857,6 +857,10 @@ export async function runFirefoxInstallation({
                       await session!.command('input.releaseActions', { context: session!.context });
                     }
                   },
+                  hover: async (at) => {
+                    assert(nativePointer, 'Native pointer bridge was not prepared');
+                    await nativePointer.hover(at);
+                  },
                   drag: async (from, to, afterDown) => {
                     assert(nativePointer, 'Native pointer bridge was not prepared');
                     await nativePointer.drag(from, to, afterDown);
