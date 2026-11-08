@@ -216,6 +216,7 @@ export async function runFirefoxNativeUi(
     await session.evaluateJson(`(() => { window.scrollTo(0, 600); history.scrollRestoration = 'auto';
       const opener = document.querySelector('[data-testid="tweetPhoto"] img');
       opener?.addEventListener('pointerdown', () => { opener.dataset.openingScrollY = String(Math.round(scrollY)); }, { once: true, capture: true });
+      return true;
     })()`);
     await pointer(session, '[data-testid="tweetPhoto"] img', true);
     await session.waitFor(
