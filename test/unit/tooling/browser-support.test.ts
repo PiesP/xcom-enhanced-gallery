@@ -13,10 +13,10 @@ const root = resolve(import.meta.dirname, '../../..');
 describe('userscript browser support', () => {
   it('uses one compatibility contract for metadata and build targets', () => {
     expect(USERSCRIPT_BROWSER_SUPPORT).toEqual({
-      chrome: '123',
-      edge: '123',
-      firefox: '128',
-      safari: '17.5',
+      chrome: '157',
+      edge: '157',
+      firefox: '159',
+      safari: '27.2',
     });
     expect(USERSCRIPT_CONFIG.compatible).toBe(USERSCRIPT_BROWSER_SUPPORT);
 

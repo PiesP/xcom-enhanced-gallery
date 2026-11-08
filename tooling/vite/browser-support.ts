@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-/** Minimum browser versions advertised by the userscript metadata and documentation. */
+/** Current stable engine baseline for the native gallery dialog and CSS anchors (2026-11). */
 export const USERSCRIPT_BROWSER_SUPPORT = {
-  chrome: '123',
-  edge: '123',
-  firefox: '128',
-  safari: '17.5',
+  chrome: '157',
+  edge: '157',
+  firefox: '159',
+  safari: '27.2',
 } as const;
 
-/** Vite compilation targets corresponding to the advertised userscript support floor. */
-export const USERSCRIPT_BUILD_TARGETS = ['chrome123', 'firefox128', 'safari17.5'] as const;
+/** Syntax targets align with the selected engines; runtime APIs need separate browser checks. */
+export const USERSCRIPT_BUILD_TARGETS = ['chrome157', 'firefox159', 'safari27.2'] as const;

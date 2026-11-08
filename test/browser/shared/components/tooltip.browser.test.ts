@@ -6,140 +6,88 @@ import { createComponent } from 'solid-js';
 import { render } from 'solid-js/web';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
-describe('Tooltip accessibility', () => {
+describe('Tooltip accessibility and native presentation', () => {
   afterEach(() => {
     vi.useRealTimers();
-    document.body.innerHTML = '';
+    document.body.replaceChildren();
   });
 
-  it('describes the actual focusable trigger and dismisses on Escape', () => {
+  it('shows a described manual popover inside its theme scope and restores the trigger', () => {
     vi.useFakeTimers();
-    const container = document.createElement('div');
+    const scope = document.createElement('div');
+    scope.className = 'xeg-theme-scope pp-design';
+    scope.dataset.ppTheme = 'dark';
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = 'Open';
-    document.body.appendChild(container);
+    button.setAttribute('aria-describedby', 'prior-description');
+    document.body.append(scope);
     const dispose = render(
       () =>
         createComponent(Tooltip, {
           content: 'Helpful information',
           showDelay: 0,
           hideDelay: 0,
-          children: button,
-        }),
-      container
-    );
-
-    button.focus();
-    vi.runAllTimers();
-
-    const describedBy = button.getAttribute('aria-describedby');
-    expect(describedBy).toBeTruthy();
-    expect(button.parentElement?.hasAttribute('aria-describedby')).toBe(false);
-    expect(document.getElementById(describedBy!)?.getAttribute('role')).toBe('tooltip');
-
-    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    expect(button.hasAttribute('aria-describedby')).toBe(false);
-    expect(document.getElementById(describedBy!)).toBeNull();
-
-    dispose();
-  });
-
-  it('renders in a body-level portal host that mirrors the gallery theme scope', async () => {
-    vi.useFakeTimers();
-    const scope = document.createElement('div');
-    scope.className = 'xeg-theme-scope pp-design';
-    scope.dataset.ppProduct = 'xeg';
-    scope.dataset.ppTheme = 'dark';
-    scope.dataset.theme = 'dark';
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = 'Open';
-    document.body.appendChild(scope);
-    const dispose = render(
-      () =>
-        createComponent(Tooltip, {
-          content: 'Scoped information',
-          showDelay: 0,
           children: button,
         }),
       scope
     );
 
-    button.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    button.focus();
     vi.runAllTimers();
+    const tooltip = scope.querySelector<HTMLElement>('[role="tooltip"]');
+    expect(tooltip?.matches(':popover-open')).toBe(true);
+    expect(tooltip?.closest('.xeg-theme-scope')).toBe(scope);
+    expect(tooltip?.parentElement).not.toBe(document.body);
+    expect(button.getAttribute('aria-describedby')).toContain(tooltip!.id);
+    expect(button.style.getPropertyValue('anchor-name')).toMatch(/^--xeg-tooltip-/);
+    expect(getComputedStyle(tooltip!).positionAnchor).toBe(
+      button.style.getPropertyValue('anchor-name')
+    );
 
-    const tooltip = document.querySelector('[role="tooltip"]');
-    const portalHost = document.querySelector('[data-xeg-tooltip-portal]');
-    expect(tooltip).not.toBeNull();
-    expect(portalHost?.parentElement).toBe(document.body);
-    expect(portalHost).not.toBe(scope);
-    expect(portalHost?.className).toBe('xeg-theme-scope pp-design');
-    expect(portalHost?.getAttribute('data-pp-product')).toBe('xeg');
-    expect(portalHost?.getAttribute('data-pp-theme')).toBe('dark');
-    expect(portalHost?.getAttribute('data-theme')).toBe('dark');
-    expect(tooltip?.closest('[data-xeg-tooltip-portal]')).toBe(portalHost);
-
-    scope.dataset.ppTheme = 'light';
-    scope.dataset.theme = 'light';
-    await Promise.resolve();
-    expect(portalHost?.getAttribute('data-pp-theme')).toBe('light');
-    expect(portalHost?.getAttribute('data-theme')).toBe('light');
-
+    button.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(tooltip?.matches(':popover-open')).toBe(false);
+    expect(button.getAttribute('aria-describedby')).toBe('prior-description');
+    expect(button.style.getPropertyValue('anchor-name')).toBe('');
     dispose();
-    expect(document.querySelector('[data-xeg-tooltip-portal]')).toBeNull();
   });
 
-  it('shows immediately on keyboard focus while preserving the pointer delay', () => {
+  it('preserves delayed hover, immediate focus, and movement into the tooltip', () => {
     vi.useFakeTimers();
-    const container = document.createElement('div');
+    const scope = document.createElement('div');
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = 'Open';
-    document.body.appendChild(container);
+    document.body.append(scope);
     const dispose = render(
       () =>
         createComponent(Tooltip, {
-          content: 'Helpful information',
+          content: 'Scoped information',
           showDelay: 300,
-          hideDelay: 0,
+          hideDelay: 100,
           children: button,
         }),
-      container
+      scope
     );
+    const tooltip = scope.querySelector<HTMLElement>('[role="tooltip"]')!;
 
     button.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
     vi.advanceTimersByTime(299);
-    expect(document.querySelector('[role="tooltip"]')).toBeNull();
+    expect(tooltip.matches(':popover-open')).toBe(false);
     vi.advanceTimersByTime(1);
-    expect(document.querySelector('[role="tooltip"]')).not.toBeNull();
+    expect(tooltip.matches(':popover-open')).toBe(true);
 
     button.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
-    vi.runAllTimers();
-    expect(document.querySelector('[role="tooltip"]')).toBeNull();
+    tooltip.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    vi.advanceTimersByTime(100);
+    expect(tooltip.matches(':popover-open')).toBe(true);
+    tooltip.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+    vi.advanceTimersByTime(100);
+    expect(tooltip.matches(':popover-open')).toBe(false);
 
+    button.focus();
+    vi.advanceTimersByTime(0);
+    expect(tooltip.matches(':popover-open')).toBe(true);
     dispose();
-    container.remove();
-
-    const focusContainer = document.createElement('div');
-    const focusButton = document.createElement('button');
-    focusButton.type = 'button';
-    focusButton.textContent = 'Open';
-    document.body.appendChild(focusContainer);
-    const disposeFocusTooltip = render(
-      () =>
-        createComponent(Tooltip, {
-          content: 'Helpful information',
-          showDelay: 300,
-          children: focusButton,
-        }),
-      focusContainer
-    );
-
-    focusButton.focus();
-    vi.advanceTimersByTime(16);
-    expect(document.querySelector('[role="tooltip"]')).not.toBeNull();
-
-    disposeFocusTooltip();
+    expect(scope.querySelector('[role="tooltip"]')).toBeNull();
   });
 });

@@ -1,89 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-/**
- * @fileoverview Tooltip component with intelligent positioning.
- *
- * Renders a custom tooltip on hover/focus via a body-level, theme-scoped Portal host.
- * Supports auto-flip between top/bottom placement, configurable delay,
- * and full accessibility (aria-describedby, role="tooltip").
- *
- * @module shared/components/ui/Tooltip/Tooltip
- */
-
 import { TOOLTIP_HIDE_DELAY_MS, TOOLTIP_SHOW_DELAY_MS } from '@constants/performance';
-import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
-import { createMemo, createSignal, createUniqueId, onCleanup, splitProps } from 'solid-js';
-import { Portal } from 'solid-js/web';
+import { createUniqueId, onCleanup, splitProps } from 'solid-js';
 import styles from './Tooltip.module.css';
-import type { TooltipPlacement, TooltipPosition, TooltipProps } from './Tooltip.types';
+import type { TooltipProps } from './Tooltip.types';
 
-/** Default show delay (ms) — short enough to feel responsive, long enough to not flicker */
-const DEFAULT_SHOW_DELAY = TOOLTIP_SHOW_DELAY_MS;
-/** Default hide delay (ms) — prevents flicker when moving between adjacent tooltip targets */
-const DEFAULT_HIDE_DELAY = TOOLTIP_HIDE_DELAY_MS;
-/** Gap between tooltip and trigger element (px) */
-const DEFAULT_OFFSET = 6;
-/** Minimum distance from viewport edge (px) */
-const VIEWPORT_PADDING = 8;
-
-/**
- * Compute tooltip position relative to a trigger element.
- * Auto-flips between bottom/top based on available viewport space.
- */
-function computePosition(
-  triggerRect: DOMRect,
-  preferredPlacement: TooltipPlacement,
-  offset: number
-): TooltipPosition {
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const centerX = triggerRect.left + triggerRect.width / 2;
-
-  // Derive tooltip half-width from max-width CSS (16em ≈ 192px at 12px font)
-  // Use a conservative estimate to prevent edge clipping
-  const estimatedHalfWidth = 96;
-
-  // Determine actual placement based on available space
-  const spaceBelow = viewportHeight - triggerRect.bottom - offset - VIEWPORT_PADDING;
-  const spaceAbove = triggerRect.top - offset - VIEWPORT_PADDING;
-  const useTop = preferredPlacement === 'top' || spaceBelow < 0;
-
-  let y: number;
-  let actualPlacement: TooltipPlacement;
-
-  if (useTop && spaceAbove > 0) {
-    actualPlacement = 'top';
-    y = triggerRect.top - offset;
-  } else {
-    actualPlacement = 'bottom';
-    y = triggerRect.bottom + offset;
-  }
-
-  // Clamp X to keep tooltip within viewport bounds (accounting for translate -50%)
-  const x = Math.max(
-    VIEWPORT_PADDING + estimatedHalfWidth,
-    Math.min(centerX, viewportWidth - VIEWPORT_PADDING - estimatedHalfWidth)
-  );
-
-  return { x, y, actualPlacement };
-}
-
-/**
- * Tooltip component.
- *
- * Wraps child elements with hover/focus handlers and renders a positioned
- * tooltip in a Portal. Uses `display: contents` on the trigger wrapper
- * so it does not affect layout.
- *
- * @example
- * ```tsx
- * <Tooltip content="Close gallery">
- *   <button>✕</button>
- * </Tooltip>
- * ```
- */
+/** A manual popover remains in its gallery dialog's subtree and inherits its theme. */
 export function Tooltip(props: TooltipProps): JSXElement {
   const [local] = splitProps(props, [
     'offset',
@@ -94,63 +18,20 @@ export function Tooltip(props: TooltipProps): JSXElement {
     'content',
   ]);
   const tooltipId = createUniqueId();
-  const [visible, setVisible] = createSignal(false);
-  const [position, setPosition] = createSignal<TooltipPosition | null>(null);
-
-  const offset = local.offset ?? DEFAULT_OFFSET;
-  const showDelay = local.showDelay ?? DEFAULT_SHOW_DELAY;
-  const hideDelay = local.hideDelay ?? DEFAULT_HIDE_DELAY;
-  const preferredPlacement = local.placement ?? 'bottom';
+  const anchorName = `--xeg-tooltip-${tooltipId.replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+  const showDelay = local.showDelay ?? TOOLTIP_SHOW_DELAY_MS;
+  const hideDelay = local.hideDelay ?? TOOLTIP_HIDE_DELAY_MS;
 
   let triggerRef!: HTMLSpanElement;
+  let tooltipRef!: HTMLDivElement;
   let showTimer: ReturnType<typeof setTimeout> | undefined;
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
-  let positionRafId: ReturnType<typeof requestAnimationFrame> | undefined;
   let describedElement: HTMLElement | undefined;
   let previousDescribedBy: string | null = null;
-  let portalHost: HTMLDivElement | undefined;
-  let themeObserver: MutationObserver | undefined;
+  let anchorElement: HTMLElement | undefined;
+  let previousAnchorName = '';
 
-  const resolveTriggerElement = (event?: Event): HTMLElement | null => {
-    if (event?.target instanceof HTMLElement && event.target !== triggerRef) {
-      return event.target.closest('button, select, input, textarea, a[href], [tabindex]');
-    }
-    const firstChild = triggerRef.firstElementChild;
-    return firstChild instanceof HTMLElement ? firstChild : null;
-  };
-
-  const attachDescription = (element: HTMLElement) => {
-    if (describedElement === element) {
-      return;
-    }
-    if (describedElement) {
-      if (previousDescribedBy === null) {
-        describedElement.removeAttribute('aria-describedby');
-      } else {
-        describedElement.setAttribute('aria-describedby', previousDescribedBy);
-      }
-    }
-    describedElement = element;
-    previousDescribedBy = element.getAttribute('aria-describedby');
-    const ids = new Set(previousDescribedBy?.split(/\s+/).filter(Boolean) ?? []);
-    ids.add(tooltipId);
-    element.setAttribute('aria-describedby', [...ids].join(' '));
-  };
-
-  const detachDescription = () => {
-    if (!describedElement) {
-      return;
-    }
-    if (previousDescribedBy === null) {
-      describedElement.removeAttribute('aria-describedby');
-    } else {
-      describedElement.setAttribute('aria-describedby', previousDescribedBy);
-    }
-    describedElement = undefined;
-    previousDescribedBy = null;
-  };
-
-  const clearTimers = () => {
+  const clearTimers = (): void => {
     if (showTimer !== undefined) {
       clearTimeout(showTimer);
       showTimer = undefined;
@@ -159,169 +40,83 @@ export function Tooltip(props: TooltipProps): JSXElement {
       clearTimeout(hideTimer);
       hideTimer = undefined;
     }
-    if (positionRafId !== undefined) {
-      cancelAnimationFrame(positionRafId);
-      positionRafId = undefined;
-    }
   };
 
-  const updatePosition = () => {
-    if (!triggerRef) {
-      return;
-    }
-
-    // Find the first child element (skip text nodes)
-    const firstChild = triggerRef.firstElementChild;
-    if (!(firstChild instanceof HTMLElement)) {
-      return;
-    }
-
-    positionRafId = requestAnimationFrame(() => {
-      const rect = firstChild.getBoundingClientRect();
-      setPosition(computePosition(rect, preferredPlacement, offset));
-    });
-  };
-
-  const show = (event?: Event, delay = showDelay) => {
-    clearTimers();
-    const triggerElement = resolveTriggerElement(event);
-    updatePosition();
-    showTimer = setTimeout(() => {
-      // Re-check position before showing (element may have moved)
-      updatePosition();
-      if (triggerElement) {
-        attachDescription(triggerElement);
-      }
-      setVisible(true);
-    }, delay);
-  };
-
-  const ensurePortalHost = (): HTMLDivElement => {
-    if (portalHost?.isConnected) {
-      return portalHost;
-    }
-
-    const themeScope = triggerRef.closest<HTMLElement>('.xeg-theme-scope');
-    portalHost = document.createElement('div');
-    portalHost.className = 'xeg-theme-scope pp-design';
-    portalHost.dataset.xegTooltipPortal = '';
-    portalHost.dataset.ppProduct = 'xeg';
-
-    const mirrorThemeAttributes = () => {
-      const ppTheme = themeScope?.getAttribute('data-pp-theme') ?? 'auto';
-      portalHost?.setAttribute('data-pp-theme', ppTheme);
-
-      const theme = themeScope?.getAttribute('data-theme');
-      if (theme === null || theme === undefined) {
-        portalHost?.removeAttribute('data-theme');
+  const restoreAnchor = (): void => {
+    if (anchorElement) {
+      if (previousAnchorName) {
+        anchorElement.style.setProperty('anchor-name', previousAnchorName);
       } else {
-        portalHost?.setAttribute('data-theme', theme);
+        anchorElement.style.removeProperty('anchor-name');
       }
-    };
-
-    mirrorThemeAttributes();
-    if (themeScope) {
-      themeObserver = new MutationObserver(mirrorThemeAttributes);
-      themeObserver.observe(themeScope, {
-        attributes: true,
-        attributeFilter: ['data-pp-theme', 'data-theme'],
-      });
+      anchorElement = undefined;
     }
-
-    document.body.appendChild(portalHost);
-    return portalHost;
   };
 
-  const hide = () => {
+  const restoreDescription = (): void => {
+    if (describedElement) {
+      if (previousDescribedBy === null) {
+        describedElement.removeAttribute('aria-describedby');
+      } else {
+        describedElement.setAttribute('aria-describedby', previousDescribedBy);
+      }
+      describedElement = undefined;
+      previousDescribedBy = null;
+    }
+  };
+
+  const dismiss = (): void => {
     clearTimers();
-    hideTimer = setTimeout(() => {
-      setVisible(false);
-      setPosition(null);
-      detachDescription();
-    }, hideDelay);
-  };
-
-  const keepVisible = () => {
-    if (hideTimer !== undefined) {
-      clearTimeout(hideTimer);
-      hideTimer = undefined;
+    if (tooltipRef.matches(':popover-open')) {
+      tooltipRef.hidePopover();
     }
+    restoreDescription();
+    restoreAnchor();
   };
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || !visible()) {
+  const resolveTrigger = (event?: Event): HTMLElement | null => {
+    if (event?.target instanceof HTMLElement && event.target !== triggerRef) {
+      return event.target.closest('button, select, input, textarea, a[href], [tabindex]');
+    }
+    const firstChild = triggerRef.firstElementChild;
+    return firstChild instanceof HTMLElement ? firstChild : null;
+  };
+
+  const present = (element: HTMLElement): void => {
+    restoreAnchor();
+    anchorElement = element;
+    previousAnchorName = element.style.getPropertyValue('anchor-name');
+    element.style.setProperty('anchor-name', anchorName);
+    try {
+      tooltipRef.showPopover();
+    } catch {
+      restoreAnchor();
       return;
     }
-    clearTimers();
-    setVisible(false);
-    setPosition(null);
-    detachDescription();
+    describedElement = element;
+    previousDescribedBy = element.getAttribute('aria-describedby');
+    const ids = new Set(previousDescribedBy?.split(/\s+/).filter(Boolean) ?? []);
+    ids.add(tooltipId);
+    element.setAttribute('aria-describedby', [...ids].join(' '));
   };
 
-  // Derived: only non-null when tooltip should render
-  const activePosition = createMemo<TooltipPosition | null>(() => {
-    const pos = position();
-    return visible() && pos !== null ? pos : null;
-  });
-
-  // Derived: CSS style for tooltip positioning
-  const tooltipStyle = createMemo((): Record<string, string> => {
-    const pos = activePosition();
-    if (pos === null) {
-      return {};
-    }
-    return {
-      left: `${pos.x}px`,
-      top: `${pos.y}px`,
-    } as Record<string, string>;
-  });
-
-  // Derived: combined class string using cx() (avoids classList computed-key TS issues)
-  const tooltipClass = createMemo(() => {
-    const pos = activePosition();
-    if (pos === null) {
-      return styles.content;
-    }
-    const placementClass =
-      pos.actualPlacement === 'bottom' ? styles.placementBottom : styles.placementTop;
-    return cx(styles.content, styles.visible, placementClass);
-  });
-
-  // Derived: arrow class
-  const arrowClass = createMemo(() => {
-    const pos = activePosition();
-    if (pos === null) {
-      return styles.arrow;
-    }
-    const placementClass =
-      pos.actualPlacement === 'bottom' ? styles.placementBottomArrow : styles.placementTopArrow;
-    return cx(styles.arrow, placementClass);
-  });
-
-  // Derived: arrow inner fill class
-  const arrowInnerClass = createMemo(() => {
-    const pos = activePosition();
-    if (pos === null) {
-      return styles.arrowInner;
-    }
-    const placementClass =
-      pos.actualPlacement === 'bottom'
-        ? styles.placementBottomArrowInner
-        : styles.placementTopArrowInner;
-    return cx(styles.arrowInner, placementClass);
-  });
-
-  onCleanup(() => {
+  const show = (event?: Event, delay = showDelay): void => {
     clearTimers();
-    detachDescription();
-    themeObserver?.disconnect();
-    themeObserver = undefined;
-    portalHost?.remove();
-    portalHost = undefined;
-  });
+    const element = resolveTrigger(event);
+    if (!element || tooltipRef.matches(':popover-open')) {
+      return;
+    }
+    showTimer = setTimeout(() => present(element), delay);
+  };
+
+  const hide = (): void => {
+    clearTimers();
+    hideTimer = setTimeout(dismiss, hideDelay);
+  };
+
+  onCleanup(dismiss);
 
   return (
-    // This display:contents wrapper delegates hover, focus, and Escape behavior to its native focusable child.
     <span
       ref={(element) => {
         triggerRef = element;
@@ -331,33 +126,45 @@ export function Tooltip(props: TooltipProps): JSXElement {
       onMouseLeave={hide}
       onFocusIn={(event) => show(event, 0)}
       onFocusOut={(event) => {
-        // Only hide if focus left the trigger entirely (not moved to a child)
         if (!triggerRef.contains(event.relatedTarget as Node | null)) {
           hide();
         }
       }}
-      onKeyDown={handleKeyDown}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape' && tooltipRef.matches(':popover-open')) {
+          dismiss();
+          const toolbar = triggerRef.closest('[data-gallery-element="toolbar"]');
+          const expandedPanel = toolbar?.querySelector(
+            '#settings-button[aria-expanded="true"], #keyboard-help-button[aria-expanded="true"]'
+          );
+          if (!expandedPanel) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }
+      }}
     >
       {local.children}
-
-      {activePosition() !== null && (
-        <Portal mount={ensurePortalHost()}>
-          <div
-            id={tooltipId}
-            role="tooltip"
-            class={tooltipClass()}
-            style={tooltipStyle()}
-            onMouseEnter={keepVisible}
-            onMouseLeave={hide}
-          >
-            {/* Arrow (border) */}
-            <span class={arrowClass()} aria-hidden="true" />
-            {/* Arrow inner fill */}
-            <span class={arrowInnerClass()} aria-hidden="true" />
-            {local.content}
-          </div>
-        </Portal>
-      )}
+      <div
+        ref={(element) => {
+          tooltipRef = element;
+        }}
+        id={tooltipId}
+        popover="manual"
+        role="tooltip"
+        class={styles.content}
+        data-placement={local.placement ?? 'bottom'}
+        style={{ 'position-anchor': anchorName, '--xeg-tooltip-offset': `${local.offset ?? 6}px` }}
+        onMouseEnter={() => {
+          if (hideTimer !== undefined) {
+            clearTimeout(hideTimer);
+            hideTimer = undefined;
+          }
+        }}
+        onMouseLeave={hide}
+      >
+        {local.content}
+      </div>
     </span>
   );
 }

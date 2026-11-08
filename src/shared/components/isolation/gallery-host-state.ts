@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
-import { hideBackgroundElement, restoreBackgroundElement } from '@shared/dom/background-visibility';
 import { startAmbientVideoGuard } from '@shared/utils/media/ambient-video-coordinator';
 
 interface BodyStyleSnapshot {
@@ -18,15 +17,13 @@ export interface GalleryHostStateHandle {
 
 class GalleryHostState implements GalleryHostStateHandle {
   private readonly bodyStyle: BodyStyleSnapshot;
-  private readonly hiddenBackgroundElements: HTMLElement[] = [];
   private readonly previousFocus: HTMLElement | null;
   private readonly previousScrollRestoration: ScrollRestoration | undefined;
   private readonly scrollY: number;
-  private readonly backgroundObserver: MutationObserver;
   private restored = false;
   private disposeAmbientVideoGuard: (() => void) | null = null;
 
-  constructor(private readonly container: HTMLElement) {
+  constructor() {
     this.bodyStyle = {
       overflow: document.body.style.overflow,
       position: document.body.style.position,
@@ -38,8 +35,6 @@ class GalleryHostState implements GalleryHostStateHandle {
     this.previousFocus = document.activeElement as HTMLElement | null;
     this.previousScrollRestoration =
       'scrollRestoration' in window.history ? window.history.scrollRestoration : undefined;
-    this.backgroundObserver = new MutationObserver((records) => this.hideAddedBackground(records));
-
     this.activate();
   }
 
@@ -50,7 +45,6 @@ class GalleryHostState implements GalleryHostStateHandle {
     this.restored = true;
     this.disposeAmbientVideoGuard?.();
     this.disposeAmbientVideoGuard = null;
-    this.backgroundObserver.disconnect();
 
     document.body.style.overflow = this.bodyStyle.overflow;
     document.body.style.position = this.bodyStyle.position;
@@ -60,13 +54,9 @@ class GalleryHostState implements GalleryHostStateHandle {
     if (this.previousScrollRestoration !== undefined) {
       window.history.scrollRestoration = this.previousScrollRestoration;
     }
-    for (const element of this.hiddenBackgroundElements) {
-      restoreBackgroundElement(element);
-    }
-    this.hiddenBackgroundElements.length = 0;
     window.scrollTo(0, this.scrollY);
 
-    if (this.previousFocus && typeof this.previousFocus.focus === 'function') {
+    if (this.previousFocus?.isConnected && typeof this.previousFocus.focus === 'function') {
       try {
         this.previousFocus.focus({ preventScroll: true });
       } catch {
@@ -88,56 +78,15 @@ class GalleryHostState implements GalleryHostStateHandle {
     document.body.style.left = '0';
     document.body.style.right = '0';
 
-    for (const child of Array.from(document.body.children)) {
-      if (!(child instanceof HTMLElement)) {
-        continue;
-      }
-      if (child === this.container || child.contains(this.container)) {
-        continue;
-      }
-      this.hideBackground(child);
-    }
-    this.backgroundObserver.observe(document.body, { childList: true });
     this.disposeAmbientVideoGuard = startAmbientVideoGuard();
-
-    this.container.focus();
-    if (document.activeElement !== this.container) {
-      this.container
-        .querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        )
-        ?.focus();
-    }
-  }
-
-  private hideAddedBackground(records: MutationRecord[]): void {
-    for (const record of records) {
-      for (const node of record.addedNodes) {
-        if (!(node instanceof HTMLElement)) {
-          continue;
-        }
-        if (node === this.container || node.contains(this.container)) {
-          continue;
-        }
-        this.hideBackground(node);
-      }
-    }
-  }
-
-  private hideBackground(element: HTMLElement): void {
-    if (this.hiddenBackgroundElements.includes(element)) {
-      return;
-    }
-    this.hiddenBackgroundElements.push(element);
-    hideBackgroundElement(element);
   }
 }
 
 let activeHostState: GalleryHostState | null = null;
 
-export function activateGalleryHostState(container: HTMLElement): GalleryHostStateHandle {
+export function activateGalleryHostState(): GalleryHostStateHandle {
   activeHostState?.restore();
-  const state = new GalleryHostState(container);
+  const state = new GalleryHostState();
   activeHostState = state;
   return state;
 }
