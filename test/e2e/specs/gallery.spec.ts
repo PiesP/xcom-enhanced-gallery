@@ -166,9 +166,17 @@ test.describe('X.com Enhanced Gallery E2E', () => {
       true
     );
     await page.keyboard.press('Shift+Tab');
-    expect(await page.evaluate(() => document.activeElement?.closest('dialog') !== null)).toBe(
-      true
-    );
+    expect(
+      await page.evaluate(() => {
+        const active = document.activeElement;
+        return (
+          active?.closest('dialog') !== null ||
+          active === document.body ||
+          active === document.documentElement
+        );
+      })
+    ).toBe(true);
+    await expect(page.locator('#native-gallery-opener')).not.toBeFocused();
 
     const settingsButton = gallery.locator('#settings-button');
     await settingsButton.focus();

@@ -133,6 +133,14 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       tabIndex={-1}
       onCancel={(event) => {
         event.preventDefault();
+        const focused = document.activeElement;
+        if (
+          focused instanceof HTMLElement &&
+          (focused.matches('input, select, textarea, video') || focused.isContentEditable)
+        ) {
+          // Native editing and playback controls own Escape while focused.
+          return;
+        }
         requestClose();
       }}
       onClose={requestClose}

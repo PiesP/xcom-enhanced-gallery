@@ -12,8 +12,8 @@
  * 4. Image alt text contains position info (e.g., 'Image 1 of' pattern)
  * 5. Video elements have aria-label
  * 6. Toolbar element has role='toolbar'
- * 7. Focus trap: Tab key cycles within gallery (doesn't escape to page)
- * 8. Body siblings are inert and hidden from assistive technology while the gallery is open
+ * 7. Native modal Tab key cannot focus the background page
+ * 8. Body siblings are implicitly inert and absent from the accessibility tree
  * 9. Focus returns to trigger element when gallery closes
  *
  * Environment: Playwright + Chromium (headless)
@@ -327,7 +327,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('background content is hidden from assistive technology when gallery is open', async ({
+  test('native modal hides background content from assistive technology and focus', async ({
     page,
   }) => {
     await setupGalleryPage(page);
@@ -337,14 +337,22 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     await openGallery(page);
 
-    await expect(outside).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.getByRole('main')).toHaveCount(0);
+    expect(
+      await outside.evaluate((element) => {
+        element.setAttribute('tabindex', '-1');
+        (element as HTMLElement).focus();
+        return document.activeElement === element;
+      })
+    ).toBe(false);
 
     await closeGallery(page);
 
     await expect(outside).not.toHaveAttribute('aria-hidden', 'true');
+    await expect(page.getByRole('main')).toHaveCount(1);
   });
 
-  test('body siblings added while open are hidden and restored with their prior state', async ({
+  test('late body siblings stay implicitly inert and retain their authored ARIA state', async ({
     page,
   }) => {
     await setupGalleryPage(page);
@@ -355,23 +363,34 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       const element = document.createElement('aside');
       element.id = 'late-background-sibling';
       element.setAttribute('aria-hidden', 'false');
+      const button = document.createElement('button');
+      button.textContent = 'Late background action';
+      element.append(button);
       document.body.append(element);
     });
 
-    await expect(lateSibling).toHaveAttribute('aria-hidden', 'true');
-    await expect(lateSibling).toHaveAttribute('inert', '');
+    await expect(lateSibling).toHaveAttribute('aria-hidden', 'false');
+    await expect(lateSibling).not.toHaveAttribute('inert', '');
+    await expect(page.getByRole('button', { name: 'Late background action' })).toHaveCount(0);
+    expect(
+      await lateSibling.locator('button').evaluate((button) => {
+        button.focus();
+        return document.activeElement === button;
+      })
+    ).toBe(false);
 
     await closeGallery(page);
 
     await expect(lateSibling).toHaveAttribute('aria-hidden', 'false');
     await expect(lateSibling).not.toHaveAttribute('inert', '');
+    await expect(page.getByRole('button', { name: 'Late background action' })).toHaveCount(1);
   });
 
-  test('focus trap excludes hidden and negative-tabindex descendants', async ({ page }) => {
+  test('native Tab excludes hidden and negative-tabindex descendants', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const result = await page.evaluate(() => {
+    await page.evaluate(() => {
       const container = document.querySelector<HTMLElement>('[data-xeg-gallery-container]');
       if (!container) {
         throw new Error('Gallery container missing');
@@ -390,31 +409,32 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       container.append(hiddenButton);
 
       visibleButton.focus();
-      const event = new KeyboardEvent('keydown', {
-        key: 'Tab',
-        bubbles: true,
-        cancelable: true,
-      });
-      visibleButton.dispatchEvent(event);
-
-      return {
-        defaultPrevented: event.defaultPrevented,
-        focusStayedInGallery: container.contains(document.activeElement),
-      };
     });
-
-    expect(result).toEqual({ defaultPrevented: true, focusStayedInGallery: true });
+    await page.keyboard.press('Shift+Tab');
+    expect(
+      await page.evaluate(() => {
+        const active = document.activeElement;
+        return (
+          active?.closest('dialog') !== null &&
+          active?.textContent !== 'Visible last button' &&
+          active?.getAttribute('tabindex') !== '-2' &&
+          !active?.hasAttribute('hidden')
+        );
+      })
+    ).toBe(true);
     await closeGallery(page);
   });
 
-  test('Shift+Tab from the initially focused dialog wraps to its last control', async ({
-    page,
-  }) => {
+  test('Shift+Tab from the dialog never focuses the background page', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
     const container = page.locator('[data-xeg-gallery-container]');
-    const lastButton = page.locator('#focus-trap-last-button');
+    await page.evaluate(() => {
+      const button = document.createElement('button');
+      button.id = 'background-focus-check';
+      document.body.append(button);
+    });
     await container.evaluate((element) => {
       const button = document.createElement('button');
       button.id = 'focus-trap-last-button';
@@ -425,7 +445,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     await page.keyboard.press('Shift+Tab');
 
-    await expect(lastButton).toBeFocused();
+    expect(await page.evaluate(() => document.activeElement?.id === 'background-focus-check')).toBe(
+      false
+    );
     await closeGallery(page);
   });
 
