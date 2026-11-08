@@ -180,8 +180,12 @@ test.describe('X.com Enhanced Gallery E2E', () => {
 
     const settingsButton = gallery.locator('#settings-button');
     await settingsButton.focus();
-    const tooltip = gallery.locator('[role="tooltip"]:popover-open');
+    const tooltip = settingsButton.locator('..').locator('[role="tooltip"]:popover-open');
     await expect(tooltip).toBeVisible();
+    await expect(settingsButton).toHaveAttribute(
+      'aria-describedby',
+      (await tooltip.getAttribute('id'))!
+    );
     expect(await tooltip.evaluate((element) => element.closest('dialog') !== null)).toBe(true);
     const bounds = await tooltip.boundingBox();
     expect(bounds).not.toBeNull();
