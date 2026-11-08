@@ -21,6 +21,14 @@ hit-target observations from before the click. It also collects JSON-string
 build provides them. Standard product builds do not emit these events; DOM
 observations alone must not be described as direct product guard decisions.
 Overflow remains a failure and the original visibility assertions still apply.
+The observer remains active through the actual paint assertion intervals rather
+than stopping five seconds after the click. Receipts identify each assertion's
+start, unchanged five-second deadline, end, budget and coverage completeness,
+plus the trace stop reason. A 15-second lifetime, 1,800 frame, 192 changed-state
+sample and 512 product-event cap remain explicit. A bound or missing interval
+makes diagnostic coverage incomplete, including when an assertion starts
+before trace attachment; an early successful assertion need not consume its
+whole deadline.
 
 The diagnostic-only `"faultRelease": "after-initial-alignment"` option requires
 `"trace": true` and the recorded source probes. It holds only the first fault
