@@ -1124,6 +1124,7 @@ type InstallResult = {
   videoSaveFormat?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  nativeBrowserUi?: unknown;
   mediaApiReuse?: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>>;
   sourceImageFailures?: SourceImageFailureEvidence;
   uxDetails?: unknown;
@@ -17706,6 +17707,165 @@ async function runUxDetailsProbe({
   return { status: 'passed', ...observations };
 }
 
+/** Focused installed-extension check for native modal, anchor and scroll completion. */
+async function runNativeBrowserUiProbe({
+  context,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+}) {
+  const experienceImages = await createExperienceImages(context);
+  const routes = await installFixtureRoutes(
+    context,
+    root,
+    images,
+    displayImages,
+    undefined,
+    experienceImages
+  );
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  nativeLoopback.setExperienceImages(experienceImages);
+  const page = await context.newPage();
+  const observations: Record<string, unknown> = {};
+  const pageErrors: string[] = [];
+  const cleanupErrors: string[] = [];
+  let error: unknown;
+  page.on('pageerror', (failure) => pageErrors.push(failure.message));
+  try {
+    await page.goto(`chrome-extension://${extensionId}/manifest.json`);
+    await page.goto(EXPERIENCE_FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.focus();
+    const hostScroll = await page.evaluate(() => window.scrollY);
+    assert(hostScroll > 0, 'The host page was not scrolled before gallery entry');
+    await trigger.click();
+    const gallery = page.locator('dialog[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert(await gallery.evaluate((element) => element.matches(':modal')));
+    assert.equal(
+      await page
+        .locator('[data-testid="tweetPhoto"] img')
+        .first()
+        .evaluate(
+          (element) => element.closest('dialog') === null && document.activeElement !== element
+        ),
+      true
+    );
+    await page.keyboard.press('Tab');
+    assert(await page.evaluate(() => document.activeElement?.closest('dialog') !== null));
+    await page.keyboard.press('Shift+Tab');
+    assert(await page.evaluate(() => document.activeElement?.closest('dialog') !== null));
+    observations.modal = { hostScroll, nativeModal: true, nativeTab: true };
+
+    const settings = gallery.locator('#settings-button');
+    await settings.focus();
+    const tooltip = gallery.locator('[role="tooltip"]:popover-open');
+    await tooltip.waitFor({ state: 'visible' });
+    const bounds = await tooltip.boundingBox();
+    const viewport = page.viewportSize();
+    assert(bounds && viewport, 'Anchored tooltip geometry is unavailable');
+    assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= viewport.width);
+    assert(bounds.y + bounds.height <= viewport.height);
+    assert(await tooltip.evaluate((element) => element.closest('dialog') !== null));
+    assert(await settings.getAttribute('aria-describedby'));
+    observations.tooltip = { bounds, viewport, inDialog: true };
+
+    await settings.click();
+    assert.equal(await settings.getAttribute('aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await settings.getAttribute('aria-expanded'), 'false');
+    assert(await gallery.isVisible(), 'Settings Escape closed the gallery');
+    const help = gallery.locator('#keyboard-help-button');
+    await help.click();
+    assert.equal(await help.getAttribute('aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await help.getAttribute('aria-expanded'), 'false');
+    assert(await gallery.isVisible(), 'Help Escape closed the gallery');
+    observations.innerEscape = { settings: true, help: true };
+
+    const items = gallery.locator('[data-gallery-element="items"]');
+    await items.evaluate((element) => {
+      element.dataset.nativeScrollEnds = '0';
+      element.addEventListener('scrollend', () => {
+        element.dataset.nativeScrollEnds = String(Number(element.dataset.nativeScrollEnds) + 1);
+      });
+    });
+    const before = await items.evaluate((element) => element.scrollTop);
+    await items.hover();
+    await page.mouse.wheel(0, 500);
+    await page.waitForFunction(() => {
+      const element = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+      return element && Number(element.dataset.nativeScrollEnds) > 0;
+    });
+    const after = await items.evaluate((element) => element.scrollTop);
+    assert(after !== before, 'Wheel input did not displace the gallery scrollport');
+    observations.scroll = {
+      before,
+      after,
+      nativeScrollEnds: await items.getAttribute('data-native-scroll-ends'),
+    };
+
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    assert.equal(await page.evaluate(() => window.scrollY), hostScroll);
+    assert(await trigger.evaluate((element) => document.activeElement === element));
+    await trigger.click();
+    await gallery.waitFor({ state: 'visible' });
+    await gallery.locator('button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    observations.reopen = true;
+    assert.deepEqual(pageErrors, []);
+  } catch (failure) {
+    error = failure;
+  } finally {
+    for (const [name, close] of [
+      ['fixture page', () => page.close()],
+      ['fixture routes', () => routes.remove()],
+    ] as const) {
+      try {
+        await close();
+      } catch (failure) {
+        cleanupErrors.push(`${name}: ${safeError(failure)}`);
+      }
+    }
+    await writeFile(
+      join(output, 'native-browser-ui.json'),
+      JSON.stringify(
+        {
+          status: error || pageErrors.length || cleanupErrors.length ? 'failed' : 'passed',
+          scope: 'installed extension on owned deterministic X fixture',
+          observations,
+          pageErrors,
+          cleanupErrors,
+          ...(error ? { error: safeError(error) } : {}),
+        },
+        null,
+        2
+      )
+    );
+  }
+  if (error || pageErrors.length || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(error ? [error] : []), ...pageErrors, ...cleanupErrors],
+      'Native browser UI probe or cleanup failed'
+    );
+  }
+  return { status: 'passed', observations };
+}
+
 async function runGalleryExperienceProbe({
   context,
   downloads,
@@ -21218,6 +21378,31 @@ export async function run({
     );
     assert.equal(liveUrls.length, 0, 'Settings probe uses only the owned fixture');
   }
+  const nativeUiSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/native-browser-ui.json'),
+    'utf8'
+  ).catch((failure: unknown) => {
+    if (failure && typeof failure === 'object' && 'code' in failure && failure.code === 'ENOENT') {
+      return null;
+    }
+    throw failure;
+  });
+  const nativeUiProbe = nativeUiSelectorText !== null;
+  if (nativeUiSelectorText !== null) {
+    assert.deepEqual(JSON.parse(nativeUiSelectorText), { scenario: 'native-browser-ui' });
+    assert.equal(installation, 'extension', 'Native UI probe requires the installed extension');
+    assert.equal(liveUrls.length, 0, 'Native UI probe uses only the owned fixture');
+    assert.equal(liveObservation, null);
+    assert(!upgradeInput && !sameVersionInput);
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['native-browser-ui.json'],
+      'Native UI probe requires an exclusive selector'
+    );
+  }
   if (uxDetailsProbe) {
     assert(
       !openingProbe && !recoveryProbe && !failedEntryProbe && !experienceProbe && !settingsProbe,
@@ -21287,6 +21472,7 @@ export async function run({
         mediaApiProbe ||
         sourceImageProbe ||
         settingsProbe ||
+        nativeUiProbe ||
         uxDetailsProbe ||
         videoFormatProbe,
     }
@@ -21542,6 +21728,16 @@ export async function run({
           output,
           extensionId,
           nativeLoopback,
+          images,
+          displayImages,
+        });
+      } else if (nativeUiProbe) {
+        result.nativeBrowserUi = await runNativeBrowserUiProbe({
+          context,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
           images,
           displayImages,
         });

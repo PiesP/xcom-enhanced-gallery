@@ -60,9 +60,6 @@ export const DOWNLOAD_CACHE_MAX_ENTRIES = 20;
 /** Maximum total bytes in the demand-driven download cache (100 MB). */
 export const DOWNLOAD_CACHE_MAX_BYTES = 100 * 1024 * 1024;
 
-/** CSS animation timeout fallback in milliseconds (safety net if animationend doesn't fire) */
-export const ANIMATION_TIMEOUT_MS = 500;
-
 /**
  * Minimum time (ms) the download-indicator state remains visible.
  * Prevents visual flicker for very fast downloads.

@@ -23,7 +23,7 @@ interface UseGalleryScrollOptions {
   readonly container: MaybeAccessor<HTMLElement | null>;
   /** Scroll target (defaults to container) */
   readonly scrollTarget?: MaybeAccessor<HTMLElement | null>;
-  /** Callback when scrolling ends (after idle timeout) */
+  /** Callback when displacement ends, or bounded wheel input has no displacement */
   readonly onScrollEnd?: () => void;
   /** Whether scroll handling is enabled */
   readonly enabled?: MaybeAccessor<boolean>;
@@ -37,8 +37,8 @@ interface UseGalleryScrollReturn {
   readonly lastScrollTime: Accessor<number>;
 }
 
-/** Idle timeout after scroll ends (ms) */
-const SCROLL_IDLE_TIMEOUT = SCROLL_IDLE_TIMEOUT_MS;
+/** Bounds wheel activity when no scroll position changes and scrollend cannot fire. */
+const WHEEL_IDLE_TIMEOUT = SCROLL_IDLE_TIMEOUT_MS;
 
 /** Window to ignore programmatic scroll events (ms) */
 const PROGRAMMATIC_SCROLL_WINDOW = PROGRAMMATIC_SCROLL_WINDOW_MS;
@@ -49,9 +49,8 @@ const LISTENER_CONTEXT_PREFIX = 'useGalleryScroll';
 /**
  * Hook for tracking user scroll activity on the gallery container.
  *
- * Monitors scroll events with idle detection — after scrolling stops for
- * a configurable timeout, the `isScrolling` signal flips to false and
- * the `onScrollEnd` callback fires.
+ * Uses native scrollend for displaced scrolling. A short timer owns only
+ * wheel activity that cannot produce scrollend at a scroll boundary.
  *
  * @param options - Container, scroll target, and end-of-scroll callback
  * @returns Reactive isScrolling signal and lastScrollTime timestamp
@@ -73,25 +72,30 @@ export function useGalleryScroll({
 
   const [isScrolling, setIsScrolling] = createSignal(false);
   const [lastScrollTime, setLastScrollTime] = createSignal(0);
-  const scrollIdleTimer = createTimeout();
+  const wheelIdleTimer = createTimeout();
+  let wheelAwaitingMovement = false;
+  let userScrollObserved = false;
 
   const markScrolling = (): void => {
     setIsScrolling(true);
     setLastScrollTime(performance.now());
   };
 
-  const scheduleScrollEnd = (): void => {
-    scrollIdleTimer.set(() => {
-      setIsScrolling(false);
-      if (__DEV__) {
-        logger.debug('useGalleryScroll: Scroll ended');
-      }
-      onScrollEnd?.();
-    }, SCROLL_IDLE_TIMEOUT);
+  const settleScroll = (): void => {
+    wheelIdleTimer.clear();
+    wheelAwaitingMovement = false;
+    userScrollObserved = false;
+    setIsScrolling(false);
+    if (__DEV__) {
+      logger.debug('useGalleryScroll: Scroll ended');
+    }
+    onScrollEnd?.();
   };
 
-  const shouldIgnoreScroll = (): boolean =>
-    performance.now() - programmaticTimestampAccessor() < PROGRAMMATIC_SCROLL_WINDOW;
+  const shouldIgnoreScroll = (): boolean => {
+    const programmaticAt = programmaticTimestampAccessor();
+    return programmaticAt > 0 && performance.now() - programmaticAt < PROGRAMMATIC_SCROLL_WINDOW;
+  };
 
   /**
    * Check if wheel event originated from toolbar or its panels
@@ -133,15 +137,33 @@ export function useGalleryScroll({
     }
 
     markScrolling();
-    scheduleScrollEnd();
+    if (userScrollObserved) {
+      // A displaced scroll already has a native completion event. Boundary
+      // wheel input must not replace that ownership with an idle deadline.
+      return;
+    }
+    wheelAwaitingMovement = true;
+    wheelIdleTimer.set(() => {
+      if (wheelAwaitingMovement) {
+        settleScroll();
+      }
+    }, WHEEL_IDLE_TIMEOUT);
   };
 
   const handleScroll = (): void => {
-    if (!isGalleryOpen() || shouldIgnoreScroll()) {
+    if (!isGalleryOpen() || (shouldIgnoreScroll() && !wheelAwaitingMovement)) {
       return;
     }
+    wheelAwaitingMovement = false;
+    wheelIdleTimer.clear();
+    userScrollObserved = true;
     markScrolling();
-    scheduleScrollEnd();
+  };
+
+  const handleScrollEnd = (): void => {
+    if (isGalleryOpen() && userScrollObserved) {
+      settleScroll();
+    }
   };
 
   createEffect(() => {
@@ -152,7 +174,9 @@ export function useGalleryScroll({
 
     if (!isEnabled || !eventTarget) {
       setIsScrolling(false);
-      scrollIdleTimer.clear();
+      wheelIdleTimer.clear();
+      wheelAwaitingMovement = false;
+      userScrollObserved = false;
       return;
     }
 
@@ -168,6 +192,7 @@ export function useGalleryScroll({
 
     registerListener('wheel', handleWheel as EventListener);
     registerListener('scroll', handleScroll as EventListener);
+    registerListener('scrollend', handleScrollEnd as EventListener);
 
     if (__DEV__) {
       logger.debug('useGalleryScroll: Listeners registered', { context: listenerContext });
@@ -175,11 +200,13 @@ export function useGalleryScroll({
 
     onCleanup(() => {
       eventManager.removeByContext(listenerContext);
-      scrollIdleTimer.clear();
+      wheelIdleTimer.clear();
+      wheelAwaitingMovement = false;
+      userScrollObserved = false;
       setIsScrolling(false);
     });
 
-    // scrollIdleTimer auto-cleans up via createTimeout's onCleanup.
+    // wheelIdleTimer auto-cleans up via createTimeout's onCleanup.
   });
 
   return { isScrolling, lastScrollTime };
