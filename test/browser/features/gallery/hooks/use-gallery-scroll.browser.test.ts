@@ -32,6 +32,32 @@ function startTracking(programmaticScrollTimestamp = () => 0) {
   return { container, items, onScrollEnd, ...result };
 }
 
+function exposeNativeScrollbarGutter(items: HTMLElement, left = false): void {
+  Object.defineProperties(items, {
+    clientHeight: { configurable: true, value: 100 },
+    scrollHeight: { configurable: true, value: 300 },
+    clientWidth: { configurable: true, value: 85 },
+    clientLeft: { configurable: true, value: left ? 15 : 0 },
+    offsetWidth: { configurable: true, value: 100 },
+  });
+  vi.spyOn(items, 'getBoundingClientRect').mockReturnValue(
+    DOMRect.fromRect({ x: 0, y: 0, width: 100, height: 100 })
+  );
+}
+
+function pressScrollbar(items: HTMLElement, x: number): void {
+  items.dispatchEvent(
+    new PointerEvent('pointerdown', {
+      bubbles: true,
+      button: 0,
+      clientX: x,
+      clientY: 50,
+      isPrimary: true,
+      pointerType: 'mouse',
+    })
+  );
+}
+
 describe('gallery native scroll completion', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -153,6 +179,72 @@ describe('gallery native scroll completion', () => {
     expect(tracking.isScrolling()).toBe(true);
     expect(tracking.lastScrollTime()).toBeGreaterThan(programmaticAt);
     items.dispatchEvent(new Event('scrollend'));
+    expect(tracking.isScrolling()).toBe(false);
+    expect(onScrollEnd).toHaveBeenCalledOnce();
+    dispose();
+  });
+
+  it('releases smooth navigation to native scrollbar drag before cancellation scrollend', () => {
+    vi.useFakeTimers();
+    const now = vi.spyOn(performance, 'now').mockReturnValue(105);
+    const { items, tracking, onScrollEnd, dispose } = startTracking(() => 100);
+    exposeNativeScrollbarGutter(items);
+    Object.defineProperty(items, 'scrollTop', { configurable: true, value: 60 });
+    const stopAnimation = vi.spyOn(items, 'scrollTo').mockImplementation(() => {});
+    items.dispatchEvent(new Event('scroll'));
+    now.mockReturnValue(300); // Smooth navigation outlives the initial timestamp window.
+
+    pressScrollbar(items, 95);
+    expect(stopAnimation).toHaveBeenCalledWith({ left: 0, top: 60, behavior: 'instant' });
+    expect(tracking.lastScrollTime()).toBe(300);
+    items.dispatchEvent(new Event('scrollend')); // Cancellation before manual movement.
+    expect(tracking.isScrolling()).toBe(true);
+    expect(onScrollEnd).not.toHaveBeenCalled();
+
+    now.mockReturnValue(320);
+    items.dispatchEvent(new Event('scroll')); // User-selected position.
+    vi.runAllTimers();
+    expect(tracking.lastScrollTime()).toBe(320);
+    expect(tracking.isScrolling()).toBe(true);
+    items.dispatchEvent(new Event('scrollend'));
+    items.dispatchEvent(new Event('scrollend')); // No duplicate completion.
+    expect(tracking.isScrolling()).toBe(false);
+    expect(onScrollEnd).toHaveBeenCalledOnce();
+    dispose();
+  });
+
+  it('ignores content controls and bounds native gutter presses without displacement', () => {
+    vi.useFakeTimers();
+    const now = vi.spyOn(performance, 'now').mockReturnValue(200);
+    const { items, tracking, onScrollEnd, dispose } = startTracking();
+    exposeNativeScrollbarGutter(items, true); // RTL scrollbar on the left.
+    const button = document.createElement('button');
+    items.append(button);
+    button.dispatchEvent(
+      new PointerEvent('pointerdown', {
+        bubbles: true,
+        button: 0,
+        clientX: 5,
+        clientY: 50,
+        isPrimary: true,
+        pointerType: 'mouse',
+      })
+    );
+    pressScrollbar(items, 50); // Content, outside the native gutter.
+    expect(tracking.isScrolling()).toBe(false);
+    expect(tracking.lastScrollTime()).toBe(0);
+
+    pressScrollbar(items, 5);
+    expect(tracking.isScrolling()).toBe(true);
+    expect(tracking.lastScrollTime()).toBe(200);
+    vi.runAllTimers();
+    expect(tracking.isScrolling()).toBe(false);
+    expect(onScrollEnd).toHaveBeenCalledOnce();
+
+    now.mockReturnValue(300);
+    pressScrollbar(items, 5);
+    tracking.beginProgrammaticScroll();
+    vi.runAllTimers();
     expect(tracking.isScrolling()).toBe(false);
     expect(onScrollEnd).toHaveBeenCalledOnce();
     dispose();
