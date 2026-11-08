@@ -51,7 +51,7 @@ function mountController() {
   };
 }
 
-describe('toolbar settings opening focus', () => {
+describe('toolbar settings focus', () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => {
     vi.clearAllTimers();
@@ -134,6 +134,62 @@ describe('toolbar settings opening focus', () => {
       expect(document.activeElement).toBe(ui.theme);
     } finally {
       ui.dispose();
+    }
+  });
+
+  it('restores the settings button after an isolated Escape', () => {
+    const ui = mountController();
+    try {
+      ui.open();
+      vi.advanceTimersByTime(50);
+      expect(document.activeElement).toBe(ui.theme);
+
+      ui.controller.handleToolbarKeyDown(new KeyboardEvent('keydown', { key: 'Escape' }));
+      vi.advanceTimersByTime(50);
+      expect(document.activeElement).toBe(ui.button);
+    } finally {
+      ui.dispose();
+    }
+  });
+
+  it('does not restore settings focus after Help takes focus', () => {
+    const ui = mountController();
+    const help = document.createElement('button');
+    document.body.append(help);
+    try {
+      ui.open();
+      vi.advanceTimersByTime(50);
+      expect(document.activeElement).toBe(ui.theme);
+
+      ui.controller.handleToolbarKeyDown(new KeyboardEvent('keydown', { key: 'Escape' }));
+      help.focus();
+      vi.advanceTimersByTime(50);
+      expect(document.activeElement).toBe(help);
+    } finally {
+      ui.dispose();
+    }
+  });
+
+  it('cancels Escape focus restoration when settings reopens or the controller disposes', () => {
+    const ui = mountController();
+    let disposed = false;
+    try {
+      ui.open();
+      vi.advanceTimersByTime(50);
+      ui.controller.handleToolbarKeyDown(new KeyboardEvent('keydown', { key: 'Escape' }));
+      ui.open();
+      vi.advanceTimersByTime(50);
+      expect(document.activeElement).toBe(ui.theme);
+
+      ui.controller.handleToolbarKeyDown(new KeyboardEvent('keydown', { key: 'Escape' }));
+      ui.dispose();
+      disposed = true;
+      vi.advanceTimersByTime(50);
+      expect(document.activeElement).toBe(ui.theme);
+    } finally {
+      if (!disposed) {
+        ui.dispose();
+      }
     }
   });
 });

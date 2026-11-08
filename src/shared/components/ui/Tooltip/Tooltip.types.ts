@@ -9,12 +9,6 @@ import type { JSXElement } from 'solid-js';
 
 export type TooltipPlacement = 'top' | 'bottom';
 
-export interface TooltipPosition {
-  readonly x: number;
-  readonly y: number;
-  readonly actualPlacement: TooltipPlacement;
-}
-
 export interface TooltipProps {
   /** Tooltip text content */
   readonly content: string;

@@ -12,7 +12,7 @@
     overflow: visible;
   }
 
-  /* Gallery overlay - Full screen background */
+  /* Native modal occupies the viewport; the browser owns the top layer. */
   .xeg-gallery-overlay {
     display: flex;
     align-items: center;
@@ -24,11 +24,24 @@
     opacity: 1;
     transition: opacity var(--xeg-duration-normal) var(--xeg-ease-standard);
     pointer-events: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    max-width: none;
+    max-height: none;
+  }
+
+  .xeg-gallery-overlay:not([open]) {
+    display: none;
+  }
+
+  .xeg-gallery-overlay::backdrop {
+    background: var(--xeg-gallery-bg);
   }
 
   /* Gallery container - Scrollable */
   .xeg-gallery-container {
-    position: relative;
+    position: fixed;
     width: 100%;
     height: 100%;
     max-width: 100vw;

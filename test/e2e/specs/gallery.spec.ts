@@ -120,6 +120,140 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     }
   });
 
+  test('native modal contains real keyboard focus and keeps anchored help on a scrolled page', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 420, height: 700 });
+    await page.route('https://pbs.twimg.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: MOCK_IMAGE })
+    );
+    await setupGalleryPage(page, 'https://x.com/author/status/222');
+    await page.evaluate(() => {
+      document.body.style.minHeight = '2000px';
+      const opener = document.createElement('button');
+      opener.id = 'native-gallery-opener';
+      opener.textContent = 'Open gallery';
+      document.body.append(opener);
+      window.scrollTo(0, 800);
+      opener.focus({ preventScroll: true });
+      const app = (
+        globalThis as unknown as {
+          __XEG__: {
+            main: { galleryApp: { openGallery: (items: unknown[], index: number) => void } };
+          };
+        }
+      ).__XEG__.main.galleryApp;
+      app.openGallery(
+        [
+          {
+            id: 'native-modal-1',
+            type: 'image',
+            url: 'https://pbs.twimg.com/media/native-modal.jpg',
+            width: 320,
+            height: 200,
+          },
+        ],
+        0
+      );
+    });
+
+    const gallery = page.locator('dialog[data-xeg-gallery-container]');
+    await expect(gallery).toHaveAttribute('open', '');
+    expect(await gallery.evaluate((dialog) => dialog.matches(':modal'))).toBe(true);
+    expect(await page.evaluate(() => document.body.style.position)).toBe('fixed');
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => document.activeElement?.closest('dialog') !== null)).toBe(
+      true
+    );
+    await page.keyboard.press('Shift+Tab');
+    expect(
+      await page.evaluate(() => {
+        const active = document.activeElement;
+        return (
+          active?.closest('dialog') !== null ||
+          active === document.body ||
+          active === document.documentElement
+        );
+      })
+    ).toBe(true);
+    await expect(page.locator('#native-gallery-opener')).not.toBeFocused();
+
+    const settingsButton = gallery.locator('#settings-button');
+    await settingsButton.focus();
+    const tooltip = settingsButton.locator('..').locator('[role="tooltip"]:popover-open');
+    await expect(tooltip).toBeVisible();
+    await expect(settingsButton).toHaveAttribute(
+      'aria-describedby',
+      (await tooltip.getAttribute('id'))!
+    );
+    expect(
+      await tooltip.evaluate((element) => {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        return range.getClientRects().length;
+      })
+    ).toBe(1);
+    expect(await tooltip.evaluate((element) => element.closest('dialog') !== null)).toBe(true);
+    const bounds = await tooltip.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds!.x).toBeGreaterThanOrEqual(0);
+    expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(420);
+    expect(bounds!.y).toBeGreaterThanOrEqual(0);
+    expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(700);
+
+    await settingsButton.click();
+    await expect(settingsButton).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(settingsButton).toHaveAttribute('aria-expanded', 'false');
+    await expect(gallery).toBeVisible();
+
+    await gallery.locator('#keyboard-help-button').click();
+    await expect(gallery.locator('#keyboard-help-button')).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(gallery.locator('#keyboard-help-button')).toHaveAttribute(
+      'aria-expanded',
+      'false'
+    );
+    await expect(gallery).toBeVisible();
+
+    await expect(gallery.locator('#keyboard-help-button')).toBeFocused();
+    await expect(
+      gallery.locator('#keyboard-help-button').locator('..').getByRole('tooltip')
+    ).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(gallery).toHaveCount(0);
+    expect(await page.evaluate(() => document.body.style.position)).toBe('');
+    expect(await page.evaluate(() => Math.round(window.scrollY))).toBe(800);
+    await expect(page.locator('#native-gallery-opener')).toBeFocused();
+
+    await page.evaluate(() => {
+      const app = (
+        globalThis as unknown as {
+          __XEG__: {
+            main: { galleryApp: { openGallery: (items: unknown[], index: number) => void } };
+          };
+        }
+      ).__XEG__.main.galleryApp;
+      app.openGallery(
+        [
+          {
+            id: 'native-modal-2',
+            type: 'image',
+            url: 'https://pbs.twimg.com/media/native-modal.jpg',
+            width: 320,
+            height: 200,
+          },
+        ],
+        0
+      );
+      document.querySelector('#native-gallery-opener')?.remove();
+    });
+    await expect(gallery).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(gallery).toHaveCount(0);
+    expect(await page.evaluate(() => document.body.style.position)).toBe('');
+  });
+
   test('keeps distant video bodies deferred at preloadCount 20 and plays the selected item', async ({
     page,
   }) => {

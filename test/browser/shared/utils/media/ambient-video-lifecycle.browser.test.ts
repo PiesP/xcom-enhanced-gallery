@@ -28,7 +28,7 @@ function modal() {
   container.className = 'xeg-gallery-container';
   container.tabIndex = -1;
   document.body.append(container);
-  return { container, state: activateGalleryHostState(container) };
+  return { container, state: activateGalleryHostState() };
 }
 
 describe('modal-owned ambient playback suppression', () => {

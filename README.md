@@ -12,7 +12,7 @@ gallery is for desktop browsers.
 | --- | --- | --- | --- |
 | [Userscript](#userscript) | Yes, through your userscript manager | The manager can offer updates; review and approve each offered update | A supported desktop browser and a userscript manager |
 | [Chrome, Edge, or Brave extension](#chrome-edge-or-brave-extension) | Yes, while the unpacked extension and its directory remain in place | Replace the extracted files and reload the extension manually | Developer mode and a permanent directory |
-| [Firefox extension](#firefox-extension) | No; the temporary add-on is removed on browser restart | Load a new ZIP manually for each session | Firefox 140+ and `about:debugging` |
+| [Firefox extension](#firefox-extension) | No; the temporary add-on is removed on browser restart | Load a new ZIP manually for each session | Firefox 159+ and `about:debugging` |
 
 The archives below are GitHub release builds; they are not public browser-store
 installations. See [browser support](#browser-support) for version floors.
@@ -96,7 +96,7 @@ extension from `chrome://extensions`. Check saved settings after updating.
 
 Firefox removes this development installation on restart. Load it again for a
 later session, or use a supported userscript manager for a persistent install.
-Firefox 140+ supports the extension's
+Firefox 159+ supports the extension's
 [built-in data consent declaration](./PRIVACY.md#network-access).
 
 ## Troubleshooting and limits
@@ -144,9 +144,9 @@ The gallery does not provide a mobile or touch flow.
 
 | Distribution | Support |
 | --- | --- |
-| Userscript | Chrome/Edge 123+, Firefox 128+, Safari 17.5+ |
+| Userscript | Chrome/Edge 157+, Firefox 159+, Safari 27.2+ |
 | Chromium extension | Current desktop Chrome, Edge, and Brave developer mode |
-| Firefox extension | Firefox 140+ temporary developer installation |
+| Firefox extension | Firefox 159+ temporary developer installation |
 
 The userscript compatibility floor is defined by `USERSCRIPT_BROWSER_SUPPORT`
 in [`tooling/vite/browser-support.ts`](./tooling/vite/browser-support.ts). The

@@ -348,8 +348,7 @@ export function VerticalImageItem(props: VerticalImageItemProps): JSXElement | n
         })
   );
 
-  // W2: Focus trap implemented at GalleryContainer level, not per-item.
-  // See GalleryContainer.tsx for the standardized focus trap.
+  // The native gallery dialog contains keyboard focus; this item does not manage Tab.
 
   return (
     <li

@@ -8,6 +8,7 @@ import {
   type GalleryHostStateHandle,
 } from '@shared/components/isolation/gallery-host-state';
 import { useTranslation } from '@shared/hooks/use-translation';
+import { closeGallery } from '@shared/state/signals/gallery.signals';
 import type { ComponentChildren } from '@shared/utils/solid/accessor-utils';
 import { cx } from '@shared/utils/text/formatting';
 import type { JSXElement } from 'solid-js';
@@ -54,7 +55,8 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
 
   const classes = cx(CSS.CLASSES.OVERLAY, CSS.CLASSES.CONTAINER, 'pp-design', local.className);
 
-  let containerEl: HTMLDivElement | undefined;
+  let containerEl: HTMLDialogElement | undefined;
+  let closeRequested = false;
 
   // H2: Safari iframe color-scheme workaround — set inline style because
   // Safari does not inherit color-scheme from CSS inside iframes.
@@ -64,7 +66,7 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       return;
     }
 
-    const applyColorScheme = (el: HTMLDivElement) => {
+    const applyColorScheme = (el: HTMLDialogElement) => {
       const theme = el.getAttribute('data-theme');
       if (theme === 'dark') {
         el.style.setProperty('color-scheme', 'dark');
@@ -90,89 +92,37 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
     });
   });
 
-  // W2: Standardized focus trap — traps Tab/Shift+Tab within the gallery dialog.
-  // Uses a single keydown listener on the container root that wraps focus
-  // from last → first and first → last focusable element.
-  createEffect(() => {
-    const container = containerEl;
-    if (!container) {
-      return;
-    }
-
-    const focusableSelectors = [
-      'a[href]',
-      'button:not([disabled])',
-      'iframe',
-      'input:not([disabled])',
-      'select:not([disabled])',
-      'textarea:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])',
-    ].join(', ');
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Tab') {
-        return;
-      }
-
-      const focusableElements = Array.from(
-        container.querySelectorAll<HTMLElement>(focusableSelectors)
-      ).filter((el) => {
-        const style = getComputedStyle(el);
-        return (
-          el.tabIndex >= 0 &&
-          el.getClientRects().length > 0 &&
-          style.visibility === 'visible' &&
-          style.display !== 'none' &&
-          !el.closest('[hidden], [inert], [aria-hidden="true"]')
-        );
-      });
-
-      if (focusableElements.length === 0) {
-        return;
-      }
-
-      const firstElement = focusableElements[0];
-      const lastElement = focusableElements[focusableElements.length - 1];
-
-      if (!firstElement || !lastElement) {
-        return;
-      }
-
-      if (event.shiftKey) {
-        if (document.activeElement === containerEl || document.activeElement === firstElement) {
-          event.preventDefault();
-          lastElement.focus();
-        }
-      } else {
-        if (document.activeElement === lastElement) {
-          event.preventDefault();
-          firstElement.focus();
-        }
-      }
-    };
-
-    container.addEventListener('keydown', handleKeyDown);
-    onCleanup(() => {
-      container.removeEventListener('keydown', handleKeyDown);
-    });
-  });
-
   let hostState: GalleryHostStateHandle | null = null;
 
   createEffect(() => {
     if (!containerEl || hostState) {
       return;
     }
-    hostState = activateGalleryHostState(containerEl);
+    hostState = activateGalleryHostState();
+    containerEl.showModal();
+    containerEl.focus({ preventScroll: true });
   });
 
   onCleanup(() => {
+    closeRequested = true;
+    if (containerEl?.open) {
+      containerEl.close();
+    }
     hostState?.restore();
     hostState = null;
   });
 
+  const requestClose = (): void => {
+    if (closeRequested) {
+      return;
+    }
+    closeRequested = true;
+    containerEl?.close();
+    closeGallery();
+  };
+
   return (
-    <div
+    <dialog
       ref={(el) => {
         containerEl = el;
       }}
@@ -180,14 +130,26 @@ export function GalleryContainer(props: GalleryContainerProps): JSXElement {
       data-xeg-gallery-container=""
       data-pp-product="xeg"
       data-pp-theme={local.theme ?? 'auto'}
-      role="dialog"
-      aria-modal="true"
-      tabindex="-1"
+      tabIndex={-1}
+      onCancel={(event) => {
+        event.preventDefault();
+        const focused = document.activeElement;
+        if (
+          focused instanceof HTMLElement &&
+          (focused.matches('input, select, textarea') || focused.isContentEditable)
+        ) {
+          // Preserve text-entry Escape ownership. Native media UI can consume
+          // the key before a dialog cancel request reaches this handler.
+          return;
+        }
+        requestClose();
+      }}
+      onClose={requestClose}
       aria-label={translate('msg.gal.imageGallery')}
       lang={local.lang ?? 'en'}
       dir={local.dir ?? 'ltr'}
     >
       {local.children}
-    </div>
+    </dialog>
   );
 }

@@ -24,7 +24,7 @@ const DATA_ATTRIBUTES = {
 } as const;
 
 const ARIA_ROLES = {
-  GALLERY: '[role="dialog"]',
+  GALLERY: 'dialog[data-xeg-gallery-container]',
   LIST: '[data-gallery-element="items"]',
   LIST_ITEM: '[data-gallery-element="item"]',
 } as const;

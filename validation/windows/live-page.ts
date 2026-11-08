@@ -298,8 +298,8 @@ type GalleryObservation = {
   activationFocusChanged?: boolean;
   focusTarget?: string;
   opened?: {
-    ariaModal: string | null;
-    role: string | null;
+    modal: boolean;
+    tag: string;
     selectedGallery?: ReturnType<typeof inspectSelectedGalleryDocument> | null;
     selectedVideo?: ReturnType<typeof inspectSelectedGalleryVideoDocument> | null;
   };
@@ -2435,8 +2435,8 @@ async function observeQuotedVideo(
     await selectedHandle?.dispose();
     const opened = (await page.evaluate(inspectSelectedGalleryVideoDocument)) || null;
     const galleryOpenedState = {
-      ariaModal: await gallery.getAttribute('aria-modal'),
-      role: await gallery.getAttribute('role'),
+      modal: await gallery.evaluate((element) => element.matches(':modal')),
+      tag: await gallery.evaluate((element) => element.tagName),
       selectedVideo: opened,
     };
     observation.gallery.opened = galleryOpenedState;
@@ -2548,8 +2548,7 @@ async function observeQuotedVideo(
         meaningfulFocusTarget,
         focusedControlStillOwnsClick: observation.gallery.focusedControlStillOwnsClick,
       }),
-      galleryDialog:
-        galleryOpenedState.role === 'dialog' && galleryOpenedState.ariaModal === 'true',
+      galleryDialog: galleryOpenedState.tag === 'DIALOG' && galleryOpenedState.modal,
       selectedPlayableVideo: Boolean(
         video?.visible &&
         video.itemLoaded &&
@@ -2815,9 +2814,9 @@ async function observeNativePreviewPhoto(
     }
     const ownerPath = await page.evaluate(inspectNativePreviewOwnerDocument);
     observation.gallery.opened = {
-      ariaModal: await gallery.getAttribute('aria-modal'),
+      modal: await gallery.evaluate((element) => element.matches(':modal')),
       selectedGallery,
-      role: await gallery.getAttribute('role'),
+      tag: await gallery.evaluate((element) => element.tagName),
     };
     observation.gallery.ownerPath = ownerPath;
     observation.screenshots.open = await captureScreenshot(
@@ -2870,8 +2869,7 @@ async function observeNativePreviewPhoto(
       extensionInjected: observation.extension.readinessMarker === true,
       nativePreviewAction: identityBeforeClick,
       galleryDialog:
-        observation.gallery.opened?.role === 'dialog' &&
-        observation.gallery.opened.ariaModal === 'true',
+        observation.gallery.opened?.tag === 'DIALOG' && observation.gallery.opened.modal,
       exactCProviderPhoto: evidence.providerConfirmed,
       selectedCPhoto: evidence.selectedConfirmed,
       canonicalCOwner: evidence.ownerConfirmed,
@@ -3463,9 +3461,9 @@ async function observeOne(
     const selectedGallery = selectedGalleryHandle ? await selectedGalleryHandle.jsonValue() : null;
     await selectedGalleryHandle?.dispose();
     observation.gallery.opened = {
-      ariaModal: await gallery.getAttribute('aria-modal'),
+      modal: await gallery.evaluate((element) => element.matches(':modal')),
       selectedGallery,
-      role: await gallery.getAttribute('role'),
+      tag: await gallery.evaluate((element) => element.tagName),
     };
     if (reportedFilename) {
       if (!selectedGallery) {
@@ -3625,8 +3623,7 @@ async function observeOne(
       loadedTargetImage: observation.target.imageLoaded && observation.target.imageVisible,
       topActionIdentity: identityBeforeClick,
       galleryDialog:
-        observation.gallery.opened?.role === 'dialog' &&
-        observation.gallery.opened.ariaModal === 'true',
+        observation.gallery.opened?.tag === 'DIALOG' && observation.gallery.opened.modal,
       galleryHostImage: observation.gallery.opened?.selectedGallery != null,
       ...(enteredMixedViaPhoto
         ? {

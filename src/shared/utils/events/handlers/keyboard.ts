@@ -167,6 +167,11 @@ export function handleKeyboardEvent(
       if (expandedToolbarPanelOwnsEscape(event)) {
         return;
       }
+      // A native modal owns Escape and fires cancel. Keep this path for any
+      // state transition that precedes dialog presentation.
+      if (document.querySelector<HTMLDialogElement>('[data-xeg-gallery-container]')?.open) {
+        return;
+      }
       handlers.onGalleryClose();
       event.preventDefault();
       event.stopPropagation();

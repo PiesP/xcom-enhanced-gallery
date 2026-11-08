@@ -1,5 +1,25 @@
 # Optional Windows artifact fixture selector
 
+For focused installed Firefox modal and anchored-tooltip acceptance for #508,
+create the ignored, exclusive `native-browser-ui.json` selector with exactly:
+
+```json
+{"scenario":"native-browser-ui"}
+```
+
+Run the prepared VM with `--browser firefox --installation extension`, the
+final built `dist-extension-firefox` artifact, and no public `--live-url`.
+This route uses a temporary installed extension, the existing experience page,
+three generated JPEGs with matching intrinsic dimensions, and real Firefox
+BiDi pointer/keyboard input. It records native modal and host inertness,
+Tab/Shift+Tab, anchored tooltips on a scrolled host and resized viewport,
+Arabic selection through the native select, narrow RTL tooltip layout,
+Settings/help/gallery Escape ownership, host state and opener restoration, and
+reopen. It retains `firefox-native-ui-observations.json`, screenshots, and the
+common `firefox-installation.json` receipt on success or failure. The filename
+download scenarios do not run in this focused route. Remove only this task-owned
+selector after the attempt; retain failed receipts and screenshots.
+
 For the bounded #502 installed-Edge image recovery comparison, create the
 ignored, exclusive `source-image-failures.json` selector:
 
