@@ -4,7 +4,6 @@
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
 
 /** Small input seam shared by the installed Chromium and Firefox transports. */
 export interface NativeScrollbarDriver {
@@ -205,7 +204,6 @@ export async function runNativeScrollbarTakeover(
     await driver.evaluate(`window.${PROBE}.mark('dragStart')`);
     await driver.drag(geometry.from, geometry.to, async () => {
       await driver.evaluate(`window.${PROBE}.mark('pointerHeld')`);
-      await delay(60);
       await driver.evaluate(`window.${PROBE}.mark('dragMoveStart')`);
     });
     await driver.evaluate(`window.${PROBE}.mark('dragEnd')`);
