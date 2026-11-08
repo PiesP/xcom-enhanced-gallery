@@ -711,6 +711,7 @@ export async function runFirefoxInstallation({
       headless,
       acceptInsecureCerts: true,
       preferences: {
+        ...(scrollbarTakeover ? { 'ui.prefersReducedMotion': 0 } : {}),
         'browser.download.dir': downloads,
         'browser.download.folderList': 2,
         'browser.download.useDownloadDir': true,
@@ -784,6 +785,8 @@ export async function runFirefoxInstallation({
                 | undefined;
               return runNativeScrollbarTakeover(
                 {
+                  launchCondition:
+                    'ui.prefersReducedMotion=0 in this owned temporary Firefox profile',
                   prepareInput: async () => {
                     const viewport = (await session!.evaluateJson(
                       '(() => ({ width: innerWidth, height: innerHeight }))()'
