@@ -34,6 +34,15 @@ results remain in `installation-result.json`. Remove only this selector after
 the run. It does not qualify live X or installed Safari.
 
 
+
+The probe also captures page-native viewport PNGs with a focused English
+Settings tooltip, then the actual Spanish ZIP tooltip at installed 200% tab
+zoom in the normal and 840×592 viewports. The receipt records the browser zoom,
+device-pixel ratio, CSS viewport size, tooltip/anchor geometry, description,
+anchor linkage, and tooltip-center hit target. The fixture restores tab zoom,
+viewport, and language before the wheel and close checks.
+
+
 For the bounded #502 installed-Edge image recovery comparison, create the
 ignored, exclusive `source-image-failures.json` selector:
 

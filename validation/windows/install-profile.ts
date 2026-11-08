@@ -17742,6 +17742,44 @@ async function runNativeBrowserUiProbe({
   const cleanupErrors: string[] = [];
   let error: unknown;
   page.on('pageerror', (failure) => pageErrors.push(failure.message));
+  const captureTooltip = async (button: Locator, file: string) => {
+    await button.focus();
+    const tooltip = button.locator('xpath=..').locator('[role="tooltip"]:popover-open');
+    await tooltip.waitFor({ state: 'visible' });
+    const geometry = await tooltip.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const anchor = document.activeElement;
+      const anchorRect = anchor?.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      return {
+        text: element.textContent?.trim() ?? '',
+        rect: rect.toJSON(),
+        anchor: anchorRect?.toJSON() ?? null,
+        viewport: {
+          width: innerWidth,
+          height: innerHeight,
+          devicePixelRatio,
+          visualScale: visualViewport?.scale ?? null,
+        },
+        inDialog: element.closest('dialog') !== null,
+        described:
+          anchor?.getAttribute('aria-describedby')?.split(/\s+/).includes(element.id) ?? false,
+        anchorName: anchor ? getComputedStyle(anchor).getPropertyValue('anchor-name').trim() : '',
+        positionAnchor: getComputedStyle(element).getPropertyValue('position-anchor').trim(),
+        centerHit: hit === element || element.contains(hit),
+      };
+    });
+    assert(geometry.text, 'Focused tooltip has no text');
+    assert(geometry.anchor, 'Focused tooltip has no anchor rectangle');
+    assert(geometry.inDialog && geometry.described, 'Focused tooltip lost its modal description');
+    assert(geometry.anchorName && geometry.positionAnchor === geometry.anchorName);
+    assert(geometry.rect.left >= -1 && geometry.rect.top >= -1);
+    assert(geometry.rect.right <= geometry.viewport.width + 1);
+    assert(geometry.rect.bottom <= geometry.viewport.height + 1);
+    assert(geometry.centerHit, 'Focused tooltip center is occluded');
+    await page.screenshot({ path: join(output, file) });
+    return { ...geometry, screenshot: file };
+  };
   try {
     await page.goto(`chrome-extension://${extensionId}/manifest.json`);
     await page.goto(EXPERIENCE_FIXTURE_URL);
@@ -17782,17 +17820,8 @@ async function runNativeBrowserUiProbe({
     observations.modal = { hostScroll, nativeModal: true, nativeTab: true };
 
     const settings = gallery.locator('#settings-button');
-    await settings.focus();
-    const tooltip = gallery.locator('[role="tooltip"]:popover-open');
-    await tooltip.waitFor({ state: 'visible' });
-    const bounds = await tooltip.boundingBox();
-    const viewport = page.viewportSize();
-    assert(bounds && viewport, 'Anchored tooltip geometry is unavailable');
-    assert(bounds.x >= 0 && bounds.y >= 0 && bounds.x + bounds.width <= viewport.width);
-    assert(bounds.y + bounds.height <= viewport.height);
-    assert(await tooltip.evaluate((element) => element.closest('dialog') !== null));
-    assert(await settings.getAttribute('aria-describedby'));
-    observations.tooltip = { bounds, viewport, inDialog: true };
+    assert.equal(await settings.getAttribute('aria-label'), 'Open Settings');
+    observations.tooltip = await captureTooltip(settings, 'native-browser-ui-tooltip-en.png');
 
     await settings.click();
     assert.equal(await settings.getAttribute('aria-expanded'), 'true');
@@ -17806,6 +17835,124 @@ async function runNativeBrowserUiProbe({
     assert.equal(await help.getAttribute('aria-expanded'), 'false');
     assert(await gallery.isVisible(), 'Help Escape closed the gallery');
     observations.innerEscape = { settings: true, help: true };
+
+    const originalViewport = page.viewportSize();
+    assert(originalViewport, 'Native tooltip viewport is unavailable');
+    const baseline = await page.evaluate(() => ({
+      devicePixelRatio,
+      innerWidth,
+      visualScale: visualViewport?.scale ?? null,
+    }));
+    const priorZoom = await fixtureTabZoom(
+      context,
+      extensionId,
+      page,
+      null,
+      null,
+      EXPERIENCE_FIXTURE_URL
+    );
+    const language = gallery.locator('#settings-language-select');
+    let priorLanguage: string | undefined;
+    let zoomAttempted = false;
+    try {
+      await settings.click();
+      priorLanguage = await language.inputValue();
+      await language.selectOption('es');
+      await settings.click();
+      await page.waitForFunction(
+        () =>
+          document.querySelector(
+            'button[aria-label="Descargar los 3 archivos visibles como ZIP"]'
+          ) !== null
+      );
+      zoomAttempted = true;
+      const appliedZoom = await fixtureTabZoom(
+        context,
+        extensionId,
+        page,
+        2,
+        null,
+        EXPERIENCE_FIXTURE_URL
+      );
+      assert.equal(appliedZoom.observed, 2, 'Installed browser did not accept 200% tab zoom');
+      const zoomRatio = appliedZoom.observed / priorZoom.previous;
+      await page.waitForFunction(
+        (before) =>
+          devicePixelRatio >= before.devicePixelRatio * before.zoomRatio * 0.95 &&
+          innerWidth <= before.innerWidth / (before.zoomRatio * 0.95) &&
+          Math.abs((visualViewport?.scale ?? 1) - 1) <= 0.05,
+        { ...baseline, zoomRatio }
+      );
+      const bulk = gallery.locator(
+        'button[aria-label="Descargar los 3 archivos visibles como ZIP"]'
+      );
+      const zoomed = await captureTooltip(bulk, 'native-browser-ui-tooltip-es-zoom200.png');
+      assert.equal(zoomed.text, 'Descargar los 3 archivos visibles como ZIP');
+      await page.setViewportSize({ width: 840, height: 592 });
+      await page.waitForFunction(
+        ({ width, height, factor }) =>
+          Math.abs(innerWidth - width / factor) <= 1 &&
+          Math.abs(innerHeight - height / factor) <= 1,
+        { width: 840, height: 592, factor: 2 }
+      );
+      const narrow = await captureTooltip(bulk, 'native-browser-ui-tooltip-es-zoom200-narrow.png');
+      assert.equal(narrow.text, zoomed.text);
+      observations.localizedZoomTooltip = {
+        language: 'es',
+        baseline,
+        priorZoom,
+        appliedZoom,
+        zoomed,
+        narrow,
+      };
+    } finally {
+      for (const [name, restore] of [
+        ['tooltip viewport', () => page.setViewportSize(originalViewport)],
+        [
+          'tab zoom',
+          async () => {
+            if (!zoomAttempted) {
+              return;
+            }
+            const restored = await fixtureTabZoom(
+              context,
+              extensionId,
+              page,
+              priorZoom.previous,
+              priorZoom.settings,
+              EXPERIENCE_FIXTURE_URL
+            );
+            assert.equal(
+              restored.observed,
+              priorZoom.previous,
+              'Native browser UI zoom was not restored'
+            );
+            assert.equal(restored.observedSettings.mode, priorZoom.settings.mode);
+            assert.equal(restored.observedSettings.scope, priorZoom.settings.scope);
+          },
+        ],
+        [
+          'tooltip language',
+          async () => {
+            if (priorLanguage === undefined || !(await gallery.isVisible())) {
+              return;
+            }
+            if ((await settings.getAttribute('aria-expanded')) !== 'true') {
+              await settings.click();
+            }
+            await language.selectOption(priorLanguage);
+            await settings.click();
+          },
+        ],
+      ] as const) {
+        try {
+          await restore();
+        } catch (failure) {
+          cleanupErrors.push(`${name}: ${safeError(failure)}`);
+        }
+      }
+    }
+    assert.deepEqual(cleanupErrors, [], 'Native tooltip state restoration failed');
 
     const items = gallery.locator('[data-gallery-element="items"]');
     await items.evaluate((element) => {
