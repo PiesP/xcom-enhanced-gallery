@@ -15,7 +15,7 @@ interface IconButtonProps {
   readonly id?: string;
   /** Native HTML title attribute (fallback when tooltip is not set) */
   readonly title?: string;
-  /** Custom tooltip content (renders a positioned Portal tooltip instead of native title) */
+  /** Custom anchored tooltip content instead of a native title */
   readonly tooltip?: string;
   readonly size?: string;
   readonly 'data-testid'?: string;
@@ -34,7 +34,7 @@ interface IconButtonProps {
  * Accessible icon button with optional tooltip.
  *
  * Renders a `<button>` element with an icon.
- * When `tooltip` is provided, a Portal-based custom tooltip is shown on hover/focus
+ * When `tooltip` is provided, an anchored popover tooltip is shown on hover/focus
  * instead of the native `title` attribute. Falls back to `title` for backward compatibility.
  *
  * @param props - Button configuration (icon, label, click handler, tooltip, etc.)

@@ -89,7 +89,7 @@ export const TOOLTIP_SHOW_DELAY_MS = 300;
 /** Tooltip hide delay in milliseconds (Tooltip.tsx) */
 export const TOOLTIP_HIDE_DELAY_MS = 100;
 
-/** Gallery scroll idle timeout before marking as idle (use-gallery-scroll) */
+/** Bounded wait for wheel input without scroll displacement (use-gallery-scroll) */
 export const SCROLL_IDLE_TIMEOUT_MS = 250;
 
 /** Window to ignore programmatic scroll events (use-gallery-scroll) */
