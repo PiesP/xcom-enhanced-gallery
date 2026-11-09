@@ -397,6 +397,7 @@ export async function runSettingsPersistenceFixture({
     assert.equal(durableLanguage, 'ja');
     await page.reload({ waitUntil: 'domcontentloaded' });
     await installGMMock(page, { persistentStorage: true });
+    await installStorageFaultControl(page);
     await installMediaFixture();
     await page.addScriptTag({ content: script });
     await page.locator('html[data-xeg-gallery-ready="true"]').waitFor();
