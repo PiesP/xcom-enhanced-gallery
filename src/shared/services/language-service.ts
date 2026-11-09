@@ -215,15 +215,20 @@ export class LanguageService {
   private async persistLanguage(language: SupportedLanguage, revision: number): Promise<void> {
     try {
       await this.storage.set(LanguageService.STORAGE_KEY, language);
-      if (revision === this.revision) {
-        this.pendingLanguage = undefined;
-        this.setUnsaved(false);
+      const effective = await this.storage.getState<string>(LanguageService.STORAGE_KEY);
+      if (revision !== this.revision) {
+        return;
       }
+      if (!effective.available || this.normalizeLanguage(effective.value) !== language) {
+        throw new Error('Language save could not be confirmed');
+      }
+      this.pendingLanguage = undefined;
+      this.setUnsaved(false);
     } catch (error) {
       if (revision === this.revision) {
         this.setUnsaved(true);
       }
-      __DEV__ && logger.warn('Failed to persist language setting:', error);
+      __DEV__ && logger.warn('Failed to save or confirm language setting:', error);
       throw error;
     }
   }

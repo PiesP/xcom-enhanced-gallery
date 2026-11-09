@@ -5,7 +5,11 @@ import { LanguageService } from '@shared/services/language-service';
 import { PersistentSettingsRepository } from '@features/settings/services/settings-repository';
 import { SettingsService } from '@features/settings/services/settings-service';
 import { createDefaultSettings } from '@constants/settings';
-import { resetPersistentStorageForTests } from '@shared/services/persistent-storage';
+import {
+  getPersistentStorage,
+  PersistentStorage,
+  resetPersistentStorageForTests,
+} from '@shared/services/persistent-storage';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import historicalBaselines from '../../../../fixtures/settings/recognized-schema-baselines.json';
 
@@ -125,6 +129,125 @@ describe('settings storage and service outcome', () => {
       fresh.destroy();
     }
   );
+
+  it('retains language intent when an unreadable newer primary outranks accepted fallback', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_000);
+    const storage = getPersistentStorage();
+    await storage.set('xeg-language', 'ja');
+    await storage.set('xeg-language', 'en');
+    const primary = JSON.parse(backend.values.get('xeg-language')!) as {
+      updatedAt: number;
+      value: string;
+    };
+    expect(primary).toMatchObject({ updatedAt: 1_002, value: 'en' });
+
+    const language = new LanguageService();
+    await language.initialize();
+    expect(language.getCurrentLanguage()).toBe('en');
+    backend.denyReads = true;
+    backend.denyPrimary = true;
+    language.setLanguage('ko');
+    await expect.poll(() => fallback.has('xeg-fallback:xeg-language')).toBe(true);
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    const acceptedFallback = JSON.parse(fallback.get('xeg-fallback:xeg-language')!) as {
+      updatedAt: number;
+      value: string;
+    };
+    expect(acceptedFallback).toMatchObject({ updatedAt: 1_001, value: 'ko' });
+    expect(language.getCurrentLanguage()).toBe('ko');
+    expect(language.translate('tb.prev')).toBe('이전');
+    expect(language.hasUnsavedChanges()).toBe(true);
+    await expect(language.retryUnsaved()).rejects.toThrow('could not be confirmed');
+    expect(language.hasUnsavedChanges()).toBe(true);
+
+    language.destroy();
+    await language.initialize();
+    expect(language.getCurrentLanguage()).toBe('ko');
+    expect(language.hasUnsavedChanges()).toBe(true);
+    backend.denyReads = false;
+    backend.denyPrimary = false;
+    language.setLanguage('ko');
+    await language.retryUnsaved();
+    expect(language.hasUnsavedChanges()).toBe(false);
+    const fresh = new LanguageService();
+    await fresh.initialize();
+    expect(fresh.getCurrentLanguage()).toBe('ko');
+    expect(JSON.parse(backend.values.get('xeg-language')!)).toMatchObject({
+      updatedAt: 1_003,
+      value: 'ko',
+    });
+    language.destroy();
+    fresh.destroy();
+  });
+
+  it('keeps a readable conflicting language save unsaved until fallback wins on retry', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_000);
+    const language = new LanguageService();
+    await language.initialize();
+    let release: () => void = () => undefined;
+    let started: () => void = () => undefined;
+    const began = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let held = false;
+    backend.beforeSet = async (key, value) => {
+      if (key === 'xeg-language' && value.includes('"ko"') && !held) {
+        held = true;
+        started();
+        await gate;
+      }
+    };
+    backend.rejectSet = (_key, value) => value.includes('"ko"');
+    language.setLanguage('ko');
+    await began;
+    await new PersistentStorage().set('xeg-language', 'en');
+    release();
+    await expect.poll(() => language.hasUnsavedChanges()).toBe(true);
+    expect(JSON.parse(backend.values.get('xeg-language')!)).toMatchObject({
+      updatedAt: 1_001,
+      value: 'en',
+    });
+    expect(JSON.parse(fallback.get('xeg-fallback:xeg-language')!)).toMatchObject({
+      updatedAt: 1_001,
+      value: 'ko',
+    });
+    expect(language.getCurrentLanguage()).toBe('ko');
+
+    await language.retryUnsaved();
+    expect(language.hasUnsavedChanges()).toBe(false);
+    expect(JSON.parse(fallback.get('xeg-fallback:xeg-language')!)).toMatchObject({
+      updatedAt: 1_002,
+      value: 'ko',
+    });
+    const fresh = new LanguageService();
+    await fresh.initialize();
+    expect(fresh.getCurrentLanguage()).toBe('ko');
+    language.destroy();
+    fresh.destroy();
+  });
+
+  it('confirms a language after clock rollback using the real storage envelope ordering', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_000);
+    await getPersistentStorage().set('xeg-language', 'en');
+    const language = new LanguageService();
+    await language.initialize();
+    vi.spyOn(Date, 'now').mockReturnValue(900);
+    language.setLanguage('ko');
+    await language.retryUnsaved();
+    expect(language.hasUnsavedChanges()).toBe(false);
+    expect(JSON.parse(backend.values.get('xeg-language')!)).toMatchObject({
+      updatedAt: 1_002,
+      value: 'ko',
+    });
+    const fresh = new LanguageService();
+    await fresh.initialize();
+    expect(fresh.getCurrentLanguage()).toBe('ko');
+    language.destroy();
+    fresh.destroy();
+  });
 
   it('does not let an older language completion clear newer pending intent', async () => {
     const language = new LanguageService();

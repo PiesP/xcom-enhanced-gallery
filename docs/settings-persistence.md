@@ -103,11 +103,16 @@ gallery settings. The existing retry button gives each owner one explicit attemp
 a failure in either owner does not prevent the other from recovering. Repeated
 denial keeps feedback visible without an automatic retry loop.
 
+An accepted write clears language intent only after an available read confirms
+the effective language. An unreadable primary or a conflicting effective value
+keeps the latest intent and unsaved feedback for explicit retry. This immediate
+readback cannot prevent a later write from another document.
+
 A successfully saved unchanged choice is deduplicated. An unchanged unsaved choice
 can retry, and a newer selection supersedes earlier pending intent. Completion of
 an older write cannot mark the newer selection saved. Pending intent survives
 same-document language-service restart; a fresh document reads durable storage
-and cannot recover unsaved memory. Successful primary and fallback writes retain
+and cannot recover unsaved memory. Confirmed primary and fallback writes retain
 the existing envelope and fallback ordering.
 
 ## Gallery feedback
@@ -115,7 +120,7 @@ the existing envelope and fallback ordering.
 When either owner reports an unsaved edit, the gallery toolbar shows a session-only
 notice even while Settings is closed. This includes fit changes made directly in
 the toolbar. The notice opens Settings, where the existing status and explicit
-retry button remain the only recovery controls. A pending write or a successful
+retry button remain the only recovery controls. A pending write or a confirmed
 primary/fallback save does not show the unsaved notice. Successful retry clears it;
 closing and reopening the gallery reads the owners' current state. The notice
 does not make in-memory preferences survive a document reload or bypass the

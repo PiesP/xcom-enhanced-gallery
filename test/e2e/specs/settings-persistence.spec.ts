@@ -76,14 +76,27 @@ async function setupGalleryPage(
   if (faultableStorage) {
     await page.evaluate((denyRead) => {
       const host = window as typeof window & {
-        __xegStorageFaults?: { denyPrimary: boolean; denyFallback: boolean; denyNextRead: number };
+        __xegStorageFaults?: {
+          denyPrimary: boolean;
+          denyFallback: boolean;
+          denyNextRead: number;
+          denyLanguageReads: boolean;
+        };
       };
-      const faults = { denyPrimary: false, denyFallback: false, denyNextRead: denyRead ? 1 : 0 };
+      const faults = {
+        denyPrimary: false,
+        denyFallback: false,
+        denyNextRead: denyRead ? 1 : 0,
+        denyLanguageReads: false,
+      };
       host.__xegStorageFaults = faults;
       const originalSet = window.GM_setValue;
       const originalGet = window.GM_getValue;
       const originalFallbackSet = Storage.prototype.setItem;
       window.GM_getValue = <T>(key: string, defaultValue?: T): T => {
+        if (faults.denyLanguageReads && key === 'xeg-language') {
+          throw new Error('controlled language read denial');
+        }
         if (faults.denyNextRead > 0) {
           faults.denyNextRead--;
           throw new Error('controlled initial read denial');
@@ -442,6 +455,107 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     await expect(page.locator('[data-gallery-element="settings-panel"] select').nth(1)).toHaveValue(
       'ja'
     );
+    expect(errors).toEqual([]);
+  });
+
+  test('language control keeps unsaved feedback until a hidden newer primary can be replaced', async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    await setupGalleryPage(page, true, true);
+    await page.evaluate(() => {
+      Date.now = () => 1_000;
+    });
+    await openGallery(page);
+    await page.locator('#settings-button').click();
+    const panel = page.locator('[data-gallery-element="settings-panel"]');
+    const language = panel.locator('#settings-language-select');
+    const unsaved = panel.locator('[data-xeg-settings-unsaved]');
+    await language.selectOption('ja');
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const raw = window.GM_getValue?.<string>('xeg-language');
+          return typeof raw === 'string' ? (JSON.parse(raw) as { value: string }).value : null;
+        })
+      )
+      .toBe('ja');
+    await language.selectOption('en');
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const raw = window.GM_getValue?.<string>('xeg-language');
+          return typeof raw === 'string' ? (JSON.parse(raw) as { value: string }).value : null;
+        })
+      )
+      .toBe('en');
+    const primary = await page.evaluate(() => {
+      const raw = window.GM_getValue?.<string>('xeg-language');
+      return typeof raw === 'string'
+        ? (JSON.parse(raw) as { updatedAt: number; value: string })
+        : null;
+    });
+    expect(primary).toMatchObject({ updatedAt: 1_002, value: 'en' });
+
+    await page.evaluate(() => {
+      const faults = (
+        window as typeof window & {
+          __xegStorageFaults: { denyPrimary: boolean; denyLanguageReads: boolean };
+        }
+      ).__xegStorageFaults;
+      faults.denyPrimary = true;
+      faults.denyLanguageReads = true;
+    });
+    await language.selectOption('ko');
+    await expect(panel.locator('label[for="settings-language-select"]')).toHaveText('언어');
+    await expect(unsaved).toBeVisible();
+    const fallback = await page.evaluate(() => {
+      const raw = localStorage.getItem('xeg-fallback:xeg-language');
+      return raw === null ? null : (JSON.parse(raw) as { updatedAt: number; value: string });
+    });
+    expect(fallback).toMatchObject({ updatedAt: 1_001, value: 'ko' });
+    await page.evaluate(async () => {
+      const main = (
+        window as typeof window & {
+          __XEG__: { main: { cleanup(): Promise<void>; start(): Promise<void> } };
+        }
+      ).__XEG__.main;
+      await main.cleanup();
+      await main.start();
+    });
+    await openGallery(page);
+    await page.locator('#settings-button').click();
+    await expect(language).toHaveValue('ko');
+    await expect(unsaved).toBeVisible();
+    await unsaved.getByRole('button').click();
+    await expect(unsaved).toBeVisible();
+
+    await page.evaluate(() => {
+      const faults = (
+        window as typeof window & {
+          __xegStorageFaults: { denyPrimary: boolean; denyLanguageReads: boolean };
+        }
+      ).__xegStorageFaults;
+      faults.denyPrimary = false;
+      faults.denyLanguageReads = false;
+    });
+    await unsaved.getByRole('button').click();
+    await expect(unsaved).toHaveCount(0);
+    const saved = await page.evaluate(() => {
+      const raw = window.GM_getValue?.<string>('xeg-language');
+      return typeof raw === 'string'
+        ? (JSON.parse(raw) as { updatedAt: number; value: string })
+        : null;
+    });
+    expect(saved).toMatchObject({ updatedAt: 1_003, value: 'ko' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await installGMMock(page, { persistentStorage: true });
+    await injectDevUserscript(page);
+    await waitForGalleryApp(page);
+    await openGallery(page);
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label*="설정"]').click();
+    await expect(page.locator('#settings-language-select')).toHaveValue('ko');
     expect(errors).toEqual([]);
   });
 
