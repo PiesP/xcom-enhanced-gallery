@@ -7032,7 +7032,8 @@ async function runOuterVideoControl({
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
-  const filename = `${quotedCase.handle}_${quotedCase.outer}_2.mp4`;
+  // The outer video is attachment 0 even when it is the third gallery item.
+  const filename = `${quotedCase.handle}_${quotedCase.outer}_0.mp4`;
   await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
   const download = await waitForDownload(extensionPage, knownIds, filename);
   const relativeDownload = relative(downloads, download.filename);
@@ -12648,7 +12649,14 @@ async function runQuotedVideoCycle({
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
-  const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}${quotedCase.name === 'unmarked-no-outer' ? ' (1)' : ''}.mp4`;
+  // Direct nested quote view places the owner's sole video second in the gallery.
+  const ownerOrdinal =
+    quotedCase.name === 'nested-direct-quote' ? 0 : quotedCase.expectedPosition - 1;
+  const collisionSuffix =
+    quotedCase.name === 'unmarked-no-outer' || quotedCase.name === 'nested-direct-quote'
+      ? ' (1)'
+      : '';
+  const filename = `${quotedCase.username}_${quotedCase.owner}_${ownerOrdinal}${collisionSuffix}.mp4`;
   await playing.gallery
     .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
     .click();
