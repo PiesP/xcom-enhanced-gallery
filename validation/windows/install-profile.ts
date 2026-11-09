@@ -6365,6 +6365,7 @@ async function runAttachmentFilenameFocusedProbe({
     });
     evidence.api = routes.compactApiResponses;
     evidence.images = routes.compactImageRequests;
+    routes.assertNoQualityRequestOverflow();
     evidence.status = 'passed';
     evidence.diagnosticOnly = diagnosticOnly;
   } catch (error) {
@@ -15928,6 +15929,7 @@ async function runFailedEntryRecoveryProbe({
       [],
       'Failed-entry fixture reported unexpected console errors'
     );
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primaryError = error;
   } finally {
@@ -16268,6 +16270,7 @@ async function runMediaDownloadRecoveryProbe({
       qualityRequests: routes.qualityRequests,
       nativeTransport: nativeLoopback.snapshot(),
     };
+    routes.assertNoQualityRequestOverflow();
     result = {
       status: 'observed',
       scope: 'installed extension and deterministic owned X fixture',
@@ -17724,6 +17727,7 @@ async function runUxDetailsProbe({
     if (failures.length) {
       throw new AggregateError(failures, 'UX details cases failed');
     }
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primaryError = error;
   } finally {
@@ -18173,6 +18177,7 @@ async function runNativeBrowserUiProbe({
     await gallery.waitFor({ state: 'detached' });
     observations.reopen = true;
     assert.deepEqual(pageErrors, []);
+    routes.assertNoQualityRequestOverflow();
   } catch (failure) {
     error = failure;
   } finally {
@@ -19179,7 +19184,8 @@ async function runGalleryExperienceProbe({
           status:
             Object.values(phases).every(({ status }) => status === 'passed') &&
             !pageErrors.length &&
-            !cleanupErrors.length
+            !cleanupErrors.length &&
+            !routes.getQualityRequestOverflow()
               ? 'passed'
               : 'failed',
           scope:
@@ -19198,6 +19204,7 @@ async function runGalleryExperienceProbe({
     Object.values(phases).every(({ status }) => status === 'passed'),
     'Gallery experience phase failed'
   );
+  routes.assertNoQualityRequestOverflow();
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(cleanupErrors, []);
   return { status: 'passed', phases, documentationScreenshots };
@@ -19330,6 +19337,7 @@ async function runOpeningFeedbackProbe({
       page,
     });
     assert.deepEqual(pageErrors, [], 'Opening probe page errors');
+    fixtureRoutes.assertNoQualityRequestOverflow();
     observations.runtime = { pageErrors, consoleErrors, pageFetches };
     result = {
       status: 'passed',
@@ -19455,6 +19463,8 @@ async function exerciseInstalledExtension(
   };
   const compactQuotePhoto: CompactEvidence = { status: 'pending', api: [], images: [], steps: [] };
   let apiReuse: unknown = { status: 'pending' };
+  let apiReuseStartCount: number | null = null;
+  let apiReuseEndCount: number | null = null;
   let capacityNotification: unknown = { status: 'pending' };
   let videoLoading: unknown = { status: 'pending' };
   let nativeRedirect: unknown = { status: 'pending' };
@@ -20098,6 +20108,7 @@ async function exerciseInstalledExtension(
       capacityNotification = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
+    apiReuseStartCount = fixtureRoutes.qualityRequests.length;
     try {
       apiReuse = await runInstalledMediaApiReuseProfile({
         context,
@@ -20112,6 +20123,7 @@ async function exerciseInstalledExtension(
       apiReuse = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
+    apiReuseEndCount = fixtureRoutes.qualityRequests.length;
     fixtureRoutes.assertNoQualityRequestOverflow();
     try {
       videoLoading = await runVideoLoadingProfile({
@@ -20170,6 +20182,7 @@ async function exerciseInstalledExtension(
       cycles.every(({ scroll }) => scroll.restored),
       'Every close must restore the saved scroll position'
     );
+    fixtureRoutes.assertNoQualityRequestOverflow();
     flowResult = {
       cleanup: flowCleanup,
       cycles,
@@ -20186,6 +20199,11 @@ async function exerciseInstalledExtension(
       sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
       sourceQualityRequests: fixtureRoutes.qualityRequests,
       qualityRequestOverflow: fixtureRoutes.getQualityRequestOverflow(),
+      qualityObservation: {
+        apiReuseStartCount,
+        apiReuseEndCount,
+        currentCount: fixtureRoutes.qualityRequests.length,
+      },
       mv3RestartCancellation,
       directRestart,
       trustedDownloadInput,
@@ -20276,6 +20294,11 @@ async function exerciseInstalledExtension(
             sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
             sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],
             qualityRequestOverflow: fixtureRoutes?.getQualityRequestOverflow() ?? null,
+            qualityObservation: {
+              apiReuseStartCount,
+              apiReuseEndCount,
+              currentCount: fixtureRoutes?.qualityRequests.length ?? null,
+            },
             quotedApiResponses: fixtureRoutes?.quotedApiResponses ?? [],
             flowCleanup,
             mv3RestartCancellation,
@@ -20604,6 +20627,7 @@ async function runExtensionUpgrade({
       await candidatePage.close();
     }
     receipt.method = 'same-path-unpacked-extension-runtime-reload';
+    routes.assertNoQualityRequestOverflow();
     receipt.status = 'passed';
   } catch (error) {
     if (!extensionPage.isClosed()) {
@@ -20911,6 +20935,7 @@ async function runSameVersionAttribution({
       receipt.cases.every((item) => item.status === 'passed'),
       'Same-version case failed'
     );
+    routes.assertNoQualityRequestOverflow();
     receipt.status = 'passed';
   } catch (error) {
     primaryError = error;
@@ -21089,6 +21114,7 @@ async function runSettingsPersistenceProbe({
       retryStillUnsaved: true,
     };
     assert.deepEqual(errors, []);
+    routes.assertNoQualityRequestOverflow();
     evidence.status = 'passed';
     return evidence;
   } catch (error) {
@@ -21178,6 +21204,7 @@ async function runMediaApiReuseFocusedProbe({
     assert.equal(transport.overflow, false, 'API reuse fixture exceeded its transport cap');
     assert.equal(transport.serverError, false, 'API reuse fixture listener failed');
     assert.equal(transport.activeCount, 0, 'API reuse fixture retains an active response');
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primarySeen = true;
     primaryError = error;
@@ -21262,6 +21289,7 @@ async function runSourceImageFailureFocusedProbe({
     assert.equal(transport.overflow, false, 'Source image fixture exceeded its transport cap');
     assert.equal(transport.serverError, false, 'Source image fixture listener failed');
     assert.equal(transport.activeCount, 0, 'Source image fixture retains an active response');
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primaryError = error;
     evidence.status = 'failed';

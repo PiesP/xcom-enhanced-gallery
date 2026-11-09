@@ -5423,6 +5423,7 @@ async function runUserscriptUpgrade({
       crossUpdateUiVerified: ['fit', 'language', 'videoVolume'],
     };
     receipt.method = 'same-manager-profile-utilities-import-defer-then-update';
+    routes.assertNoQualityRequestOverflow();
     receipt.status = 'passed';
   } catch (error) {
     receipt.error = safeRouteError(error);
