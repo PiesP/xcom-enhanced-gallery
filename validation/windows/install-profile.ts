@@ -5562,7 +5562,8 @@ async function runCompactQuotePhotoCycle({
   const bNativeMark = nativeLoopback.mark();
   const bFetchMark = pageFetches.length;
   await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
-  const bSingleName = `middle_fixture_${COMPACT_MIDDLE_ID}_1.webp`;
+  // B owns one attachment (ordinal 0), though it is the second gallery item.
+  const bSingleName = `middle_fixture_${COMPACT_MIDDLE_ID}_0.webp`;
   const bSingle = await waitForDownload(extensionPage, knownBSingle, bSingleName);
   const bSinglePath = relative(downloads, bSingle.filename);
   assert(bSinglePath && !bSinglePath.startsWith('..') && !isAbsolute(bSinglePath));
