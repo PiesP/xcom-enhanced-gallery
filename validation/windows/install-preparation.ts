@@ -521,6 +521,13 @@ export async function installFixtureRoutes(
   const unavailableApiResponses: ApiRecord[] = [];
   const qualityApiResponses: ApiRecord[] = [];
   const qualityRequests: QualityRequest[] = [];
+  let qualityRequestOverflow: {
+    path: string;
+    name: string | null;
+    resourceType: string;
+    currentCount: number;
+    limit: number;
+  } | null = null;
   const compactApiResponses: ApiRecord[] = [];
   const compactImageRequests: QualityRequest[] = [];
   const filenameFaults: Array<{ transport: 'context'; status: 404; path: string }> = [];
@@ -1073,10 +1080,17 @@ export async function installFixtureRoutes(
         url.pathname.startsWith('/media/') &&
         IMAGE_URL_MARKERS.some((marker) => url.pathname.includes(marker))
       ) {
-        assert(
-          qualityRequests.length < MAX_QUALITY_IMAGE_REQUESTS,
-          'Source-quality request observation overflow'
-        );
+        if (qualityRequests.length >= MAX_QUALITY_IMAGE_REQUESTS) {
+          qualityRequestOverflow ??= {
+            path: url.pathname,
+            name: url.searchParams.get('name'),
+            resourceType: route.request().resourceType(),
+            currentCount: qualityRequests.length,
+            limit: MAX_QUALITY_IMAGE_REQUESTS,
+          };
+          await route.abort('blockedbyclient');
+          return;
+        }
         qualityRequests.push({
           path: url.pathname,
           name: url.searchParams.get('name'),
@@ -1111,6 +1125,14 @@ export async function installFixtureRoutes(
     quotedApiResponses,
     unavailableApiResponses,
     qualityRequests,
+    getQualityRequestOverflow: () => qualityRequestOverflow,
+    assertNoQualityRequestOverflow() {
+      assert.equal(
+        qualityRequestOverflow,
+        null,
+        `Source-quality request observation overflow: ${JSON.stringify(qualityRequestOverflow)}`
+      );
+    },
     compactApiResponses,
     compactImageRequests,
     filenameFaults,

@@ -20112,6 +20112,7 @@ async function exerciseInstalledExtension(
       apiReuse = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
+    fixtureRoutes.assertNoQualityRequestOverflow();
     try {
       videoLoading = await runVideoLoadingProfile({
         context,
@@ -20184,6 +20185,7 @@ async function exerciseInstalledExtension(
       videoLoading,
       sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
       sourceQualityRequests: fixtureRoutes.qualityRequests,
+      qualityRequestOverflow: fixtureRoutes.getQualityRequestOverflow(),
       mv3RestartCancellation,
       directRestart,
       trustedDownloadInput,
@@ -20273,6 +20275,7 @@ async function exerciseInstalledExtension(
             videoLoading,
             sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
             sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],
+            qualityRequestOverflow: fixtureRoutes?.getQualityRequestOverflow() ?? null,
             quotedApiResponses: fixtureRoutes?.quotedApiResponses ?? [],
             flowCleanup,
             mv3RestartCancellation,
