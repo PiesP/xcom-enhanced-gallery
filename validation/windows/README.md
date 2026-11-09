@@ -342,7 +342,15 @@ physical API requests across successive clicks, navigation, reload and a fresh
 page. It checks independent selected-photo identity, uncached provider failures,
 and the exact controlled 403/429/unreadable-503 retry guidance. Owned pages have
 bounded script and console observations, and the helper retains its JSON receipt
-and a screenshot on failure. `video-loading-profile.ts` opens eight synthetic
+and a screenshot on failure. Before API reuse, the full flow preserves its
+completed image-observation buffer and hands the route observer one fresh buffer.
+Only one handoff is permitted; each buffer retains the bound defined in
+`install-preparation.ts`. Ordinary and failure receipts keep both buffers and
+their phase counts. Overflow aborts the affected fixture request and fails the
+owning probe at its awaited result boundary. Fixture-route owners must check
+overflow before accepting success; cleanup remains a separate outcome. Focused
+profiles start with their own buffer. `video-loading-profile.ts` opens eight
+synthetic
 videos with a high image-preload setting, checks geometry-based admission and
 far entries without attached sources, and verifies metadata, first frame,
 playback progress and same-attachment decode recovery. The separate HTTPS

@@ -294,6 +294,7 @@ export async function runInstalledVideoSaveFormatProbe({
       unexpectedCount: transport.unexpectedCount,
       overflow: transport.overflow,
     };
+    routes.assertNoQualityRequestOverflow();
     receipt.status = 'passed';
   } catch (error) {
     primarySeen = true;

@@ -39,14 +39,8 @@ export class SettingsService {
     }
     // A same-document SPA restart must not discard a denied local edit. A real
     // document reload creates a fresh service and reads durable storage again.
-    if (this.unsaved && !this.repository.loadState) {
-      this._initialized = true;
-      return;
-    }
     const generation = this.generation;
-    const result = this.repository.loadState
-      ? await this.repository.loadState()
-      : { settings: await this.repository.load(), available: true };
+    const result = await this.repository.loadState();
     if (generation !== this.generation) {
       return;
     }
@@ -148,11 +142,7 @@ export class SettingsService {
     let failure: unknown;
     let savedSettings = nextSettings;
     try {
-      if (this.repository.saveChanges) {
-        savedSettings = await this.repository.saveChanges(this.pendingChanges, timestamp);
-      } else {
-        await this.repository.save(nextSettings);
-      }
+      savedSettings = await this.repository.saveChanges(this.pendingChanges, timestamp);
       saved = true;
     } catch (error) {
       failure = error;
@@ -210,30 +200,26 @@ export class SettingsService {
         if (!this.unsaved || generation !== this.generation || !this._initialized) {
           return;
         }
-        if (this.repository.saveChanges) {
-          if (this.pendingChanges.size > 0) {
-            const saved = await this.repository.saveChanges(this.pendingChanges, Date.now());
-            this.pendingChanges.clear();
-            if (generation === this.generation && this._initialized) {
-              const previousSettings = this.settings;
-              this.settings = saved;
-              this.notifyRecoveredSettings(previousSettings);
-            }
-          } else if (this.repository.loadState) {
-            const result = await this.repository.loadState();
-            if (!result.available) {
-              throw new Error(
-                'Settings storage is unreadable or has an unsupported schema; retry after recovery'
-              );
-            }
-            if (generation === this.generation && this._initialized) {
-              const previousSettings = this.settings;
-              this.settings = result.settings;
-              this.notifyRecoveredSettings(previousSettings);
-            }
+        if (this.pendingChanges.size > 0) {
+          const saved = await this.repository.saveChanges(this.pendingChanges, Date.now());
+          this.pendingChanges.clear();
+          if (generation === this.generation && this._initialized) {
+            const previousSettings = this.settings;
+            this.settings = saved;
+            this.notifyRecoveredSettings(previousSettings);
           }
         } else {
-          await this.repository.save(globalThis.structuredClone(this.settings));
+          const result = await this.repository.loadState();
+          if (!result.available) {
+            throw new Error(
+              'Settings storage is unreadable or has an unsupported schema; retry after recovery'
+            );
+          }
+          if (generation === this.generation && this._initialized) {
+            const previousSettings = this.settings;
+            this.settings = result.settings;
+            this.notifyRecoveredSettings(previousSettings);
+          }
         }
         if (generation === this.generation && this._initialized) {
           this.baselineAvailable = true;

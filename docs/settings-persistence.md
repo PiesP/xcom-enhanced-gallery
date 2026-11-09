@@ -10,7 +10,9 @@ defaults. Legacy migration and normalization still apply to the baseline, but
 normalization never writes a snapshot derived from an unavailable read. The
 [`loadState` and `saveChanges` methods](../src/features/settings/services/settings-repository.ts)
 own composition and field writes; [`getState`](../src/shared/services/persistent-storage.ts)
-reports whether both storage layers were readable.
+reports whether both storage layers were readable. `SettingsRepository` requires
+availability-aware reads and explicit leaf changes. It offers no full-snapshot
+write capability: a stale snapshot cannot represent an independent user edit.
 
 An edit records only the leaves the caller changed, including differences in a
 parent-object setter. Before writing, the repository must read the baseline and

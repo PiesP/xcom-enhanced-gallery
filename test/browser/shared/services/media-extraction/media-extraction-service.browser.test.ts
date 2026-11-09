@@ -21,6 +21,7 @@ vi.mock('@shared/services/media/twitter-auth/twitter-auth', () => ({
 import { getTweetMedias } from '@shared/services/media/twitter-api-client';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import type { MediaExtractionResult } from '@shared/types/media.types';
+import { ErrorCode } from '@shared/types/media.types';
 
 describe('MediaExtractionService quoted media selection', () => {
   beforeEach(() => {
@@ -328,6 +329,8 @@ describe('MediaExtractionService quoted media selection', () => {
     const result = await pending;
     expect(result.success).toBe(false);
     expect(result.metadata?.error).toBe('Extraction cancelled');
+    expect(result.failureKind).toBe('cancelled');
+    expect(result.errors?.[0]?.code).toBe(ErrorCode.CANCELLED);
   });
 });
 
@@ -705,7 +708,10 @@ describe('MediaExtractionService API circuit', () => {
     await vi.waitFor(() => expect(httpGet).toHaveBeenCalledTimes(3));
     controller.abort();
     complete(foreignRootResponse());
-    expect((await pending).metadata?.error).toBe('Extraction cancelled');
+    const cancelled = await pending;
+    expect(cancelled.metadata?.error).toBe('Extraction cancelled');
+    expect(cancelled.failureKind).toBe('cancelled');
+    expect(cancelled.errors?.[0]?.code).toBe(ErrorCode.CANCELLED);
 
     httpGet.mockResolvedValue({ ok: true, status: 200, data: createQuotedVideoTweetResponse() });
     expect((await click(service)).success).toBe(true);
