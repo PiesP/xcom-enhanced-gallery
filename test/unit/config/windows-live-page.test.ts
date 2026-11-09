@@ -192,6 +192,12 @@ type LivePageModule = Pick<
 };
 
 type InstallProfileModule = {
+  collectFilenameFaultConsoleErrors(
+    consoleErrors: Array<{ location: string; text: string }>,
+    start: number,
+    url: string,
+    contextFaultCount: number
+  ): Array<{ location: string; text: string }>;
   notificationCallsSince(cursor: unknown, observed: unknown): unknown[];
   assertNoRetiredExtractionNotifications(cursor: unknown, observed: unknown): unknown[];
   assertDownloadIncomplete(download: unknown, stage: string): void;
@@ -430,6 +436,38 @@ const userscriptInstall = (await import(
     durationMs: number
   ): Promise<{ samples: number }>;
 };
+
+describe('installed filename fault console attribution', () => {
+  const url = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig';
+  const text = 'Failed to load resource: the server responded with a status of 404 (Not Found)';
+
+  it('retains only the exact observed context fault record from its armed window', () => {
+    const prior = { location: url, text };
+    const owned = { location: url, text };
+    const wrongUrl = { location: 'https://pbs.twimg.com/media/other.jpg', text };
+    const wrongText = { location: url, text: 'Failed to load resource: net::ERR_FAILED' };
+    const records = [prior, owned, wrongUrl, wrongText];
+    const expected = installProfile.collectFilenameFaultConsoleErrors(records, 1, url, 1);
+    expect(expected).toHaveLength(1);
+    expect(expected[0]).toBe(owned);
+
+    const later = { location: url, text };
+    records.push(later);
+    const allowed = new Set([prior, ...expected]);
+    expect(records.filter((record) => !allowed.has(record))).toEqual([wrongUrl, wrongText, later]);
+  });
+
+  it('rejects an extra identical error beyond the observed context fault count', () => {
+    const records = [
+      { location: url, text },
+      { location: url, text },
+    ];
+    expect(() => installProfile.collectFilenameFaultConsoleErrors(records, 0, url, 1)).toThrow(
+      'more resource errors than its observed context faults'
+    );
+    expect(() => installProfile.collectFilenameFaultConsoleErrors(records, 0, url, 0)).toThrow();
+  });
+});
 
 describe('installed navigation notification creation history', () => {
   const prior = { id: 'xeg-prior', message: 'Before the scenario' };

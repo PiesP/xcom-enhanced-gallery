@@ -5224,11 +5224,33 @@ type CompactEvidence = {
   api: ApiRecord[];
   images: QualityRequest[];
   steps: Record<string, unknown>[];
+  expectedConsoleErrors?: ConsoleErrorRecord[];
   error?: string;
   failureScreenshot?: string;
   screenshotError?: string;
   cleanupErrors?: string[];
 };
+
+export function collectFilenameFaultConsoleErrors(
+  consoleErrors: ConsoleErrorRecord[],
+  start: number,
+  url: string,
+  contextFaultCount: number
+): ConsoleErrorRecord[] {
+  const expected = consoleErrors
+    .slice(start)
+    .filter(
+      (record) =>
+        record.location === url &&
+        record.text ===
+          'Failed to load resource: the server responded with a status of 404 (Not Found)'
+    );
+  assert(
+    expected.length <= contextFaultCount,
+    'Filename failure logged more resource errors than its observed context faults'
+  );
+  return expected;
+}
 
 async function compactHostSnapshot(page: Page, selector: string) {
   return page.evaluate((target) => {
@@ -5706,6 +5728,7 @@ async function runCompactQuotePhotoCycle({
 async function runAttachmentFilenameCycle({
   page,
   extensionPage,
+  consoleErrors,
   downloads,
   output,
   images,
@@ -5722,6 +5745,7 @@ async function runAttachmentFilenameCycle({
 }: {
   page: Page;
   extensionPage: Page;
+  consoleErrors?: ConsoleErrorRecord[];
   downloads: string;
   output: string;
   images: ImageFixtures;
@@ -6083,6 +6107,7 @@ async function runAttachmentFilenameCycle({
     });
     const faultNativeMark = nativeLoopback.mark();
     const faultContextMark = routes.filenameFaults.length;
+    const filenameConsoleMark = consoleErrors?.length;
     routes.armFilenameB1Failure();
     nativeLoopback.armHttpFailure(b1Url, 404);
     const knownPartial = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
@@ -6108,6 +6133,17 @@ async function runAttachmentFilenameCycle({
       .events.slice(faultNativeMark)
       .filter((event) => event.status === 404 && event.path === '/media/GkE5678GHIJKL.jpg');
     assert(contextFaults.length + nativeFaults.length > 0, 'B1 failure transport was not observed');
+    if (consoleErrors && filenameConsoleMark !== undefined) {
+      evidence.expectedConsoleErrors ??= [];
+      evidence.expectedConsoleErrors.push(
+        ...collectFilenameFaultConsoleErrors(
+          consoleErrors,
+          filenameConsoleMark,
+          b1Url,
+          contextFaults.length
+        )
+      );
+    }
     routes.clearFilenameB1Failure();
     nativeLoopback.clearHttpFailure();
     const recover = retry.getByRole('button', {
@@ -19717,6 +19753,7 @@ async function exerciseInstalledExtension(
       await runAttachmentFilenameCycle({
         page,
         extensionPage,
+        consoleErrors,
         downloads,
         output,
         images,
@@ -20155,18 +20192,20 @@ async function exerciseInstalledExtension(
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const expectedRenderFaultErrors = new Set(modelessRenderRecovery.expectedConsoleErrors ?? []);
     const expectedOriginalErrors = new Set(originalAvailability.expectedConsoleErrors);
+    const expectedFilenameErrors = new Set(compactQuotePhoto.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter(
       (record) =>
         !isExpectedFixtureApiConsoleError(record) &&
         !expectedMemoryErrors.has(record) &&
         !expectedOriginalErrors.has(record) &&
+        !expectedFilenameErrors.has(record) &&
         !expectedRenderFaultErrors.has(record)
     );
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
     assert.deepEqual(
       unexpectedConsoleErrors,
       [],
-      'Installed fixture must not log errors beyond its exact mocked API 403'
+      'Installed fixture logged unexpected console errors'
     );
     const nativeTransport = nativeLoopback.snapshot();
     assert.equal(
