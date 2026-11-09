@@ -1362,6 +1362,58 @@ async function waitForValue<T>(
   throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(lastValue)}`);
 }
 
+/** Verify native modal isolation without relying on an authored background marker. */
+export async function assertLateHostPanelIsolation(
+  page: Page,
+  panelId: string,
+  phase: 'open' | 'closed'
+): Promise<void> {
+  const panel = page.locator(`#${panelId}`);
+  await panel.waitFor({ state: 'attached' });
+  const state = await panel.evaluate((element) => ({
+    directBodyChild: element.parentElement === document.body,
+    ariaHidden: element.getAttribute('aria-hidden'),
+    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
+    inert: element.hasAttribute('inert'),
+    nativeModalOpen: document.querySelector('dialog[data-xeg-gallery-container]:modal') !== null,
+  }));
+  assert.equal(state.directBodyChild, true, 'Late host panel must be a body sibling');
+  assert.deepEqual(
+    { ariaHidden: state.ariaHidden, hiddenMarker: state.hiddenMarker, inert: state.inert },
+    { ariaHidden: 'false', hiddenMarker: false, inert: false },
+    'Gallery must preserve the late host panel authored attributes'
+  );
+  assert.equal(state.nativeModalOpen, phase === 'open', `Native gallery modal must be ${phase}`);
+
+  const actionName = `Late host action ${panelId}`;
+  await waitForValue(
+    async () => {
+      const session = await page.context().newCDPSession(page);
+      try {
+        const { nodes } = await session.send('Accessibility.getFullAXTree');
+        const exposed = nodes.filter(
+          (node) =>
+            !node.ignored && node.role?.value === 'button' && node.name?.value === actionName
+        ).length;
+        return exposed === (phase === 'open' ? 0 : 1) ? true : undefined;
+      } finally {
+        await session.detach();
+      }
+    },
+    `late host action ${phase} accessibility state`,
+    5_000
+  );
+  const focusAcquired = await panel.locator('button').evaluate((button) => {
+    button.focus();
+    return document.activeElement === button;
+  });
+  assert.equal(
+    focusAcquired,
+    phase === 'closed',
+    `Late host action focus must be ${phase === 'open' ? 'excluded' : 'restored'}`
+  );
+}
+
 function safeError(error: unknown, depth = 0): string {
   const rawSummary = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
   const summary =
@@ -10697,7 +10749,7 @@ async function runModelessRenderRecovery({
     assert.deepEqual(
       modelessRestoration.background,
       hostBefore.background,
-      'Modeless recovery must restore host isolation markers'
+      'Modeless recovery must restore host state'
     );
     assert.equal(modelessRestoration.scrollRestoration, hostBefore.scrollRestoration);
     assert.equal(modelessRestoration.scrollY, hostBefore.scrollY);
@@ -12583,11 +12635,13 @@ async function runQuotedVideoCycle({
     const panel = document.createElement('aside');
     panel.id = 'late-quote-panel';
     panel.setAttribute('aria-hidden', 'false');
-    panel.textContent = 'Late quote host panel';
+    const action = document.createElement('button');
+    action.textContent = 'Late host action late-quote-panel';
+    panel.append(action);
     document.body.append(panel);
     return panel.id;
   });
-  await page.locator(`#${latePanel}[data-xeg-gallery-hidden]`).waitFor({ state: 'attached' });
+  await assertLateHostPanelIsolation(page, latePanel, 'open');
   await page.screenshot({ path: join(output, `${artifactName}-playing-gallery.png`) });
 
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
@@ -12619,15 +12673,7 @@ async function runQuotedVideoCycle({
   });
   const copiedName = `${artifactName}-download.mp4`;
   await copyFile(download.filename, join(output, copiedName));
-  const lateState = await page.locator(`#${latePanel}`).evaluate((element) => ({
-    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
-    inert: element.hasAttribute('inert'),
-  }));
-  assert.deepEqual(
-    lateState,
-    { hiddenMarker: true, inert: true },
-    'Late-added host panel must be isolated while the gallery is open'
-  );
+  await assertLateHostPanelIsolation(page, latePanel, 'open');
   const playingClose = await closeQuotedGallery({
     gallery: playing.gallery,
     page,
@@ -12681,12 +12727,7 @@ async function runQuotedVideoCycle({
     URL.revokeObjectURL(video.src);
     video.remove();
   });
-  const restoredPanel = await page.locator(`#${latePanel}`).evaluate((element) => ({
-    ariaHidden: element.getAttribute('aria-hidden'),
-    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
-    inert: element.hasAttribute('inert'),
-  }));
-  assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
+  await assertLateHostPanelIsolation(page, latePanel, 'closed');
   await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
   const pausedControl =
     quotedCase.route === 'unmarked' || postPlayOverlay
@@ -12982,11 +13023,13 @@ async function runCycle({
     const node = document.createElement('aside');
     node.id = 'late-host-panel';
     node.setAttribute('aria-hidden', 'false');
-    node.textContent = 'Late host panel';
+    const action = document.createElement('button');
+    action.textContent = 'Late host action late-host-panel';
+    node.append(action);
     document.body.append(node);
     return node.id;
   });
-  await page.locator(`#${lateBackground}[data-xeg-gallery-hidden]`).waitFor({ state: 'attached' });
+  await assertLateHostPanelIsolation(page, lateBackground, 'open');
 
   let shiftedLayout = false;
   if (cycle.expectedIndex === 0) {
@@ -13159,12 +13202,7 @@ async function runCycle({
   const after = await hostSnapshot(page, cycle.triggerIndex);
   await page.screenshot({ path: join(output, `cycle-${number}-after.png`) });
 
-  const lateState = await page.locator(`#${lateBackground}`).evaluate((element) => ({
-    ariaHidden: element.getAttribute('aria-hidden'),
-    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
-    inert: element.hasAttribute('inert'),
-  }));
-  assert.deepEqual(lateState, { ariaHidden: 'false', hiddenMarker: false, inert: false });
+  await assertLateHostPanelIsolation(page, lateBackground, 'closed');
   assert.deepEqual(
     after.background,
     before.background,
