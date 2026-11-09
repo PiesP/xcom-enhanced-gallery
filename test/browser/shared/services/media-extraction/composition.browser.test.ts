@@ -30,7 +30,7 @@ const selected: MediaExtractionResult = {
 };
 
 function collaborators() {
-  const readContext = vi.fn(() => context);
+  const readContext = vi.fn<() => TweetClickContext | null>(() => context);
   const api = {
     extract: vi.fn(),
     invalidateMetadata: vi.fn(),
@@ -55,6 +55,21 @@ describe('composed extraction session', () => {
     expect(ports.api.extract).not.toHaveBeenCalled();
     expect(ports.dom.extract).not.toHaveBeenCalled();
     session.dispose();
+  });
+
+  it('keeps missing click context distinct from cancellation', async () => {
+    const ports = collaborators();
+    ports.readContext.mockReturnValue(null);
+    const session = new MediaExtractionService(ports);
+    try {
+      const result = await session.extractFromClickedElement(document.createElement('img'));
+      expect(result).toMatchObject({ success: false });
+      expect(result.errors?.[0]?.code).toBe(ErrorCode.NO_MEDIA_FOUND);
+      expect(result.failureKind).toBeUndefined();
+      expect(ports.api.extract).not.toHaveBeenCalled();
+    } finally {
+      session.dispose();
+    }
   });
 
   it('passes click ownership to the API and uses DOM recovery only after API failure', async () => {
