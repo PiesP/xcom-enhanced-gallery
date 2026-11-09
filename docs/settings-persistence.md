@@ -120,8 +120,9 @@ the existing envelope and fallback ordering.
 When either owner reports an unsaved edit, the gallery toolbar shows a session-only
 notice even while Settings is closed. This includes fit changes made directly in
 the toolbar. The notice opens Settings, where the existing status and explicit
-retry button remain the only recovery controls. A pending write or a confirmed
-primary/fallback save does not show the unsaved notice. Successful retry clears it;
-closing and reopening the gallery reads the owners' current state. The notice
-does not make in-memory preferences survive a document reload or bypass the
-unsupported-schema write protection described above.
+retry button remain the only recovery controls. An initial write shows no unsaved
+notice while its outcome is pending. After a failed or unconfirmed save, the
+notice remains visible during explicit retry until effective persistence is
+confirmed. Closing and reopening the gallery reads the owners' current state.
+The notice does not make in-memory preferences survive a document reload or
+bypass the unsupported-schema write protection described above.

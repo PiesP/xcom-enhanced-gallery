@@ -10,6 +10,9 @@ interface FaultControl {
   denyPrimary: boolean;
   denyFallback: boolean;
   denyNextRead: number;
+  denyLanguageReads: boolean;
+  denyLanguagePrimaryWrites: boolean;
+  restoreClock?: () => void;
   holdNextFitPrimary: boolean;
   fitPrimaryHeld: boolean;
   fitFallbackDenials: number;
@@ -35,6 +38,9 @@ export async function installStorageFaultControl(page: Page): Promise<void> {
     }
     const originalFallbackSet = Storage.prototype.setItem;
     const controlledGet = <T>(key: string): T | undefined => {
+      if (key === 'xeg-language' && faults.denyLanguageReads) {
+        throw new Error('controlled language read denial');
+      }
       if (faults.denyNextRead > 0) {
         faults.denyNextRead--;
         throw new Error('controlled initial read denial');
@@ -43,7 +49,7 @@ export async function installStorageFaultControl(page: Page): Promise<void> {
     };
     const controlledSet = (key: string, value: unknown): void | Promise<void> => {
       const write = (): void | Promise<void> => {
-        if (faults.denyPrimary) {
+        if (faults.denyPrimary || (key === 'xeg-language' && faults.denyLanguagePrimaryWrites)) {
           throw new Error('controlled primary denial');
         }
         return originalSet(key, value);
@@ -83,10 +89,13 @@ export async function installStorageFaultControl(page: Page): Promise<void> {
       denyPrimary: false,
       denyFallback: false,
       denyNextRead: 0,
+      denyLanguageReads: false,
+      denyLanguagePrimaryWrites: false,
       holdNextFitPrimary: false,
       fitPrimaryHeld: false,
       fitFallbackDenials: 0,
       restore: async () => {
+        faults.restoreClock?.();
         faults.holdNextFitPrimary = false;
         if (faults.releaseHeldFitPrimary) {
           const fallbackDenialsBefore = faults.fitFallbackDenials;
@@ -103,6 +112,8 @@ export async function installStorageFaultControl(page: Page): Promise<void> {
         }
         faults.denyPrimary = false;
         faults.denyFallback = false;
+        faults.denyLanguageReads = false;
+        faults.denyLanguagePrimaryWrites = false;
         if (host.GM_getValue === controlledGet) {
           host.GM_getValue = originalGet;
         }
@@ -405,6 +416,139 @@ export async function runSettingsPersistenceFixture({
       const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
       return typeof raw === 'string' && (JSON.parse(raw) as { value: string }).value === 'en';
     });
+
+    // Use actual product writes at a fixed clock to make an unseen primary
+    // newer than a fallback accepted during a language-only primary outage.
+    await page.evaluate(() => {
+      const host = window as StorageHost;
+      const faults = host.__xegStorageFaults;
+      if (!faults || !host.GM_deleteValue) {
+        throw new Error('Language storage control is unavailable');
+      }
+      host.GM_deleteValue('xeg-language');
+      localStorage.removeItem('xeg-fallback:xeg-language');
+      const originalNow = Date.now;
+      faults.restoreClock = () => {
+        Date.now = originalNow;
+        delete faults.restoreClock;
+      };
+      Date.now = () => 1_000;
+    });
+    try {
+      await language.selectOption('ja');
+      await page.waitForFunction(() => {
+        const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
+        return (
+          typeof raw === 'string' &&
+          (JSON.parse(raw) as { updatedAt: number; value: string }).updatedAt === 1_001 &&
+          (JSON.parse(raw) as { value: string }).value === 'ja'
+        );
+      });
+      await language.selectOption('en');
+      await page.waitForFunction(() => {
+        const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
+        return (
+          typeof raw === 'string' &&
+          (JSON.parse(raw) as { updatedAt: number; value: string }).updatedAt === 1_002 &&
+          (JSON.parse(raw) as { value: string }).value === 'en'
+        );
+      });
+      assert.equal(
+        await languageUnsaved.count(),
+        0,
+        'Healthy language save showed unsaved feedback'
+      );
+      await page.evaluate(() => {
+        const faults = (window as StorageHost).__xegStorageFaults!;
+        faults.denyLanguageReads = true;
+        faults.denyLanguagePrimaryWrites = true;
+      });
+      await language.selectOption('ko');
+      await languageUnsaved.waitFor({ state: 'visible', timeout: 5_000 });
+      assert.equal(
+        await reloadedGallery.locator('label[for="settings-language-select"]').textContent(),
+        '언어'
+      );
+      const firstFallback = await page.evaluate(() => {
+        const raw = localStorage.getItem('xeg-fallback:xeg-language');
+        return raw === null ? null : (JSON.parse(raw) as { updatedAt: number; value: string });
+      });
+      assert.deepEqual(
+        firstFallback,
+        { __xegStorageEnvelope: 1, updatedAt: 1_001, value: 'ko' },
+        'Accepted fallback did not retain the real older language envelope'
+      );
+      await page.screenshot({ path: path.join(output, 'language-hidden-primary-unsaved.png') });
+      await languageUnsaved.getByRole('button').click();
+      assert.equal(await languageUnsaved.isVisible(), true, 'Unconfirmed retry cleared feedback');
+      const retriedFallback = await page.evaluate(() => {
+        const raw = localStorage.getItem('xeg-fallback:xeg-language');
+        return raw === null ? null : (JSON.parse(raw) as { updatedAt: number; value: string });
+      });
+      assert.deepEqual(
+        retriedFallback,
+        { __xegStorageEnvelope: 1, updatedAt: 1_002, value: 'ko' },
+        'Unconfirmed retry did not remain bounded to one fallback write'
+      );
+      await page.evaluate(() => {
+        const faults = (window as StorageHost).__xegStorageFaults!;
+        faults.denyLanguageReads = false;
+        faults.denyLanguagePrimaryWrites = false;
+      });
+      const hiddenPrimary = await page.evaluate(() => {
+        const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
+        return typeof raw === 'string'
+          ? (JSON.parse(raw) as { updatedAt: number; value: string })
+          : null;
+      });
+      assert.deepEqual(
+        hiddenPrimary,
+        { __xegStorageEnvelope: 1, updatedAt: 1_002, value: 'en' },
+        'Hidden primary changed while language-only writes were denied'
+      );
+      await languageUnsaved.getByRole('button').click();
+      await languageUnsaved.waitFor({ state: 'detached', timeout: 5_000 });
+      const recoveredPrimary = await page.evaluate(() => {
+        const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
+        return typeof raw === 'string'
+          ? (JSON.parse(raw) as { updatedAt: number; value: string })
+          : null;
+      });
+      assert.deepEqual(
+        recoveredPrimary,
+        { __xegStorageEnvelope: 1, updatedAt: 1_003, value: 'ko' },
+        'Recovered retry did not become the effective primary language'
+      );
+      assert.equal(
+        await page.evaluate(() => localStorage.getItem('xeg-fallback:xeg-language')),
+        null,
+        'Recovered primary write left a stale fallback'
+      );
+      evidence.languageHiddenPrimary = {
+        initialPrimary: hiddenPrimary,
+        firstFallback,
+        retriedFallback,
+        recoveredPrimary,
+        translatedWhileUnsaved: true,
+        repeatedRetryUnsaved: true,
+      };
+      await language.selectOption('en');
+      await page.waitForFunction(() => {
+        const raw = (window as StorageHost).GM_getValue?.<string>('xeg-language');
+        return typeof raw === 'string' && (JSON.parse(raw) as { value: string }).value === 'en';
+      });
+      assert.equal(await languageUnsaved.count(), 0, 'Language restoration stayed unsaved');
+    } finally {
+      await page.evaluate(() => {
+        const faults = (window as StorageHost).__xegStorageFaults;
+        if (!faults) {
+          return;
+        }
+        faults.denyLanguageReads = false;
+        faults.denyLanguagePrimaryWrites = false;
+        faults.restoreClock?.();
+      });
+    }
 
     await page.evaluate(() => {
       const host = window as StorageHost;

@@ -470,7 +470,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     await openGallery(page);
     await page.locator('#settings-button').click();
     const panel = page.locator('[data-gallery-element="settings-panel"]');
-    const language = panel.locator('#settings-language-select');
+    const language = panel.locator('select').nth(1);
     const unsaved = panel.locator('[data-xeg-settings-unsaved]');
     await language.selectOption('ja');
     await expect
@@ -508,7 +508,7 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
       faults.denyLanguageReads = true;
     });
     await language.selectOption('ko');
-    await expect(panel.locator('label[for="settings-language-select"]')).toHaveText('언어');
+    await expect(panel.locator('label').nth(1)).toHaveText('언어');
     await expect(unsaved).toBeVisible();
     const fallback = await page.evaluate(() => {
       const raw = localStorage.getItem('xeg-fallback:xeg-language');
@@ -555,7 +555,9 @@ test.describe('X.com Enhanced Gallery Settings & Theme', () => {
     await waitForGalleryApp(page);
     await openGallery(page);
     await page.locator('[data-gallery-element="toolbar"] button[aria-label*="설정"]').click();
-    await expect(page.locator('#settings-language-select')).toHaveValue('ko');
+    await expect(page.locator('[data-gallery-element="settings-panel"] select').nth(1)).toHaveValue(
+      'ko'
+    );
     expect(errors).toEqual([]);
   });
 
