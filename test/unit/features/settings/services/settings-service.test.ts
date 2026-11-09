@@ -13,16 +13,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 function createMockRepository(): Mocked<SettingsRepository> {
   let savedSettings: AppSettings | null = null;
   return {
-    load: vi.fn(async () => {
-      if (savedSettings) {
-        return savedSettings;
-      }
-      return createDefaultSettings(Date.now());
-    }),
-    save: vi.fn(async (settings: AppSettings) => {
-      savedSettings = settings;
+    loadState: vi.fn(async () => ({
+      settings: globalThis.structuredClone(savedSettings ?? createDefaultSettings(Date.now())),
+      available: true,
+    })),
+    saveChanges: vi.fn(async (changes, timestamp) => {
+      savedSettings = applyChanges(
+        savedSettings ?? createDefaultSettings(Date.now()),
+        changes,
+        timestamp
+      );
+      return globalThis.structuredClone(savedSettings);
     }),
   };
+}
+
+function applyChanges(
+  stored: AppSettings,
+  changes: ReadonlyMap<string, unknown>,
+  timestamp: number
+): AppSettings {
+  const updated = globalThis.structuredClone(stored);
+  for (const [key, value] of changes) {
+    const [group, leaf] = key.split('.') as [keyof AppSettings, string];
+    (updated[group] as Record<string, unknown>)[leaf] = value;
+  }
+  updated.lastModified = timestamp;
+  return updated;
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────
@@ -50,7 +67,7 @@ describe('SettingsService', () => {
 
     it('should not load settings on construction', () => {
       service = new SettingsService(mockRepo);
-      expect(mockRepo.load).not.toHaveBeenCalled();
+      expect(mockRepo.loadState).not.toHaveBeenCalled();
     });
   });
 
@@ -60,7 +77,7 @@ describe('SettingsService', () => {
     it('should load settings from repository and mark initialized', async () => {
       service = new SettingsService(mockRepo);
       await service.initialize();
-      expect(mockRepo.load).toHaveBeenCalledTimes(1);
+      expect(mockRepo.loadState).toHaveBeenCalledTimes(1);
       expect(service.isInitialized()).toBe(true);
     });
 
@@ -68,13 +85,13 @@ describe('SettingsService', () => {
       service = new SettingsService(mockRepo);
       await service.initialize();
       await service.initialize();
-      expect(mockRepo.load).toHaveBeenCalledTimes(1);
+      expect(mockRepo.loadState).toHaveBeenCalledTimes(1);
     });
 
     it('should load saved settings from repository', async () => {
       const customSettings = createDefaultSettings(Date.now());
       customSettings.gallery.theme = 'dark';
-      mockRepo.load.mockResolvedValue(customSettings);
+      mockRepo.loadState.mockResolvedValue({ settings: customSettings, available: true });
 
       service = new SettingsService(mockRepo);
       await service.initialize();
@@ -97,7 +114,7 @@ describe('SettingsService', () => {
       // Calling set on a destroyed service may still work
       // since the repo is still referenced, but initialization guard
       // in destroy clears listeners
-      expect(mockRepo.save).not.toHaveBeenCalled();
+      expect(mockRepo.saveChanges).not.toHaveBeenCalled();
     });
 
     it('does not emit a late completion for a retired owner', async () => {
@@ -107,12 +124,13 @@ describe('SettingsService', () => {
         started = resolve;
       });
       const repository: SettingsRepository = {
-        load: vi.fn(async () => createDefaultSettings(1_000)),
-        save: vi.fn(async () => {
+        loadState: vi.fn(async () => ({ settings: createDefaultSettings(1_000), available: true })),
+        saveChanges: vi.fn(async (changes, timestamp) => {
           started();
           await new Promise<void>((resolve) => {
             finishSave = resolve;
           });
+          return applyChanges(createDefaultSettings(1_000), changes, timestamp);
         }),
       };
       service = new SettingsService(repository);
@@ -137,9 +155,13 @@ describe('SettingsService', () => {
     it('reloads external storage changes before the next write without reviving old listeners', async () => {
       let stored = createDefaultSettings(1_000);
       const repository: SettingsRepository = {
-        load: vi.fn(async () => globalThis.structuredClone(stored)),
-        save: vi.fn(async (settings) => {
-          stored = globalThis.structuredClone(settings);
+        loadState: vi.fn(async () => ({
+          settings: globalThis.structuredClone(stored),
+          available: true,
+        })),
+        saveChanges: vi.fn(async (changes, timestamp) => {
+          stored = applyChanges(stored, changes, timestamp);
+          return globalThis.structuredClone(stored);
         }),
       };
       service = new SettingsService(repository);
@@ -161,19 +183,23 @@ describe('SettingsService', () => {
       expect(stored.gallery.theme).toBe('dark');
       expect(oldListener).not.toHaveBeenCalled();
       expect(newListener).toHaveBeenCalledTimes(1);
-      expect(repository.load).toHaveBeenCalledTimes(2);
+      expect(repository.loadState).toHaveBeenCalledTimes(2);
     });
 
     it('retains an unsaved session edit through restart and retries its latest value', async () => {
       let stored = createDefaultSettings(1_000);
       let denied = true;
       const repository: SettingsRepository = {
-        load: vi.fn(async () => globalThis.structuredClone(stored)),
-        save: vi.fn(async (settings) => {
+        loadState: vi.fn(async () => ({
+          settings: globalThis.structuredClone(stored),
+          available: true,
+        })),
+        saveChanges: vi.fn(async (changes, timestamp) => {
           if (denied) {
             throw new Error('denied');
           }
-          stored = globalThis.structuredClone(settings);
+          stored = applyChanges(stored, changes, timestamp);
+          return globalThis.structuredClone(stored);
         }),
       };
       service = new SettingsService(repository);
@@ -184,7 +210,7 @@ describe('SettingsService', () => {
       await service.initialize();
       expect(service.get('gallery.theme')).toBe('dark');
       expect(service.hasUnsavedChanges()).toBe(true);
-      expect(repository.load).toHaveBeenCalledTimes(1);
+      expect(repository.loadState).toHaveBeenCalledTimes(2);
       denied = false;
       await service.retryUnsaved();
       expect(stored.gallery.theme).toBe('dark');
@@ -204,8 +230,11 @@ describe('SettingsService', () => {
     });
     let calls = 0;
     const repository: SettingsRepository = {
-      load: vi.fn(async () => globalThis.structuredClone(stored)),
-      save: vi.fn(async (settings) => {
+      loadState: vi.fn(async () => ({
+        settings: globalThis.structuredClone(stored),
+        available: true,
+      })),
+      saveChanges: vi.fn(async (changes, timestamp) => {
         calls++;
         if (calls === 1) {
           throw new Error('denied');
@@ -214,7 +243,8 @@ describe('SettingsService', () => {
           markRetryStarted();
           await retryGate;
         }
-        stored = globalThis.structuredClone(settings);
+        stored = applyChanges(stored, changes, timestamp);
+        return globalThis.structuredClone(stored);
       }),
     };
     service = new SettingsService(repository);
@@ -320,13 +350,8 @@ describe('SettingsService', () => {
 
     it('should persist to repository after setting', async () => {
       await service.set('gallery.theme', 'dark');
-      expect(mockRepo.save).toHaveBeenCalledTimes(1);
-      const saved = mockRepo.save.mock.calls[0]?.[0];
-      expect(saved).toBeDefined();
-      if (!saved) {
-        return;
-      }
-      expect(saved.gallery.theme).toBe('dark');
+      expect(mockRepo.saveChanges).toHaveBeenCalledTimes(1);
+      expect((await mockRepo.loadState()).settings.gallery.theme).toBe('dark');
     });
 
     it('should update lastModified on set', async () => {
@@ -341,9 +366,14 @@ describe('SettingsService', () => {
     it('should persist the current lastModified with the changed setting', async () => {
       const saved: AppSettings[] = [];
       const repository: SettingsRepository = {
-        load: vi.fn(async () => createDefaultSettings(Date.now())),
-        save: vi.fn(async (settings) => {
-          saved.push(globalThis.structuredClone(settings));
+        loadState: vi.fn(async () => ({
+          settings: createDefaultSettings(Date.now()),
+          available: true,
+        })),
+        saveChanges: vi.fn(async (changes, timestamp) => {
+          const updated = applyChanges(createDefaultSettings(Date.now()), changes, timestamp);
+          saved.push(updated);
+          return updated;
         }),
       };
       service = new SettingsService(repository);
@@ -362,10 +392,10 @@ describe('SettingsService', () => {
         markSaveStarted = resolve;
       });
       const repository: SettingsRepository = {
-        load: vi.fn(async () => createDefaultSettings(1_000)),
-        save: vi.fn(
+        loadState: vi.fn(async () => ({ settings: createDefaultSettings(1_000), available: true })),
+        saveChanges: vi.fn(
           () =>
-            new Promise<void>((_resolve, reject) => {
+            new Promise<AppSettings>((_resolve, reject) => {
               markSaveStarted();
               rejectSave = reject;
             })

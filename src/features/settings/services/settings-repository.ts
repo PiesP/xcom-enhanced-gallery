@@ -46,11 +46,8 @@ function settingsMatch(left: unknown, right: unknown): boolean {
 }
 
 export interface SettingsRepository {
-  load(): Promise<AppSettings>;
-  /** Legacy full-save interface for injected repositories; production uses saveChanges. */
-  save(settings: AppSettings): Promise<void>;
-  loadState?(): Promise<{ settings: AppSettings; available: boolean }>;
-  saveChanges?(changes: ReadonlyMap<string, unknown>, timestamp: number): Promise<AppSettings>;
+  loadState(): Promise<{ settings: AppSettings; available: boolean }>;
+  saveChanges(changes: ReadonlyMap<string, unknown>, timestamp: number): Promise<AppSettings>;
 }
 
 export class PersistentSettingsRepository implements SettingsRepository {
@@ -59,10 +56,6 @@ export class PersistentSettingsRepository implements SettingsRepository {
   // A hash mismatch gives no migration authority. Keep this owner closed even
   // if another document later replaces the record; a fresh owner re-evaluates it.
   private unsupportedSchema = false;
-
-  public async load(): Promise<AppSettings> {
-    return (await this.loadState()).settings;
-  }
 
   public async loadState(): Promise<{ settings: AppSettings; available: boolean }> {
     // Retrieve as unknown first — never cast storage values blindly
@@ -108,11 +101,6 @@ export class PersistentSettingsRepository implements SettingsRepository {
       available:
         !this.unsupportedSchema && base.available && fields.every((field) => field?.available),
     };
-  }
-
-  /** A stale full snapshot has no safe interpretation as a user edit. */
-  public async save(_settings: AppSettings): Promise<void> {
-    throw new Error('Full settings snapshot writes are unsupported; save explicit field changes');
   }
 
   public async saveChanges(
