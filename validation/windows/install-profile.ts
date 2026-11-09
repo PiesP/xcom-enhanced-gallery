@@ -19463,6 +19463,7 @@ async function exerciseInstalledExtension(
   };
   const compactQuotePhoto: CompactEvidence = { status: 'pending', api: [], images: [], steps: [] };
   let apiReuse: unknown = { status: 'pending' };
+  let sourceQualityRequests: QualityRequest[] | null = null;
   let apiReuseStartCount: number | null = null;
   let apiReuseEndCount: number | null = null;
   let capacityNotification: unknown = { status: 'pending' };
@@ -20108,6 +20109,8 @@ async function exerciseInstalledExtension(
       capacityNotification = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
+    // Retain the completed source and installed-flow observations before API reuse.
+    sourceQualityRequests = fixtureRoutes.handoffQualityRequests();
     apiReuseStartCount = fixtureRoutes.qualityRequests.length;
     try {
       apiReuse = await runInstalledMediaApiReuseProfile({
@@ -20119,12 +20122,12 @@ async function exerciseInstalledExtension(
         output,
         videoPayloads: fixtureRoutes.videoPayloads,
       });
+      fixtureRoutes.assertNoQualityRequestOverflow();
     } catch (error) {
       apiReuse = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
     apiReuseEndCount = fixtureRoutes.qualityRequests.length;
-    fixtureRoutes.assertNoQualityRequestOverflow();
     try {
       videoLoading = await runVideoLoadingProfile({
         context,
@@ -20197,9 +20200,11 @@ async function exerciseInstalledExtension(
       capacityNotification,
       videoLoading,
       sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
-      sourceQualityRequests: fixtureRoutes.qualityRequests,
+      sourceQualityRequests: sourceQualityRequests ?? fixtureRoutes.qualityRequests,
+      apiReuseQualityRequests: sourceQualityRequests ? fixtureRoutes.qualityRequests : [],
       qualityRequestOverflow: fixtureRoutes.getQualityRequestOverflow(),
       qualityObservation: {
+        retiredCount: sourceQualityRequests?.length ?? null,
         apiReuseStartCount,
         apiReuseEndCount,
         currentCount: fixtureRoutes.qualityRequests.length,
@@ -20292,9 +20297,13 @@ async function exerciseInstalledExtension(
             capacityNotification,
             videoLoading,
             sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
-            sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],
+            sourceQualityRequests: sourceQualityRequests ?? fixtureRoutes?.qualityRequests ?? [],
+            apiReuseQualityRequests: sourceQualityRequests
+              ? (fixtureRoutes?.qualityRequests ?? [])
+              : [],
             qualityRequestOverflow: fixtureRoutes?.getQualityRequestOverflow() ?? null,
             qualityObservation: {
+              retiredCount: sourceQualityRequests?.length ?? null,
               apiReuseStartCount,
               apiReuseEndCount,
               currentCount: fixtureRoutes?.qualityRequests.length ?? null,

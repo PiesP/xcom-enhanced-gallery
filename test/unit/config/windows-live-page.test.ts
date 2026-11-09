@@ -227,6 +227,7 @@ type InstallPreparationModule = {
       limit: number;
     } | null;
     assertNoQualityRequestOverflow(): void;
+    handoffQualityRequests(): unknown[];
     unhandledRequests: unknown[];
     remove(): Promise<void>;
   }>;
@@ -691,6 +692,64 @@ describe('Windows X live page validation', () => {
       expect(abort).toHaveBeenCalledTimes(2);
       expect(routes.qualityRequests).toHaveLength(248);
       expect(() => routes.assertNoQualityRequestOverflow()).toThrow(
+        'Source-quality request observation overflow'
+      );
+      expect(() => routes.handoffQualityRequests()).toThrow(
+        'Source-quality request observation overflow'
+      );
+    } finally {
+      await routes.remove();
+    }
+    expect(context.unroute).toHaveBeenCalledOnce();
+  });
+  it('preserves completed quality observations and bounds the fresh API reuse buffer', async () => {
+    const root = resolve(import.meta.dirname, '../../..');
+    const images: [Buffer, Buffer, Buffer] = [
+      Buffer.from('first'),
+      Buffer.from('second'),
+      Buffer.from('third'),
+    ];
+    const url = 'https://pbs.twimg.com/media/GkE1234ABCDEF?format=jpg&name=small';
+    type FixtureRoute = {
+      request(): { url(): string; resourceType(): string };
+      fulfill(response: unknown): Promise<void>;
+      abort(reason: string): Promise<void>;
+    };
+    let handler: ((route: FixtureRoute) => Promise<void>) | undefined;
+    const context = Object.assign(new EventEmitter(), {
+      route: vi.fn(async (_pattern: string, routeHandler: typeof handler) => {
+        handler = routeHandler;
+      }),
+      unroute: vi.fn(async () => {}),
+    });
+    const routes = await installPreparation.installFixtureRoutes(context, root, images, images);
+    const fulfill = vi.fn(async (_response: unknown) => {});
+    const abort = vi.fn(async (_reason: string) => {});
+    const request = {
+      request: () => ({ url: () => url, resourceType: () => 'image' }),
+      fulfill,
+      abort,
+    };
+    try {
+      expect(handler).toBeDefined();
+      await handler!(request);
+      await handler!(request);
+      const retired = routes.handoffQualityRequests();
+      expect(retired).toHaveLength(2);
+      expect(routes.qualityRequests).toEqual([]);
+      expect(routes.qualityRequests).not.toBe(retired);
+      expect(() => routes.handoffQualityRequests()).toThrow(
+        'Quality observations already handed off'
+      );
+      for (let index = 0; index < 248; index += 1) {
+        await handler!(request);
+      }
+      expect(retired).toHaveLength(2);
+      expect(routes.qualityRequests).toHaveLength(248);
+      await expect(handler!(request)).resolves.toBeUndefined();
+      expect(abort).toHaveBeenCalledExactlyOnceWith('blockedbyclient');
+      expect(routes.qualityRequests).toHaveLength(248);
+      expect(() => routes.handoffQualityRequests()).toThrow(
         'Source-quality request observation overflow'
       );
     } finally {

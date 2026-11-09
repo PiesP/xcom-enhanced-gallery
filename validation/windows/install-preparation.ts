@@ -520,7 +520,8 @@ export async function installFixtureRoutes(
   const quotedApiResponses: ApiRecord[] = [];
   const unavailableApiResponses: ApiRecord[] = [];
   const qualityApiResponses: ApiRecord[] = [];
-  const qualityRequests: QualityRequest[] = [];
+  let qualityRequests: QualityRequest[] = [];
+  let qualityRequestsHandedOff = false;
   let qualityRequestOverflow: {
     path: string;
     name: string | null;
@@ -528,6 +529,13 @@ export async function installFixtureRoutes(
     currentCount: number;
     limit: number;
   } | null = null;
+  const assertNoQualityRequestOverflow = () => {
+    assert.equal(
+      qualityRequestOverflow,
+      null,
+      `Source-quality request observation overflow: ${JSON.stringify(qualityRequestOverflow)}`
+    );
+  };
   const compactApiResponses: ApiRecord[] = [];
   const compactImageRequests: QualityRequest[] = [];
   const filenameFaults: Array<{ transport: 'context'; status: 404; path: string }> = [];
@@ -1124,14 +1132,18 @@ export async function installFixtureRoutes(
     qualityApiResponses,
     quotedApiResponses,
     unavailableApiResponses,
-    qualityRequests,
+    get qualityRequests() {
+      return qualityRequests;
+    },
     getQualityRequestOverflow: () => qualityRequestOverflow,
-    assertNoQualityRequestOverflow() {
-      assert.equal(
-        qualityRequestOverflow,
-        null,
-        `Source-quality request observation overflow: ${JSON.stringify(qualityRequestOverflow)}`
-      );
+    assertNoQualityRequestOverflow,
+    handoffQualityRequests() {
+      assertNoQualityRequestOverflow();
+      assert.equal(qualityRequestsHandedOff, false, 'Quality observations already handed off');
+      const completed = qualityRequests;
+      qualityRequests = [];
+      qualityRequestsHandedOff = true;
+      return completed;
     },
     compactApiResponses,
     compactImageRequests,
