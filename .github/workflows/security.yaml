@@ -3,6 +3,7 @@ name: 🔒 Security Scanning
 # Responsibility: Security analysis for Node.js + pnpm project
 # - Default branch/PR/merge queue: CodeQL, OSV, and Semgrep secrets
 # - PR gate: OSV diff scan; merge queue: full OSV scan
+# - Stable OSV and security decisions reject failed prerequisites and selected scans
 # - Scheduled/manual diagnostics: pinned-tool freshness, full OSV scan, and full Semgrep SARIF
 #
 # Full Semgrep source analysis runs on the weekly schedule or manually; the
@@ -166,7 +167,7 @@ jobs:
           node --experimental-strip-types "${{ steps.scanner_helper.outputs.helper-path }}" check "$pin_metadata"
 
   osv-scan-pr:
-    name: pr-gate/osv / osv-scan
+    name: OSV scan (PR diff)
     needs: [changes, pin-metadata]
     if: ${{ !cancelled() && github.event_name == 'pull_request' }}
     runs-on: ubuntu-24.04
@@ -262,7 +263,7 @@ jobs:
           sarif_file: ${{ runner.temp }}/osv-results/osv-results.sarif
 
   osv-scan-dispatch:
-    name: pr-gate/osv / osv-scan
+    name: OSV scan (full)
     needs: [changes, pin-metadata]
     if: ${{ !cancelled() && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event_name == 'merge_group' || github.event_name == 'schedule') }}
     runs-on: ubuntu-24.04
@@ -475,3 +476,77 @@ jobs:
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: semgrep.sarif
+
+  osv-decision:
+    name: pr-gate/osv / osv-scan
+    needs: [changes, pin-metadata, osv-scan-pr, osv-scan-dispatch]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    env:
+      EVENT_NAME: ${{ github.event_name }}
+      CHANGES_RESULT: ${{ needs.changes.result }}
+      PINS_RESULT: ${{ needs['pin-metadata'].result }}
+      OSV_ROUTE: ${{ needs.changes.outputs.osv }}
+      OSV_IMAGE: ${{ needs['pin-metadata'].outputs.OSV_SCANNER_IMAGE }}
+      OSV_PR_RESULT: ${{ needs['osv-scan-pr'].result }}
+      OSV_FULL_RESULT: ${{ needs['osv-scan-dispatch'].result }}
+    steps:
+      - name: Reject cancelled OSV workflow
+        if: ${{ cancelled() }}
+        run: exit 1
+      - name: Enforce event-selected OSV result
+        run: |
+          set -euo pipefail
+          [[ "$CHANGES_RESULT" == 'success' && "$PINS_RESULT" == 'success' ]]
+          [[ "$OSV_ROUTE" == 'true' || "$OSV_ROUTE" == 'false' ]]
+          [[ "$OSV_IMAGE" =~ @sha256:[[:xdigit:]]{64}$ ]]
+          case "$EVENT_NAME" in
+            pull_request) selected="$OSV_PR_RESULT"; alternate="$OSV_FULL_RESULT" ;;
+            push|workflow_dispatch|merge_group|schedule) selected="$OSV_FULL_RESULT"; alternate="$OSV_PR_RESULT" ;;
+            *) echo "Unsupported OSV event: $EVENT_NAME" >&2; exit 1 ;;
+          esac
+          [[ "$selected" == 'success' && "$alternate" == 'skipped' ]]
+          if [[ "$OSV_ROUTE" == 'false' ]]; then
+            echo 'OSV classification was unaffected; selected scanner completed its explicit no-op.'
+          else
+            echo 'Event-selected OSV scan and prerequisites completed successfully.'
+          fi
+
+  security-summary:
+    name: Security scan summary
+    needs: [changes, pin-metadata, osv-decision, codeql, semgrep]
+    if: ${{ always() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    permissions: {}
+    env:
+      CHANGES_RESULT: ${{ needs.changes.result }}
+      PINS_RESULT: ${{ needs['pin-metadata'].result }}
+      OSV_RESULT: ${{ needs['osv-decision'].result }}
+      CODEQL_RESULT: ${{ needs.codeql.result }}
+      SEMGREP_RESULT: ${{ needs.semgrep.result }}
+      OSV_IMAGE: ${{ needs['pin-metadata'].outputs.OSV_SCANNER_IMAGE }}
+      SEMGREP_IMAGE: ${{ needs['pin-metadata'].outputs.SEMGREP_IMAGE }}
+      OSV_ROUTE: ${{ needs.changes.outputs.osv }}
+      SEMGREP_ROUTE: ${{ needs.changes.outputs.semgrep }}
+      ACTIONS_ROUTE: ${{ needs.changes.outputs.codeql_actions }}
+      JAVASCRIPT_ROUTE: ${{ needs.changes.outputs.codeql_javascript }}
+    steps:
+      - name: Reject cancelled security workflow
+        if: ${{ cancelled() }}
+        run: exit 1
+      - name: Enforce selected security analyses
+        run: |
+          set -euo pipefail
+          for result in "$CHANGES_RESULT" "$PINS_RESULT" "$OSV_RESULT" "$CODEQL_RESULT" "$SEMGREP_RESULT"; do
+            [[ "$result" == 'success' ]]
+          done
+          for route in "$OSV_ROUTE" "$SEMGREP_ROUTE" "$ACTIONS_ROUTE" "$JAVASCRIPT_ROUTE"; do
+            [[ "$route" == 'true' || "$route" == 'false' ]]
+          done
+          [[ "$OSV_IMAGE" =~ @sha256:[[:xdigit:]]{64}$ ]]
+          [[ "$SEMGREP_IMAGE" =~ @sha256:[[:xdigit:]]{64}$ ]]
+          echo 'Required security jobs and reviewed scanner pins completed successfully.'
+          echo 'A false route is an explicit no-op, not a fresh scan; CodeQL completion does not assert zero alerts.'
