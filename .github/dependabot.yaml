@@ -33,6 +33,15 @@ updates:
 
     # Group updates by category to reduce PR noise
     groups:
+      # The CLI, test API and browser provider must resolve one Playwright version.
+      playwright:
+        patterns:
+          - "@playwright/test"
+          - "playwright"
+        update-types:
+          - "minor"
+          - "patch"
+
       vite-plus:
         patterns:
           - "vite-plus"
