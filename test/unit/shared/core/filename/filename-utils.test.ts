@@ -6,6 +6,7 @@ import {
   finalizeFilename,
   generateMediaFilename,
   generateZipFilename,
+  getFilenameStemKey,
   getIndexFromMediaId,
   planMediaFilename,
 } from '@shared/core/filename/filename-utils';
@@ -141,6 +142,27 @@ describe('filename-utils', () => {
     expect(filename).toHaveLength(255);
     expect(filename.startsWith('_CON.')).toBe(true);
     expect(finalizeFilename(filename)).toBe(filename);
+  });
+
+  it('compares the finalized stem without its final extension', () => {
+    expect(getFilenameStemKey(finalizeFilename(' Alpha.JPG '))).toBe('alpha');
+    expect(getFilenameStemKey(finalizeFilename('alpha.PNG'))).toBe('alpha');
+    expect(getFilenameStemKey(finalizeFilename('alpha.tar.gz'))).toBe('alpha.tar');
+  });
+
+  it('rejects an overlong generated identity before a counter can be truncated', () => {
+    const planned = planMediaFilename({
+      id: 'photo',
+      type: 'image',
+      url: 'https://pbs.twimg.com/media/probe.jpg',
+      tweetUsername: 'alice',
+      tweetId: '1'.repeat(247),
+      attachmentOrdinal: 0,
+    });
+    expect(planned.filename).toHaveLength(255);
+    expect(() => appendFilenameSuffix(planned.filename, '-1', planned.identitySuffix)).toThrow(
+      /identity leaves no room/
+    );
   });
 
   it('bounds the fallback stem when a required suffix leaves one UTF-16 unit', () => {

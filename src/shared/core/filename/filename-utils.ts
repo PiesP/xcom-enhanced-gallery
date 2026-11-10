@@ -127,11 +127,24 @@ export function appendFilenameSuffix(name: string, suffix: string, identitySuffi
   const stem = extension ? name.slice(0, -extension.length) : name;
   const identity = identitySuffix && stem.endsWith(identitySuffix) ? identitySuffix : '';
   const prefix = identity ? stem.slice(0, -identity.length) : stem;
-  return finalizeFilename(prefix, {
+  if (identity.length + suffix.length + extension.length + 1 > MAX_BASENAME_UNITS) {
+    throw new RangeError('ZIP filename identity leaves no room for a collision suffix');
+  }
+  const candidate = finalizeFilename(prefix, {
     suffix: `${identity}${suffix}`,
     extension: extension.slice(1),
     preserveTailUnits: identity ? 0 : 32,
   });
+  if (candidate === name || !candidate.endsWith(`${identity}${suffix}${extension}`)) {
+    throw new RangeError('ZIP filename collision suffix could not be preserved');
+  }
+  return candidate;
+}
+
+/** Compare finalized ZIP names without their final recognized extension. */
+export function getFilenameStemKey(name: string): string {
+  const extension = name.match(SAFE_EXTENSION)?.[0] ?? '';
+  return (extension ? name.slice(0, -extension.length) : name).toLowerCase();
 }
 
 function resolveNowMs(nowMs?: number): number {
