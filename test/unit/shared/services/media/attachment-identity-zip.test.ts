@@ -58,7 +58,6 @@ function convert(tweet: TwitterTweet) {
 describe('source-bound attachment identity through actual ZIP generation', () => {
   it.each([
     [1, 1, 1, 1],
-    [4, 3, 2, 1],
     [99, 1, 2, 3],
   ])('retains all four source positions despite navigation hints %j', async (...hints) => {
     const mediaItems = convert(post(hints));
@@ -152,15 +151,28 @@ describe('source-bound attachment identity through actual ZIP generation', () =>
         },
       },
     };
-    const media = convert({ ...post([1, 2, 3, 4]), note_tweet });
-    expect(media.map(({ originalUrl }) => originalUrl)).toEqual([
-      'https://pbs.twimg.com/media/fourth.jpg?format=jpg&name=orig',
-      'https://pbs.twimg.com/media/third.png?format=png&name=orig',
-      'https://pbs.twimg.com/media/second.png?format=png&name=orig',
-      'https://pbs.twimg.com/media/first.jpg?format=jpg&name=orig',
+    const tweet = { ...post([1, 2, 3, 4]), note_tweet };
+    const source = extractMediaFromTweet(tweet, { screen_name: 'instiz' });
+    expect(source.map(({ media_id, attachmentOrdinal }) => [media_id, attachmentOrdinal])).toEqual([
+      ['fourth', 0],
+      ['third', 1],
+      ['second', 2],
+      ['first', 3],
     ]);
-    expect(media.map((media) => generateMediaFilename(media))).toEqual(expectedNames);
-    expect(planBulkDownload({ mediaItems: [media[2]!] }).items[0]?.desiredName).toBe(
+    const media = convert(tweet);
+    expect(media.map(({ originalUrl }) => originalUrl)).toEqual([
+      'https://pbs.twimg.com/media/first.jpg?format=jpg&name=orig',
+      'https://pbs.twimg.com/media/second.png?format=png&name=orig',
+      'https://pbs.twimg.com/media/third.png?format=png&name=orig',
+      'https://pbs.twimg.com/media/fourth.jpg?format=jpg&name=orig',
+    ]);
+    expect(media.map((media) => generateMediaFilename(media))).toEqual([
+      'instiz_2119670174475522225_3.jpg',
+      'instiz_2119670174475522225_2.png',
+      'instiz_2119670174475522225_1.png',
+      'instiz_2119670174475522225_0.jpg',
+    ]);
+    expect(planBulkDownload({ mediaItems: [media[1]!] }).items[0]?.desiredName).toBe(
       'instiz_2119670174475522225_2.png'
     );
   });

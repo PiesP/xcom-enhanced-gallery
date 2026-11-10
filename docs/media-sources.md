@@ -61,7 +61,8 @@ The API establishes positions in the complete owner collection before filtering.
 A complete note inline list with unique media IDs and nonnegative, unique integer
 positions defines source order; otherwise entity array order defines it. Repeated,
 conflicting, foreign or out-of-range navigation hints cannot override that order.
-Later presentation sorting retains this established identity and note order.
+Collection-wide unique, in-range navigation links for the correct owner and
+media kind may sort presentation later; they never change this source identity.
 
 DOM recovery is a partial observation, even when an article contains several tiles.
 A uniquely bound, same-owner `/photo/N` or `/video/N` link can establish a position;

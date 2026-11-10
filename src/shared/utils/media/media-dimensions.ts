@@ -56,11 +56,7 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
     return mediaItems;
   }
 
-  // Parser-established source identity (including complete note inline order)
-  // outranks navigation. Presentation must not undo that source order.
-  if (mediaItems.every((media) => Number.isSafeInteger(media.attachmentOrdinal))) {
-    return mediaItems;
-  }
+  // Validated navigation may sort presentation, never source attachment identity.
   const positions = mediaItems.map((media) =>
     getOwnedNavigationOrdinal(
       media.expanded_url ?? '',
