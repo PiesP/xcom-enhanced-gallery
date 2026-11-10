@@ -1148,7 +1148,7 @@ export async function withFilenameCorrelation<T>(
         const retainedName = `filename-correlation-${options.label ?? 'xeg-alone'}-${nativeItem.id}.bin`;
         try {
           const retainedFile = resolve(output, retainedName);
-          await writeFile(retainedFile, bytes, { flag: 'wx' });
+          await writeFile(retainedFile, bytes, { flag: 'wx', mode: 0o600 });
           const retained = await readExactDownloadFile(retainedFile, bytes.length);
           assert(
             sha256(retained.bytes) === sha256(bytes),
@@ -1225,7 +1225,8 @@ export async function withFilenameCorrelation<T>(
     try {
       await writeFile(
         resolve(output, `filename-correlation-${options.label ?? 'xeg-alone'}.json`),
-        `${JSON.stringify(receipt, null, 2)}\n`
+        `${JSON.stringify(receipt, null, 2)}\n`,
+        { flag: 'wx', mode: 0o600 }
       );
     } catch (error) {
       addError('receipt-write', error);

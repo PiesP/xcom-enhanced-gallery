@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { test, vi } from 'vite-plus/test';
@@ -742,43 +742,67 @@ test('borrowed browser acceptance requires the newly owned candidate and downloa
     validateOwnedCandidateInBorrowedBrowser(proof, extensionId, resolve('other-downloads')),
     false
   );
-  await assert.rejects(
-    () =>
-      observeLiveUrls({
-        context: null as unknown as BrowserContext,
-        extensionId,
-        liveUrls: context.liveUrls,
-        output: '/tmp/unused',
-        session: 'borrowed',
-        actualSiteAcceptance: { downloads: proof.downloadsPath },
-      }),
-    /task-owned extension/u
-  );
-  await assert.rejects(
-    () =>
-      observeLiveUrls({
-        context: null as unknown as BrowserContext,
-        extensionId,
-        liveUrls: context.liveUrls,
-        output: '/tmp/unused',
-        session: 'borrowed-browser-owned-extension',
-        actualSiteAcceptance: { downloads: proof.downloadsPath },
-      }),
-    /attested task-owned candidate/u
-  );
-  await assert.rejects(
-    () =>
-      observeLiveUrls({
-        context: null as unknown as BrowserContext,
-        extensionId,
-        liveUrls: context.liveUrls,
-        output: '/tmp/unused',
-        session: 'borrowed-browser-owned-extension',
-        ownedCandidateProof: proof,
-        actualSiteAcceptance: { downloads: proof.downloadsPath },
-      }),
-    /validated host baseline/u
-  );
+  {
+    const output = await mkdtemp(join(tmpdir(), 'xeg-live-guard-'));
+    try {
+      await assert.rejects(
+        () =>
+          observeLiveUrls({
+            context: null as unknown as BrowserContext,
+            extensionId,
+            liveUrls: context.liveUrls,
+            output,
+            session: 'borrowed',
+            actualSiteAcceptance: { downloads: proof.downloadsPath },
+          }),
+        /task-owned extension/u
+      );
+      assert.deepEqual(await readdir(output), []);
+    } finally {
+      await rm(output, { recursive: true, force: true });
+    }
+  }
+  {
+    const output = await mkdtemp(join(tmpdir(), 'xeg-live-guard-'));
+    try {
+      await assert.rejects(
+        () =>
+          observeLiveUrls({
+            context: null as unknown as BrowserContext,
+            extensionId,
+            liveUrls: context.liveUrls,
+            output,
+            session: 'borrowed-browser-owned-extension',
+            actualSiteAcceptance: { downloads: proof.downloadsPath },
+          }),
+        /attested task-owned candidate/u
+      );
+      assert.deepEqual(await readdir(output), []);
+    } finally {
+      await rm(output, { recursive: true, force: true });
+    }
+  }
+  {
+    const output = await mkdtemp(join(tmpdir(), 'xeg-live-guard-'));
+    try {
+      await assert.rejects(
+        () =>
+          observeLiveUrls({
+            context: null as unknown as BrowserContext,
+            extensionId,
+            liveUrls: context.liveUrls,
+            output,
+            session: 'borrowed-browser-owned-extension',
+            ownedCandidateProof: proof,
+            actualSiteAcceptance: { downloads: proof.downloadsPath },
+          }),
+        /validated host baseline/u
+      );
+      assert.deepEqual(await readdir(output), []);
+    } finally {
+      await rm(output, { recursive: true, force: true });
+    }
+  }
 });
 
 test('download ownership stays inside the extension page and returns only task fields', async () => {
