@@ -71,9 +71,15 @@ observed sources sharing a position, or one source with conflicting positions,
 leave that position unknown. Equivalent representations can share an unambiguous
 source-bound position. Sorting the gallery, opening A's quote of B, or filtering an
 unavailable earlier attachment does not renumber B's attachments. A mixed-owner
-ZIP keeps gallery order, while each entry keeps its own owner and attachment
-identity; the ZIP archive name follows the first item in gallery order,
-independently of the active selection.
+ZIP keeps each entry's owner and attachment identity. Entry names are assigned
+in input order before asynchronous work; the ZIP archive name follows the first
+item in gallery order, independently of the active selection. Physical ZIP member
+order is not an input-order service guarantee: known-size, already-owned or
+cached Blobs may be read concurrently, and local headers and central-directory
+entries follow their commit order. The ordinary gallery currently supplies a
+Blob provider whose unknown-size work is admitted serially; no reordering has
+been demonstrated in that path. Completion order does not change assigned names
+or filename-to-byte pairing.
 
 If DOM recovery sees only part of a post and has no unambiguous position link,
 the filename uses `source-` plus a 16-digit hexadecimal key derived from the
