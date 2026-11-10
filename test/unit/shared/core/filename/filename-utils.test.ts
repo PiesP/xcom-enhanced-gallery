@@ -163,6 +163,17 @@ describe('filename-utils', () => {
     expect(() => appendFilenameSuffix(planned.filename, '-1', planned.identitySuffix)).toThrow(
       /identity leaves no room/
     );
+    const alreadyTruncated = planMediaFilename({
+      id: 'photo',
+      type: 'image',
+      url: 'https://pbs.twimg.com/media/probe.jpg',
+      tweetUsername: 'alice',
+      tweetId: '1'.repeat(248),
+      attachmentOrdinal: 0,
+    });
+    expect(() =>
+      appendFilenameSuffix(alreadyTruncated.filename, '-1', alreadyTruncated.identitySuffix)
+    ).toThrow(/identity was truncated/);
   });
 
   it('bounds the fallback stem when a required suffix leaves one UTF-16 unit', () => {

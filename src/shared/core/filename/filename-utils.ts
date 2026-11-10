@@ -126,6 +126,9 @@ export function appendFilenameSuffix(name: string, suffix: string, identitySuffi
   const extension = name.match(SAFE_EXTENSION)?.[0] ?? '';
   const stem = extension ? name.slice(0, -extension.length) : name;
   const identity = identitySuffix && stem.endsWith(identitySuffix) ? identitySuffix : '';
+  if (identitySuffix && !identity) {
+    throw new RangeError('ZIP filename identity was truncated before collision allocation');
+  }
   const prefix = identity ? stem.slice(0, -identity.length) : stem;
   if (identity.length + suffix.length + extension.length + 1 > MAX_BASENAME_UNITS) {
     throw new RangeError('ZIP filename identity leaves no room for a collision suffix');
