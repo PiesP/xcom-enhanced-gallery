@@ -147,10 +147,14 @@ export function getMediaSourceKey(url: string | null): string | null {
   return `${parsed.hostname}${parsed.pathname.slice(0, parsed.pathname.lastIndexOf('/') + 1)}${name}`;
 }
 
-/** Exact thumbnail paths, allowing the explicit extensionless format spelling. */
+/** Validated photo spellings are equivalent; other thumbnail paths remain exact. */
 function getMediaIdentityKey(url: string | null): string | null {
   if (!url || !isValidMediaUrl(url)) {
     return null;
+  }
+  const photo = getCanonicalPhotoIdentity(url);
+  if (photo) {
+    return photo;
   }
   const parsed = new URL(url, 'https://x.com');
   let path = parsed.pathname;
