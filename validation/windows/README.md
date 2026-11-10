@@ -50,7 +50,9 @@ for another, and none is a required CI lane.
 
 The native regression suite under `validation/windows/` runs with
 `vp run test:e2e:native` after the project dependencies and Playwright Chromium
-are installed. This command selects the Vite+ Windows native Node project,
+are installed. Run `vp run verify` first to build the production artifacts:
+the release-upgrade regressions require the current `dist-extension` inventory.
+This command selects the Vite+ Windows native Node project,
 including Chromium
 tests, and is included in `test:e2e:all`, CI E2E, and `verify:full`. It checks
 fixture and cleanup contracts; the installed Windows tiers below still require
