@@ -90,9 +90,11 @@ unambiguous source-bound position is available. The selected item and preferred
 save URL are unchanged by naming.
 
 Validated photo extension/query spellings and all supported legacy sizes share
-canonical source identity. Deduplication also retains encoding, owner and any
-verified attachment ordinal: duplicate `.jpg` and `?format=jpg` representations
-collapse, while different verified attachments or owners reusing one URL survive.
+canonical source identity. Deduplication also retains encoding, owner and the
+verified API entity ID (or otherwise the established ordinal). Duplicate `.jpg`
+and `?format=jpg` representations of one entity collapse, while different verified
+attachments or owners reusing one URL survive. A repeated API entity retains its
+first source position; later source positions are not renumbered after removal.
 WebP original recovery may change the save extension while preserving identity.
 
 ## DOM WebP originals

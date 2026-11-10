@@ -72,7 +72,7 @@ function getOwnedAttachmentOrdinal(element: MediaElement, tweetInfo: TweetInfo):
     return null;
   }
   return getOwnedNavigationOrdinal(
-    link.href,
+    link.getAttribute('href') ?? '',
     tweetInfo.tweetId,
     tweetInfo.username,
     element instanceof HTMLImageElement ? 'photo' : 'video'

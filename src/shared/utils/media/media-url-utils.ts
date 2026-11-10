@@ -62,7 +62,12 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
     Number.isSafeInteger(media.attachmentOrdinal) && (media.attachmentOrdinal ?? -1) >= 0
       ? `attachment:${media.attachmentOrdinal}:`
       : '';
-  const prefix = `${typePrefix}${ownerPrefix}${ordinalPrefix}`;
+  const apiData = media.metadata?.apiData as Record<string, unknown> | undefined;
+  const entityPrefix =
+    media.tweetId && typeof apiData?.media_id === 'string' && apiData.media_id.length > 0
+      ? `entity:${apiData.media_id}:`
+      : ordinalPrefix;
+  const prefix = `${typePrefix}${ownerPrefix}${entityPrefix}`;
 
   const photo = media.type === 'image' ? getCanonicalPhotoIdentity(urlCandidate) : null;
   if (photo) {

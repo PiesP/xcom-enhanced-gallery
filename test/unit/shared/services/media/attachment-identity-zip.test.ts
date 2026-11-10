@@ -9,7 +9,11 @@ import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory
 import { extractMediaFromTweet } from '@shared/services/media/twitter-parser/twitter-response-parser';
 import type { TwitterMedia, TwitterTweet } from '@shared/services/media/types';
 import type { TweetInfo } from '@shared/types/media.types';
-import { sortMediaByVisualOrder } from '@shared/utils/media/media-dimensions';
+import {
+  adjustClickedIndexAfterDeduplication,
+  removeDuplicateMediaItems,
+  sortMediaByVisualOrder,
+} from '@shared/utils/media/media-dimensions';
 import { verifyStoredZip } from '../../../../../validation/windows/download-memory.ts';
 import { describe, expect, it } from 'vite-plus/test';
 
@@ -166,6 +170,35 @@ describe('source-bound attachment identity through actual ZIP generation', () =>
         generateMediaFilename(media)
       )
     ).toEqual(['instiz_2119670174475522225_0.jpg', 'instiz_2119670174475522225_1.mp4']);
+  });
+
+  it('collapses repeated API entity representations while preserving independently verified source reuse', () => {
+    const tweet = post();
+    const [first, second, , fourth] = tweet.extended_entities.media;
+    const media = convert({
+      ...tweet,
+      extended_entities: {
+        media: [
+          first!,
+          second!,
+          {
+            ...second!,
+            media_url_https: 'https://pbs.twimg.com/media/second?format=png&name=small',
+          },
+          fourth!,
+          { ...fourth!, id_str: 'independent', expanded_url: `${owner.tweetUrl}/photo/5` },
+        ],
+      },
+    });
+    const unique = removeDuplicateMediaItems(media);
+    expect(unique.map((item) => generateMediaFilename(item))).toEqual([
+      'instiz_2119670174475522225_0.jpg',
+      'instiz_2119670174475522225_1.png',
+      'instiz_2119670174475522225_3.jpg',
+      'instiz_2119670174475522225_4.jpg',
+    ]);
+    expect(adjustClickedIndexAfterDeduplication(media, unique, 2)).toBe(1);
+    expect(adjustClickedIndexAfterDeduplication(media, unique, 4)).toBe(3);
   });
 
   it('keeps complete note-inline identity through later navigation sorting and selection', () => {
