@@ -53,6 +53,12 @@ At this revision the runtime gitlink is
 `068b57a6a37c0d8a0af8e151d0c160250ce3d105`. The security workflow pins
 `setup-project` to `38cd1cb18c9c37e57e8b53a98e811450bb1a18fc` and
 `prepare-osv` to `9a9471ad301e439bcd1ebc52334cf6b4399510e7`.
+Both reviewed tool-metadata checkouts use the merged consumer source
+`d5f21b38d591ab6b5754c9960228e9292b6705f7`. Its `.node-version` selects
+Node 26.13.0, `packageManager` selects pnpm 12.18.0, and the workspace catalog
+selects Vite+ 1.5.1 for the setup Action's global CLI. Its reviewed scanner
+metadata selects OSV 2.7.0 and Semgrep 1.184.0. The checkout pin remains
+independent of the provider Action and runtime gitlink pins.
 The original provider adoption replaced a base-checkout Python validator and
 inline scan/report policy; it did not change the product runtime gitlink.
 
@@ -61,6 +67,10 @@ commit, restoring its Python validator, callers and tests together. Leave the
 runtime gitlink, setup Action and separately adopted tool-metadata pin intact.
 Once a later provider pin is adopted, restore the previously verified full SHA
 in both `prepare-osv` calls and run the same workflow gates before landing.
+For this metadata activation, a protected rollback PR restores
+`ec690a7e284b09729bcdef84437800233d522b81` in both reviewed tool-metadata
+checkouts and their consumer contract; that source selects the previous Vite+
+1.5.0 global CLI. Run the security and CI gates on the rollback PR before landing.
 Never substitute a candidate branch, mutable tag or runtime gitlink for the
 trusted helper source. Rollback instructions are a recovery procedure; they do
 not claim that a rollback has been deployed.
