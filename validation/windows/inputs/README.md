@@ -226,6 +226,18 @@ filename, source and bytes. Remove the selector after the attempt. The filename
 cycle uses controlled fixtures. Extension runs may append separate public-status
 observations with `--live-url`; the live observer does not save files.
 
+The Chrome/Edge extension cycle also opens one owner with four distinct
+JPG/PNG/PNG/JPG sources whose API navigation links all end in `/photo/1`. It
+saves each attachment through the ordinary gallery Download control, then saves
+a ZIP through the ordinary toolbar. Original native files and parsed ZIP entries
+must retain their literal 0/1/2/3 owner names, four case-insensitively distinct
+extensionless stems, exact source bytes, and the observed archive order. This is
+a controlled source-identity regression, not a replay of the reported instiz
+payload. A separate `--live-url https://x.com/instiz/status/2119670174475522225`
+observation records at most twelve API media entities, their original list
+positions, validated same-owner navigation hints, and bounded source fields if
+the public post is accessible; it does not issue a native save.
+
 For a diagnosis that must retain nonconforming native names and continue to the
 public observation, add `"diagnosticOnly": true` to this selector. Only that
 explicit mode records known CDN/active-control basenames without accepting

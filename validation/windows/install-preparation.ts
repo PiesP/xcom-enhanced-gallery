@@ -182,13 +182,22 @@ const PUBLIC_TWEET_ID = '9876543210987654321';
 
 export const PUBLIC_FIXTURE_URL = `https://x.com/public_user/status/${PUBLIC_TWEET_ID}`;
 
-const COMPACT_OUTER_ID = '8555555555555555555';
+export const COMPACT_OUTER_ID = '8555555555555555555';
 
 export const COMPACT_MIDDLE_ID = '9555555555555555555';
 
 export const COMPACT_INNER_ID = '7555555555555555555';
 
 export const COMPACT_FIXTURE_URL = `https://x.com/outer_fixture/status/${COMPACT_OUTER_ID}`;
+
+export const REPEATED_HINT_PATHS = [
+  'RepeatedHintOne',
+  'RepeatedHintTwo',
+  'RepeatedHintThree',
+  'RepeatedHintFour',
+] as const;
+
+export const REPEATED_HINT_FORMATS = ['jpg', 'png', 'png', 'jpg'] as const;
 
 export const COMPACT_DISPLAY_URL =
   'https://pbs.twimg.com/media/CompactQuoteSelected?format=webp&name=medium';
@@ -285,6 +294,45 @@ export async function createImageFixtures(
   }
 }
 
+/** Four different encoded images, generated inside the installed browser. */
+export async function createRepeatedHintImages(context: BrowserContext): Promise<Buffer[]> {
+  const page = await context.newPage();
+  try {
+    await page.goto('about:blank');
+    const encoded = await page.evaluate(() =>
+      [
+        { color: '#aa2311', format: 'jpeg' },
+        { color: '#15ab42', format: 'png' },
+        { color: '#2878cc', format: 'png' },
+        { color: '#e8a511', format: 'jpeg' },
+      ].map(({ color, format }, index) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 320 + index * 20;
+        canvas.height = 220 + index * 10;
+        const drawing = canvas.getContext('2d');
+        if (!drawing) {
+          throw new Error('Canvas 2D context unavailable');
+        }
+        drawing.fillStyle = color;
+        drawing.fillRect(0, 0, canvas.width, canvas.height);
+        drawing.fillStyle = '#ffffff';
+        drawing.font = 'bold 28px Segoe UI';
+        drawing.fillText(`Attachment ${index + 1}`, 18, 50);
+        return canvas.toDataURL(`image/${format}`, 0.9).split(',')[1];
+      })
+    );
+    assert.equal(encoded.length, REPEATED_HINT_PATHS.length);
+    return encoded.map((value, index) => {
+      assert(value, `Repeated-hint image ${index} encoding failed`);
+      const bytes = Buffer.from(value, 'base64');
+      assert(bytes.length > 0 && bytes.length < 256 * 1024);
+      return bytes;
+    });
+  } finally {
+    await page.close();
+  }
+}
+
 function compactPhotoApiResponse(tweetId: string) {
   const photo = (id: string, url: string) => ({
     type: 'photo',
@@ -346,25 +394,41 @@ export function attachmentFilenameApiResponse(tweetId: string) {
   const c = tweet(COMPACT_INNER_ID, 'inner_fixture', [
     photo('filename-c1', 'inner_fixture', 1, COMPACT_DISPLAY_URL),
   ]);
-  const b = tweet(
-    COMPACT_MIDDLE_ID,
-    'middle_fixture',
-    [
-      photo(
-        'filename-b2',
-        'middle_fixture',
-        2,
-        'https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&name=medium'
-      ),
-      photo(
-        'filename-b1',
-        'middle_fixture',
-        1,
-        'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=medium'
-      ),
-    ],
-    c
-  );
+  const b = {
+    ...tweet(
+      COMPACT_MIDDLE_ID,
+      'middle_fixture',
+      [
+        photo(
+          'filename-b2',
+          'middle_fixture',
+          2,
+          'https://pbs.twimg.com/media/GkE9012MNOPQR.jpg?format=jpg&name=medium'
+        ),
+        photo(
+          'filename-b1',
+          'middle_fixture',
+          1,
+          'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=medium'
+        ),
+      ],
+      c
+    ),
+    // This complete note order is the source order for B; the entity array above
+    // intentionally arrives B2, B1 to exercise the parser's precedence.
+    note_tweet: {
+      note_tweet_results: {
+        result: {
+          media: {
+            inline_media: [
+              { media_id: 'filename-b1', index: 0 },
+              { media_id: 'filename-b2', index: 1 },
+            ],
+          },
+        },
+      },
+    },
+  };
   const a = tweet(
     COMPACT_OUTER_ID,
     'outer_fixture',
@@ -385,6 +449,35 @@ export function attachmentFilenameApiResponse(tweetId: string) {
       },
     },
   };
+}
+
+export function repeatedHintApiResponse() {
+  const media = REPEATED_HINT_PATHS.map((path, index) => ({
+    type: 'photo',
+    id_str: `repeated-hint-${index}`,
+    media_url_https: `https://pbs.twimg.com/media/${path}?format=${REPEATED_HINT_FORMATS[index]}&name=medium`,
+    expanded_url: `https://x.com/outer_fixture/status/${COMPACT_OUTER_ID}/photo/1`,
+  }));
+  return {
+    data: {
+      tweetResult: {
+        result: {
+          __typename: 'Tweet',
+          rest_id: COMPACT_OUTER_ID,
+          core: { user_results: { result: { legacy: { screen_name: 'outer_fixture' } } } },
+          legacy: { id_str: COMPACT_OUTER_ID, extended_entities: { media } },
+        },
+      },
+    },
+  };
+}
+
+function repeatedHintPageHtml(): string {
+  const photos = REPEATED_HINT_PATHS.map(
+    (path, index) =>
+      `<a href="/outer_fixture/status/${COMPACT_OUTER_ID}/photo/1"><img class="media" id="repeated-hint-${index}" src="https://pbs.twimg.com/media/${path}?format=${REPEATED_HINT_FORMATS[index]}&amp;name=medium" alt="Attachment ${index + 1}"></a>`
+  ).join('\n');
+  return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>Repeated attachment hint fixture</title><style>body{margin:0;background:#111;color:#eee;font:16px sans-serif}article{padding:16px;max-width:700px}img.media{width:140px;height:100px;object-fit:cover}</style></head><body><article data-testid="tweet"><a href="/outer_fixture/status/${COMPACT_OUTER_ID}"><time>Owner post</time></a>${photos}</article></body></html>`;
 }
 
 export function attachmentFilenamePageHtml(html: string, partial: boolean) {
@@ -415,7 +508,11 @@ export async function installFixtureRoutes(
   displayImages: ImageFixtures,
   compactImages?: CompactImages,
   experienceImages?: Buffer[],
-  options: { classicTweetApi?: boolean; classicApiObservationLimit?: 4 } = {}
+  options: {
+    classicTweetApi?: boolean;
+    classicApiObservationLimit?: 4;
+    repeatedHintImages?: Buffer[];
+  } = {}
 ) {
   assert(
     options.classicApiObservationLimit === undefined ||
@@ -549,6 +646,7 @@ export async function installFixtureRoutes(
     | 'filename-dom-full'
     | 'filename-dom-partial'
     | 'filename-retry'
+    | 'filename-repeated'
     | null = null;
   let unavailableApiOverflow = 0;
   let sequenceRouteActive = false;
@@ -631,7 +729,9 @@ export async function installFixtureRoutes(
             denied
               ? {}
               : compactMode.startsWith('filename-')
-                ? attachmentFilenameApiResponse(tweetId)
+                ? compactMode === 'filename-repeated'
+                  ? repeatedHintApiResponse()
+                  : attachmentFilenameApiResponse(tweetId)
                 : compactPhotoApiResponse(tweetId)
           ),
         });
@@ -906,7 +1006,8 @@ export async function installFixtureRoutes(
         requestedCompactMode === 'filename-api-b' ||
         requestedCompactMode === 'filename-dom-full' ||
         requestedCompactMode === 'filename-dom-partial' ||
-        requestedCompactMode === 'filename-retry';
+        requestedCompactMode === 'filename-retry' ||
+        requestedCompactMode === 'filename-repeated';
       compactMode =
         compactImages && url.pathname === new URL(COMPACT_FIXTURE_URL).pathname
           ? isFilenameMode
@@ -926,6 +1027,10 @@ export async function installFixtureRoutes(
         url.pathname ===
         `/${UNAVAILABLE_SEQUENCE.handle}/status/${UNAVAILABLE_SEQUENCE.failures[0]?.outer}`;
       sequenceRouteActive = unavailableRoute;
+      if (compactMode === 'filename-repeated') {
+        await route.fulfill({ contentType: 'text/html', body: repeatedHintPageHtml() });
+        return;
+      }
       await route.fulfill({
         contentType: 'text/html',
         body: compactMode?.startsWith('filename-')
@@ -1030,6 +1135,22 @@ export async function installFixtureRoutes(
       return;
     }
     if (url.hostname === 'pbs.twimg.com') {
+      const repeatedIndex = REPEATED_HINT_PATHS.findIndex(
+        (path) => url.pathname === `/media/${path}`
+      );
+      if (repeatedIndex >= 0) {
+        const body = options.repeatedHintImages?.[repeatedIndex];
+        assert(body, 'Repeated-hint source is missing its exact payload');
+        await route.fulfill({
+          contentType: `image/${REPEATED_HINT_FORMATS[repeatedIndex] === 'jpg' ? 'jpeg' : 'png'}`,
+          body,
+          headers: {
+            'Access-Control-Allow-Origin': 'https://x.com',
+            'Access-Control-Allow-Credentials': 'true',
+          },
+        });
+        return;
+      }
       const experienceIndex = EXPERIENCE_IMAGES.findIndex(
         ({ path }) => url.pathname === `/media/${path}`
       );

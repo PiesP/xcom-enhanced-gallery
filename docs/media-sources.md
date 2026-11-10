@@ -55,13 +55,31 @@ MP4 bytes and ZIP entries is tracked separately from these source rules.
 ## Attachment filenames
 
 Single downloads and ZIP entries use the attachment's owning handle and post ID,
-followed by a zero-based owner-local attachment number when the API supplies its
-full media list or a uniquely bound, same-owner `/photo/N` DOM link establishes
-the position. Sorting the gallery, opening A's quote of B, or filtering an
+followed by a zero-based owner-local attachment number:
+`{owningHandle}_{owningPostId}_{attachmentOrdinal}.{actualExtension}`.
+The API establishes positions in the complete owner collection before filtering.
+A complete note inline list with unique media IDs and nonnegative, unique integer
+positions defines source order; otherwise entity array order defines it. Repeated,
+conflicting, foreign or out-of-range navigation hints cannot override that order.
+Collection-wide unique, in-range navigation links for the correct owner and
+media kind may sort presentation later; they never change this source identity.
+
+DOM recovery is a partial observation, even when an article contains several tiles.
+A uniquely bound, same-owner `/photo/N` or `/video/N` link can establish a position;
+a lone `/photo/2` remains attachment 1 regardless of visible tile count. Distinct
+observed sources sharing a position, or one source with conflicting positions,
+leave that position unknown. Equivalent representations can share an unambiguous
+source-bound position. Sorting the gallery, opening A's quote of B, or filtering an
 unavailable earlier attachment does not renumber B's attachments. A mixed-owner
-ZIP keeps gallery order, while each entry keeps its own owner and attachment
-identity; the ZIP archive name follows the first item in gallery order,
-independently of the active selection.
+ZIP keeps each entry's owner and attachment identity. Entry names are assigned
+in input order before asynchronous work; the ZIP archive name follows the first
+item in gallery order, independently of the active selection. Physical ZIP member
+order is not an input-order service guarantee: known-size, already-owned or
+cached Blobs may be read concurrently, and local headers and central-directory
+entries follow their commit order. The ordinary gallery currently supplies a
+Blob provider whose unknown-size work is admitted serially; no reordering has
+been demonstrated in that path. Completion order does not change assigned names
+or filename-to-byte pairing.
 
 If DOM recovery sees only part of a post and has no unambiguous position link,
 the filename uses `source-` plus a 16-digit hexadecimal key derived from the
@@ -69,7 +87,21 @@ validated CDN path. Display-size and query variants of one image share the key;
 different sources are separated by a 64-bit hash rather than a DOM candidate
 position. A hash collision remains theoretically possible, so this key does
 not assert the missing original position or guarantee equality with an API
-filename. The selected item and preferred save URL are unchanged by naming.
+filename. This is an explicit nonnumeric fallback, not compliance with the normal
+numeric filename format. The existing bounded, cancellation-aware API attempt is
+the opportunity to recover complete owner metadata before DOM fallback; no extra
+request or visible-subset renumbering fabricates an unknown position. Strict
+numeric naming remains unavailable until complete owner metadata or an
+unambiguous source-bound position is available. The selected item and preferred
+save URL are unchanged by naming.
+
+Validated photo extension/query spellings and all supported legacy sizes share
+canonical source identity. Deduplication also retains encoding, owner and the
+verified API entity ID (or otherwise the established ordinal). Duplicate `.jpg`
+and `?format=jpg` representations of one entity collapse, while different verified
+attachments or owners reusing one URL survive. A repeated API entity retains its
+first source position; later source positions are not renumbered after removal.
+WebP original recovery may change the save extension while preserving identity.
 
 ## DOM WebP originals
 
@@ -148,10 +180,16 @@ guidance](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file).
 
 Generated names reserve the verified media extension and post/attachment
 identity before shortening the author or fallback prefix. ZIP duplicate
-allocation then reserves `-N` while retaining that generator-owned identity;
-it compares assigned names without case to avoid collisions on common Windows
-extraction paths, including an already present `-1` name. Assigned failed-entry
-names are reused exactly during recovery, and supplementary archives reserve
+allocation reserves `-N` and compares each finalized basename without its final
+extension, case-insensitively, while also retaining complete-name uniqueness.
+Different formats cannot reuse one stem, including an already present `-1` name.
+This generic caller boundary does not correct an invalid semantic ordinal.
+Allocation is bounded by the names already reserved. If an overlong generated
+identity cannot retain its collision counter, the plan fails before asynchronous
+work or saving; ordinary X post IDs are not claimed to reach that synthetic limit.
+Assigned failed-entry names are reused exactly during recovery. A supplied legacy
+recovery plan with conflicting stems or noncanonical names is rejected before
+saving rather than silently renamed. Supplementary archives reserve
 `-missing[-N].zip` before truncation. Explicit caller-provided names retain up
 to 32 UTF-16 units from the end of an overlong stem as a best-effort way to
 keep a trailing identifier; arbitrary text in that tail is not treated as a

@@ -905,7 +905,7 @@ describe('production quoted-video pipeline', () => {
     });
   });
 
-  it('remaps an exact root photo past an unsafe entry, duplicate sizes and an inserted quote', async () => {
+  it('remaps an exact root photo past an unsafe entry, distinct source-reusing entities and an inserted quote', async () => {
     const photo = (id: string, url: string): TwitterMedia => ({
       type: 'photo',
       id_str: id,
@@ -932,9 +932,10 @@ describe('production quoted-video pipeline', () => {
 
     expect(requestedId()).toBe('222');
     expect(result.success).toBe(true);
-    expect(result.clickedIndex).toBe(2);
+    expect(result.clickedIndex).toBe(3);
     expect(result.mediaItems.map((item) => [item.tweetId, item.url])).toEqual([
       ['111', 'https://pbs.twimg.com/media/quoted.jpg?format=jpg&name=orig'],
+      ['222', 'https://pbs.twimg.com/media/duplicate.jpg?format=jpg&name=orig'],
       ['222', 'https://pbs.twimg.com/media/duplicate.jpg?format=jpg&name=orig'],
       ['222', 'https://pbs.twimg.com/media/selected.jpg?format=jpg&name=orig'],
     ]);

@@ -112,6 +112,8 @@ interface TweetMediaEntryBase {
   readonly index: number;
   /** Zero-based position within the owning post, before gallery ordering or quote merge. */
   readonly attachmentOrdinal?: number;
+  /** Navigation order validated against the full owner collection before filtering. */
+  readonly presentationOrdinal?: number | null;
   readonly preview_url: string;
   readonly media_id: string;
   readonly media_key: string;

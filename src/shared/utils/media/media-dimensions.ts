@@ -10,7 +10,7 @@ import { clampIndex } from '@piesp/browser-core/util';
 import type { TweetMediaEntry } from '@shared/services/media/types';
 import type { MediaInfo } from '@shared/types/media.types';
 import type { ImageFitMode } from '@shared/types/settings.types';
-import { extractVisualIndexFromUrl, getMediaDedupKey } from '@shared/utils/media/media-url-utils';
+import { getMediaDedupKey, getOwnedNavigationOrdinal } from '@shared/utils/media/media-url-utils';
 
 const FALLBACK_VIEWPORT_HEIGHT = `${STANDARD_GALLERY_HEIGHT}px`;
 
@@ -56,8 +56,31 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
     return mediaItems;
   }
 
+  // Validated navigation may sort presentation, never source attachment identity.
+  if (mediaItems.every((media) => media.presentationOrdinal !== undefined)) {
+    return mediaItems.some((media) => media.presentationOrdinal === null)
+      ? mediaItems
+      : mediaItems
+          .map((media) => ({ media, visualIndex: media.presentationOrdinal ?? 0 }))
+          .sort((a, b) => a.visualIndex - b.visualIndex)
+          .map(({ media }, index) => ({ ...media, index }));
+  }
+  const positions = mediaItems.map((media) =>
+    getOwnedNavigationOrdinal(
+      media.expanded_url ?? '',
+      media.tweet_id,
+      media.screen_name,
+      media.type
+    )
+  );
+  if (
+    positions.some((position) => position === null || position >= mediaItems.length) ||
+    new Set(positions).size !== mediaItems.length
+  ) {
+    return mediaItems;
+  }
   return mediaItems
-    .map((media) => ({ media, visualIndex: extractVisualIndexFromUrl(media.expanded_url || '') }))
+    .map((media, index) => ({ media, visualIndex: positions[index] ?? index }))
     .sort((a, b) => a.visualIndex - b.visualIndex)
     .map(({ media }, newIndex) => ({ ...media, index: newIndex }));
 }

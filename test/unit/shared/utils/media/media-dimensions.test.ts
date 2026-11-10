@@ -246,9 +246,24 @@ describe('media-dimensions (pure functions)', () => {
   describe('sortMediaByVisualOrder', () => {
     it('should sort by visual index extracted from URL', () => {
       const items = [
-        { expanded_url: 'https://x.com/user/status/123/photo/3' },
-        { expanded_url: 'https://x.com/user/status/123/photo/1' },
-        { expanded_url: 'https://x.com/user/status/123/photo/2' },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123/photo/3',
+        },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123/photo/1',
+        },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123/photo/2',
+        },
       ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
       expect(result[0]?.expanded_url).toContain('/photo/1');
@@ -258,7 +273,12 @@ describe('media-dimensions (pure functions)', () => {
 
     it('should handle single item', () => {
       const items = [
-        { expanded_url: 'https://x.com/user/status/123/photo/1' },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123/photo/1',
+        },
       ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
       expect(result).toHaveLength(1);
@@ -271,26 +291,77 @@ describe('media-dimensions (pure functions)', () => {
 
     it('should assign new index after sorting', () => {
       const items = [
-        { expanded_url: 'https://x.com/user/status/123/photo/2', index: 5 },
-        { expanded_url: 'https://x.com/user/status/123/photo/1', index: 3 },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123/photo/2',
+          index: 5,
+        },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123/photo/1',
+          index: 3,
+        },
       ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
       expect(result[0]?.index).toBe(0);
       expect(result[1]?.index).toBe(1);
     });
 
-    it('should default to index 0 for URLs without visual index', () => {
+    it('preserves source order when navigation evidence is incomplete', () => {
       const items = [
-        { expanded_url: 'https://x.com/user/status/123' },
-        { expanded_url: 'https://x.com/user/status/123/photo/1' },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123',
+        },
+        {
+          tweet_id: '123',
+          screen_name: 'user',
+          type: 'photo',
+          expanded_url: 'https://x.com/user/status/123/photo/1',
+        },
       ] as unknown as TweetMediaEntry[];
       const result = sortMediaByVisualOrder(items);
-      // URL without visual index gets 0, so it comes first
       expect(result[0]?.expanded_url).toBe('https://x.com/user/status/123');
     });
   });
 
   describe('media deduplication', () => {
+    it('reconciles equivalent photo spellings while preserving format, owner and verified ordinal', () => {
+      const first = makeMedia('first', 'https://pbs.twimg.com/media/ABC.jpg?name=small', {
+        tweetId: '111',
+        attachmentOrdinal: 1,
+      });
+      const duplicate = makeMedia(
+        'duplicate',
+        'https://pbs.twimg.com/media/ABC:4096x4096?format=jpg',
+        { tweetId: '111', attachmentOrdinal: 1 }
+      );
+      const anotherAttachment = { ...duplicate, id: 'other-attachment', attachmentOrdinal: 3 };
+      const otherOwner = { ...duplicate, id: 'other-owner', tweetId: '222' };
+      const otherFormat = {
+        ...duplicate,
+        id: 'other-format',
+        url: 'https://pbs.twimg.com/media/ABC.png',
+      };
+      const items = [first, duplicate, anotherAttachment, otherOwner, otherFormat];
+      const unique = removeDuplicateMediaItems(items);
+      expect(unique.map(({ id }) => id)).toEqual([
+        'first',
+        'other-attachment',
+        'other-owner',
+        'other-format',
+      ]);
+      expect(adjustClickedIndexAfterDeduplication(items, unique, 1)).toBe(0);
+      expect(adjustClickedIndexAfterDeduplication(items, unique, 2)).toBe(1);
+      expect(adjustClickedIndexAfterDeduplication(items, unique, 3)).toBe(2);
+    });
+
     it('drops missing and duplicate entries while preserving type-specific media', () => {
       const first = makeMedia('first', 'https://pbs.twimg.com/media/shared.jpg');
       const duplicate = makeMedia('duplicate', 'https://pbs.twimg.com/media/shared.jpg');

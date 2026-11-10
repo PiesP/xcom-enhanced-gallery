@@ -80,6 +80,18 @@ export function normalizeOriginalImageUrl(source: string): string | null {
   return parsed.href;
 }
 
+/** Validated photo identity plus encoding; size/query spelling does not create an attachment. */
+export function getCanonicalPhotoIdentity(source: string): string | null {
+  const original = normalizeOriginalImageUrl(source);
+  if (!original) {
+    return null;
+  }
+  const parsed = new URL(original);
+  const format = parsed.searchParams.get('format');
+  const path = parsed.pathname.replace(/\.(?:jpe?g|png|webp|gif)$/iu, '');
+  return `${parsed.hostname}${path}?format=${format}`;
+}
+
 export function getMediaDisplayUrl(media: MediaInfo): string {
   return media.url;
 }

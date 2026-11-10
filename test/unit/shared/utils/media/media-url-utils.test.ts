@@ -119,14 +119,16 @@ describe('media-url-utils (pure functions)', () => {
       'keeps %s media in a distinct namespace',
       (type) => {
         expect(getMediaDedupKey(makeMedia({ type }))).toBe(
-          `${type}:pbs.twimg.com/media/fallback.jpg`
+          type === 'image'
+            ? 'image:pbs.twimg.com/media/fallback?format=jpg'
+            : `${type}:pbs.twimg.com/media/fallback.jpg`
         );
       }
     );
 
     it('falls back from an empty original URL to the primary URL', () => {
       expect(getMediaDedupKey(makeMedia({ originalUrl: '' }))).toBe(
-        'image:pbs.twimg.com/media/fallback.jpg'
+        'image:pbs.twimg.com/media/fallback?format=jpg'
       );
     });
 

@@ -11,6 +11,7 @@ import {
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
 import { extractFilenameStemFromUrl } from '@shared/utils/media/media-url-utils';
+import { getCanonicalPhotoIdentity } from '@shared/utils/media/media-source';
 import { findNativeVideoControlMedia } from '@shared/utils/media/native-video-control';
 import { isVideoPreview } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
@@ -132,6 +133,10 @@ export function getMediaSourceKey(url: string | null): string | null {
     return null;
   }
   const parsed = new URL(url, 'https://x.com');
+  const photo = getCanonicalPhotoIdentity(url);
+  if (photo) {
+    return photo.slice(0, photo.lastIndexOf('?format='));
+  }
   if (parsed.hostname === 'video.twimg.com') {
     return `${parsed.hostname}${parsed.pathname}`;
   }
@@ -142,10 +147,14 @@ export function getMediaSourceKey(url: string | null): string | null {
   return `${parsed.hostname}${parsed.pathname.slice(0, parsed.pathname.lastIndexOf('/') + 1)}${name}`;
 }
 
-/** Exact thumbnail paths, allowing the explicit extensionless format spelling. */
+/** Validated photo spellings are equivalent; other thumbnail paths remain exact. */
 function getMediaIdentityKey(url: string | null): string | null {
   if (!url || !isValidMediaUrl(url)) {
     return null;
+  }
+  const photo = getCanonicalPhotoIdentity(url);
+  if (photo) {
+    return photo;
   }
   const parsed = new URL(url, 'https://x.com');
   let path = parsed.pathname;
