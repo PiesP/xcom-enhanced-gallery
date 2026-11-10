@@ -10,6 +10,10 @@ import { DOMFallbackExtractor } from '@shared/services/media-extraction/extracto
 import { TweetInfoExtractor } from '@shared/services/media-extraction/extractors/tweet-info-extractor';
 import { MediaExtractionService } from '@shared/services/media-extraction/media-extraction-service';
 import {
+  adjustClickedIndexAfterDeduplication,
+  removeDuplicateMediaItems,
+} from '@shared/utils/media/media-dimensions';
+import {
   findMediaElementInDOM,
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
@@ -144,6 +148,66 @@ describe('scoped DOM recovery', () => {
       /^author_222_source-[0-9a-f]{16}\.jpg$/u
     );
   });
+
+  it('downgrades repeated hints on separate distinct sources without changing the clicked item', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/1">${photo('first')}</a><a href="/author/status/222/photo/1">${photo('second')}</a></article>`;
+    const result = await recover('second');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([undefined, undefined]);
+    expect(result.clickedIndex).toBe(1);
+    expect(result.mediaItems[1]?.url).toBe('https://pbs.twimg.com/media/second.jpg');
+  });
+
+  it('compares mixed photo/video hints in one observed owner collection', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/1">${photo('first')}</a><a href="/author/status/222/video/1">${video('second')}</a></article>`;
+    const result = await recover('second');
+    expect(result.success).toBe(true);
+    expect(result.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([undefined, undefined]);
+    document
+      .querySelector('a[href$="video/1"]')!
+      .setAttribute('href', '/author/status/222/video/2');
+    const unambiguous = await recover('second');
+    expect(unambiguous.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([0, 1]);
+    expect(generateMediaFilename(unambiguous.mediaItems[1]!)).toBe('author_222_1.mp4');
+  });
+
+  it('does not pick an ordinal when duplicate representations have conflicting position links', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/1">${photo('same')}</a><a href="/author/status/222/photo/2"><img id="selected" src="https://pbs.twimg.com/media/same?format=jpg&name=small"></a></article>`;
+    const result = await recover('selected');
+    expect(result.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([undefined, undefined]);
+    const unique = removeDuplicateMediaItems(result.mediaItems);
+    expect(unique).toHaveLength(1);
+    expect(
+      adjustClickedIndexAfterDeduplication(result.mediaItems, unique, result.clickedIndex!)
+    ).toBe(0);
+    expect(generateMediaFilename(unique[0]!)).toBe(generateMediaFilename(result.mediaItems[1]!));
+  });
+
+  it('recovers one validated source ordinal across duplicate DOM representations', async () => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/2">${photo('same')}</a><img id="selected" src="https://pbs.twimg.com/media/same?format=jpg&name=small"></article>`;
+    const result = await recover('selected');
+    expect(result.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([1, 1]);
+    const unique = removeDuplicateMediaItems(result.mediaItems);
+    expect(unique).toHaveLength(1);
+    expect(generateMediaFilename(unique[0]!)).toBe('author_222_1.jpg');
+    expect(
+      adjustClickedIndexAfterDeduplication(result.mediaItems, unique, result.clickedIndex!)
+    ).toBe(0);
+  });
+
+  it.each(['thumb', 'small', 'medium', 'large', 'orig', '900x900', '4096x4096'])(
+    'preserves the ordinary fallback hash for supported legacy size %s',
+    async (size) => {
+      document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><img id="target" src="https://pbs.twimg.com/media/ABC:${size}?format=jpg"></article>`;
+      const result = await recover('target');
+      expect(generateMediaFilename(result.mediaItems[0]!)).toBe(
+        'author_222_source-8658d42135ba67f1.jpg'
+      );
+      expect(result.mediaItems[0]?.downloadSource?.url).toBe(
+        'https://pbs.twimg.com/media/ABC?format=jpg&name=orig'
+      );
+    }
+  );
 
   it.each([
     'https://evil.invalid/author/status/222/photo/8',

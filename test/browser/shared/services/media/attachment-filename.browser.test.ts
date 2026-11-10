@@ -4,9 +4,13 @@
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import { extractMediaFromTweet } from '@shared/services/media/twitter-parser/twitter-response-parser';
+import {
+  captureClickedMediaEvidence,
+  matchClickedMedia,
+} from '@shared/services/media-extraction/determine-clicked-index';
 import type { TwitterTweet } from '@shared/services/media/types';
 import type { TweetInfo } from '@shared/types/media.types';
-import { describe, expect, it } from 'vite-plus/test';
+import { afterEach, describe, expect, it } from 'vite-plus/test';
 
 const requested: TweetInfo = {
   tweetId: '111',
@@ -26,6 +30,55 @@ function photo(ownerId: string, id: string, position: number) {
 }
 
 describe('owner-local attachment filenames', () => {
+  afterEach(() => document.body.replaceChildren());
+
+  it.each([
+    '.jpg?name=small',
+    '?format=jpg&name=medium',
+    ':900x900?format=jpg',
+    ':4096x4096?format=jpg',
+  ])(
+    'matches a direct quote photo through validated spelling %s without inventing ownership',
+    (suffix) => {
+      const image = document.createElement('img');
+      image.src = `https://pbs.twimg.com/media/QuotePhoto${suffix}`;
+      document.body.append(image);
+      const evidence = {
+        ...captureClickedMediaEvidence(image),
+        ownership: {
+          requestTweetId: '111',
+          ownerTweetId: null,
+          scope: 'clickable' as const,
+        },
+      };
+      const items = [
+        {
+          type: 'image' as const,
+          url: 'https://pbs.twimg.com/media/QuotePhoto.jpg',
+          metadata: {
+            apiData: {
+              sourceLocation: 'quoted',
+              tweet_id: '222',
+              quotedTweetId: '222',
+              quoteParentTweetId: '111',
+            },
+          },
+        },
+      ];
+      expect(matchClickedMedia(evidence, items, '111')).toEqual({ status: 'matched', index: 0 });
+      expect(
+        matchClickedMedia(
+          evidence,
+          [{ ...items[0]!, url: 'https://pbs.twimg.com/media/QuotePhoto.png' }],
+          '111'
+        )
+      ).toEqual({ status: 'contradictory', index: 0 });
+      expect(matchClickedMedia(evidence, [items[0]!, items[0]!], '111')).toEqual({
+        status: 'unknown',
+        index: null,
+      });
+    }
+  );
   it('retains an explicit owner position when an earlier API attachment is rejected', () => {
     const post: TwitterTweet = {
       rest_id: '111',

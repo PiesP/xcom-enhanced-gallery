@@ -6,12 +6,13 @@ import { createServer, request } from 'node:http';
 import { copyFile, mkdir, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { describe, it } from 'vite-plus/test';
+import { describe, expect, it } from 'vite-plus/test';
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
 import {
   attachmentFilenameApiResponse,
   attachmentFilenamePageHtml,
   loadAttachmentFilenameFixtureHtml,
+  repeatedHintApiResponse,
   COMPACT_INNER_ID,
   COMPACT_MIDDLE_ID,
 } from '../../../../validation/windows/install-preparation.ts';
@@ -73,6 +74,10 @@ describe('installed attachment filename fixture', () => {
         ],
       ]
     );
+    expect(middle).toHaveProperty('note_tweet.note_tweet_results.result.media.inline_media', [
+      { media_id: 'filename-b1', index: 0 },
+      { media_id: 'filename-b2', index: 1 },
+    ]);
     const inner = middle.quoted_status_result?.result;
     assert(inner && 'rest_id' in inner);
     assert.equal(inner.rest_id, COMPACT_INNER_ID);
@@ -82,6 +87,119 @@ describe('installed attachment filename fixture', () => {
       innerResult.legacy.extended_entities.media[0]?.media_url_https,
       'https://pbs.twimg.com/media/CompactQuoteSelected?format=webp&name=medium'
     );
+  });
+
+  it('supplies four distinct mixed-format owner entities with one repeated navigation hint', () => {
+    const result = repeatedHintApiResponse().data.tweetResult.result;
+    assert.equal(result.rest_id, '8555555555555555555');
+    assert.deepEqual(
+      result.legacy.extended_entities.media.map((item) => [
+        item.id_str,
+        item.media_url_https,
+        item.expanded_url,
+      ]),
+      [
+        [
+          'repeated-hint-0',
+          'https://pbs.twimg.com/media/RepeatedHintOne?format=jpg&name=medium',
+          'https://x.com/outer_fixture/status/8555555555555555555/photo/1',
+        ],
+        [
+          'repeated-hint-1',
+          'https://pbs.twimg.com/media/RepeatedHintTwo?format=png&name=medium',
+          'https://x.com/outer_fixture/status/8555555555555555555/photo/1',
+        ],
+        [
+          'repeated-hint-2',
+          'https://pbs.twimg.com/media/RepeatedHintThree?format=png&name=medium',
+          'https://x.com/outer_fixture/status/8555555555555555555/photo/1',
+        ],
+        [
+          'repeated-hint-3',
+          'https://pbs.twimg.com/media/RepeatedHintFour?format=jpg&name=medium',
+          'https://x.com/outer_fixture/status/8555555555555555555/photo/1',
+        ],
+      ]
+    );
+  });
+
+  it('serves each repeated-hint original with its own bytes and MIME type', async () => {
+    const fixture = createExtensionNativeFixtureHandler();
+    fixture.setPayloads(
+      [Buffer.from('A1'), Buffer.from('B1'), Buffer.from('B2')],
+      Object.fromEntries(
+        ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+          name,
+          Buffer.from('video'),
+        ])
+      )
+    );
+    const expected = [
+      {
+        path: 'RepeatedHintOne',
+        format: 'jpg',
+        mime: 'image/jpeg',
+        bytes: Buffer.from('JPEG one'),
+      },
+      { path: 'RepeatedHintTwo', format: 'png', mime: 'image/png', bytes: Buffer.from('PNG two') },
+      {
+        path: 'RepeatedHintThree',
+        format: 'png',
+        mime: 'image/png',
+        bytes: Buffer.from('PNG three'),
+      },
+      {
+        path: 'RepeatedHintFour',
+        format: 'jpg',
+        mime: 'image/jpeg',
+        bytes: Buffer.from('JPEG four'),
+      },
+    ];
+    fixture.setRepeatedHintImages(expected.map(({ bytes }) => bytes));
+    const server = createServer(fixture.handle);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const address = server.address();
+    assert(address && typeof address !== 'string');
+    try {
+      for (const { path, format, mime, bytes } of expected) {
+        const response = await new Promise<{
+          status: number | undefined;
+          mime: string | undefined;
+          bytes: Buffer;
+        }>((resolve, reject) => {
+          const outgoing = request(
+            {
+              hostname: '127.0.0.1',
+              port: address.port,
+              path: `/media/${path}?format=${format}&name=orig`,
+              headers: { Host: 'pbs.twimg.com' },
+            },
+            (incoming) => {
+              const chunks: Buffer[] = [];
+              incoming.on('data', (chunk: Buffer) => chunks.push(chunk));
+              incoming.once('error', reject);
+              incoming.once('end', () =>
+                resolve({
+                  status: incoming.statusCode,
+                  mime: incoming.headers['content-type'],
+                  bytes: Buffer.concat(chunks),
+                })
+              );
+            }
+          );
+          outgoing.once('error', reject);
+          outgoing.end();
+        });
+        assert.equal(response.status, 200);
+        assert.equal(response.mime, mime);
+        assert(response.bytes.equals(bytes));
+      }
+    } finally {
+      fixture.destroyActive();
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve()))
+      );
+    }
   });
 
   it('removes only B1 from the partial DOM and preserves B2 photo/2 source binding', async () => {
