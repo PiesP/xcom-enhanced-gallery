@@ -51,6 +51,13 @@ function createErrorResult(
   };
 }
 
+function createCancelledResult(): MediaExtractionResult {
+  return {
+    ...createErrorResult('Extraction cancelled', ErrorCode.CANCELLED),
+    failureKind: 'cancelled',
+  };
+}
+
 function mergeTweetInfo(base?: TweetInfo | null, override?: TweetInfo | null): TweetInfo | null {
   if (!base) {
     return override ?? null;
@@ -150,7 +157,7 @@ export class MediaExtractionService implements OwnedMediaExtractionSession {
 
     // Check for cancellation before starting extraction
     if (this.disposed || options.signal?.aborted) {
-      return createErrorResult('Extraction cancelled');
+      return createCancelledResult();
     }
 
     try {
@@ -185,7 +192,7 @@ export class MediaExtractionService implements OwnedMediaExtractionSession {
       // Some request adapters can resolve after abort. Currentness must be
       // checked before API success resets the circuit breaker or returns data.
       if (this.disposed || options.signal?.aborted) {
-        return createErrorResult('Extraction cancelled');
+        return createCancelledResult();
       }
 
       const physicalRequest = apiResult.apiRequestToken;
@@ -246,7 +253,7 @@ export class MediaExtractionService implements OwnedMediaExtractionSession {
       // Yield before CPU-intensive DOM fallback extraction
       await schedulerYield();
       if (this.disposed || options.signal?.aborted) {
-        return createErrorResult('Extraction cancelled');
+        return createCancelledResult();
       }
 
       const domResult = await this.collaborators.dom.extract(
@@ -257,7 +264,7 @@ export class MediaExtractionService implements OwnedMediaExtractionSession {
       );
 
       if (this.disposed || options.signal?.aborted) {
-        return createErrorResult('Extraction cancelled');
+        return createCancelledResult();
       }
 
       if (domResult.success && domResult.mediaItems.length > 0) {
@@ -294,7 +301,7 @@ export class MediaExtractionService implements OwnedMediaExtractionSession {
       };
     } catch (error) {
       if (this.disposed || options.signal?.aborted) {
-        return createErrorResult('Extraction cancelled');
+        return createCancelledResult();
       }
       __DEV__ && logger.error('Extract failed', extractionId, error);
       return createErrorResult(error);

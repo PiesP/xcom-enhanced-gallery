@@ -24,7 +24,7 @@
 import { existsSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML } from '../fixtures/artifacts';
+import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 
@@ -166,10 +166,25 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
   test('clicking the empty gallery background closes the dialog', async ({ page }) => {
     await setupGalleryPage(page);
+    await page.route('https://pbs.twimg.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: MOCK_IMAGE,
+      })
+    );
     await openGallery(page);
 
     const container = page.locator('[data-xeg-gallery-container]');
     const items = page.locator('[data-gallery-element="items"]');
+    await expect(items.locator('[data-gallery-element="item"]').nth(0)).toHaveAttribute(
+      'data-media-loaded',
+      'true'
+    );
+    await expect(items.locator('[data-gallery-element="item"]').nth(1)).toHaveAttribute(
+      'data-media-loaded',
+      'true'
+    );
     const backgroundPoint = await items.evaluate((element) => {
       const item = element.querySelector<HTMLElement>('[data-gallery-element="item"]');
       if (!item) {
@@ -188,8 +203,21 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       }
       return { x, y };
     });
+    await page.evaluate(() => {
+      document.addEventListener(
+        'pointerdown',
+        (event) => {
+          document.documentElement.dataset.backdropPointerTarget =
+            event.target instanceof Element
+              ? (event.target.getAttribute('data-gallery-element') ?? event.target.tagName)
+              : 'unknown';
+        },
+        { capture: true, once: true }
+      );
+    });
 
     await items.click({ position: backgroundPoint });
+    expect(await page.locator('html').getAttribute('data-backdrop-pointer-target')).toBe('items');
 
     await expect(container).toHaveCount(0);
   });
