@@ -93,6 +93,7 @@ import {
   COMPACT_FIXTURE_URL,
   COMPACT_INNER_ID,
   COMPACT_MIDDLE_ID,
+  COMPACT_OUTER_ID,
   DELAYED_FAILURE_ID,
   DELAYED_NAVIGATION_ID,
   EXPERIENCE_FIXTURE_URL,
@@ -109,9 +110,11 @@ import {
   SOURCE_IMAGE_FAULTS,
   TWEET_ID,
   createImageFixtures,
+  createRepeatedHintImages,
   enableDeveloperMode,
   imageReceipt,
   installFixtureRoutes,
+  REPEATED_HINT_PATHS,
   verifyDownloadDirectory,
 } from './install-preparation.ts';
 import {
@@ -5733,6 +5736,7 @@ async function runAttachmentFilenameCycle({
   output,
   images,
   compactImages,
+  repeatedHintImages,
   nativeLoopback,
   pageFetches,
   routes,
@@ -5750,6 +5754,7 @@ async function runAttachmentFilenameCycle({
   output: string;
   images: ImageFixtures;
   compactImages: CompactImages;
+  repeatedHintImages?: Buffer[];
   nativeLoopback: NativeLoopback;
   pageFetches: PageFetch[];
   routes: Awaited<ReturnType<typeof installFixtureRoutes>>;
@@ -6049,6 +6054,91 @@ async function runAttachmentFilenameCycle({
     await retire(bB2, 'b-b2.jpg', images[2]);
     await retire(bZip, 'b.zip', await readFile(join(downloads, bZip.filename)));
 
+    if (repeatedHintImages) {
+      // Four distinct originals carry the same valid /photo/1 hint. The full
+      // owner collection, rather than those navigation links, owns their ordinals.
+      const repeatedExpected = [
+        {
+          filename: 'outer_fixture_8555555555555555555_0.jpg',
+          url: 'https://pbs.twimg.com/media/RepeatedHintOne?format=jpg&name=orig',
+        },
+        {
+          filename: 'outer_fixture_8555555555555555555_1.png',
+          url: 'https://pbs.twimg.com/media/RepeatedHintTwo?format=png&name=orig',
+        },
+        {
+          filename: 'outer_fixture_8555555555555555555_2.png',
+          url: 'https://pbs.twimg.com/media/RepeatedHintThree?format=png&name=orig',
+        },
+        {
+          filename: 'outer_fixture_8555555555555555555_3.jpg',
+          url: 'https://pbs.twimg.com/media/RepeatedHintFour?format=jpg&name=orig',
+        },
+      ] as const;
+      const repeatedStems = repeatedExpected.map(({ filename }) =>
+        filename.slice(0, filename.lastIndexOf('.')).toLowerCase()
+      );
+      assert.equal(new Set(repeatedStems).size, 4, 'Expected four distinct extensionless names');
+      assert.equal(repeatedHintImages.length, 4);
+      const repeated = await open('filename-repeated', '#repeated-hint-0');
+      const repeatedSingles = [];
+      for (const [index, expected] of repeatedExpected.entries()) {
+        const bytes: Buffer | undefined = repeatedHintImages[index];
+        assert(bytes, 'Repeated-hint original payload is missing');
+        await assertQuotedSelection(page, {
+          position: index + 1,
+          total: 4,
+          type: 'image',
+          path: `/media/${REPEATED_HINT_PATHS[index]}`,
+        });
+        repeatedSingles.push(await single(repeated, expected.filename, expected.url, bytes));
+        if (index < 3) {
+          await page.keyboard.press('ArrowRight');
+        }
+      }
+      const repeatedEntries = repeatedExpected.map(({ filename }, index) => ({
+        filename,
+        bytes: repeatedHintImages[index]!,
+      }));
+      const repeatedZip = await zip(
+        repeated,
+        4,
+        `outer_fixture_${COMPACT_OUTER_ID}.zip`,
+        repeatedEntries
+      );
+      assert.equal(repeatedZip.verified.entryOrder.length, 4);
+      assert.equal(
+        new Set(
+          repeatedZip.verified.entryOrder.map((name) =>
+            name.slice(0, name.lastIndexOf('.')).toLowerCase()
+          )
+        ).size,
+        4,
+        'Parsed ZIP contains duplicate extensionless names'
+      );
+      evidence.steps.push({
+        name: 'filename-repeated-photo-hint',
+        owner: COMPACT_OUTER_ID,
+        sourceMedia: REPEATED_HINT_PATHS,
+        singles: repeatedSingles,
+        zip: repeatedZip,
+      });
+      await page.keyboard.press('Escape');
+      await repeated.waitFor({ state: 'detached' });
+      for (const [index, saved] of repeatedSingles.entries()) {
+        await retire(
+          saved,
+          `repeated-${index}.${index === 1 || index === 2 ? 'png' : 'jpg'}`,
+          repeatedHintImages[index]!
+        );
+      }
+      await retire(
+        repeatedZip,
+        'repeated.zip',
+        await readFile(join(downloads, repeatedZip.filename))
+      );
+    }
+
     for (const [mode, position, total] of [
       ['filename-dom-full', 2, 2],
       ['filename-dom-partial', 1, 1],
@@ -6331,9 +6421,21 @@ async function runAttachmentFilenameFocusedProbe({
   profile: string;
 }) {
   const compactImages = await createCompactImages(context);
-  const routes = await installFixtureRoutes(context, root, images, displayImages, compactImages);
+  const repeatedHintImages = await createRepeatedHintImages(context);
+  const routes = await installFixtureRoutes(
+    context,
+    root,
+    images,
+    displayImages,
+    compactImages,
+    undefined,
+    {
+      repeatedHintImages,
+    }
+  );
   nativeLoopback.setPayloads(images, routes.videoPayloads);
   nativeLoopback.setCompactImage(compactImages.original);
+  nativeLoopback.setRepeatedHintImages(repeatedHintImages);
   const extensionPage = await context.newPage();
   const page = await context.newPage();
   const pageFetches: PageFetch[] = [];
@@ -6361,6 +6463,7 @@ async function runAttachmentFilenameFocusedProbe({
       output,
       images,
       compactImages,
+      repeatedHintImages,
       nativeLoopback,
       pageFetches,
       routes,
