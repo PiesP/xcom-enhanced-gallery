@@ -57,6 +57,14 @@ export function sortMediaByVisualOrder(mediaItems: TweetMediaEntry[]): TweetMedi
   }
 
   // Validated navigation may sort presentation, never source attachment identity.
+  if (mediaItems.every((media) => media.presentationOrdinal !== undefined)) {
+    return mediaItems.some((media) => media.presentationOrdinal === null)
+      ? mediaItems
+      : mediaItems
+          .map((media) => ({ media, visualIndex: media.presentationOrdinal ?? 0 }))
+          .sort((a, b) => a.visualIndex - b.visualIndex)
+          .map(({ media }, index) => ({ ...media, index }));
+  }
   const positions = mediaItems.map((media) =>
     getOwnedNavigationOrdinal(
       media.expanded_url ?? '',

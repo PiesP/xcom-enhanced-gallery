@@ -114,6 +114,38 @@ describe('source-bound attachment identity through actual ZIP generation', () =>
     );
   });
 
+  it.each([
+    {
+      hints: [2, 4, 1, 3],
+      names: [
+        'instiz_2119670174475522225_2.png',
+        'instiz_2119670174475522225_3.jpg',
+        'instiz_2119670174475522225_1.png',
+      ],
+    },
+    {
+      hints: [1, 2, 1, 3],
+      names: [
+        'instiz_2119670174475522225_1.png',
+        'instiz_2119670174475522225_2.png',
+        'instiz_2119670174475522225_3.jpg',
+      ],
+    },
+  ])(
+    'validates presentation hints against even an excluded earlier entity: %j',
+    ({ hints, names }) => {
+      const tweet = post(hints);
+      const media = tweet.extended_entities.media.map((item, index) =>
+        index === 0 ? { ...item, media_url_https: 'https://evil.invalid/unavailable.jpg' } : item
+      );
+      expect(
+        convert({ ...tweet, extended_entities: { media } }).map((item) =>
+          generateMediaFilename(item)
+        )
+      ).toEqual(names);
+    }
+  );
+
   it('uses one owner collection across image/video kinds rather than per-kind hints', () => {
     const media: TwitterMedia[] = [
       post().extended_entities!.media[0]!,

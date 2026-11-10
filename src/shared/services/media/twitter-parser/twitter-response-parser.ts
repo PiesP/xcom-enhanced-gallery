@@ -12,6 +12,7 @@ import type { VideoSourceVariant } from '@shared/types/media.types';
 import { isDirectMp4Source } from '@shared/utils/media/direct-mp4-source';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
+import { getOwnedNavigationOrdinal } from '@shared/utils/media/media-url-utils';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const MAX_VIDEO_VARIANT_URLS = 32;
@@ -155,7 +156,8 @@ function createMediaEntry(
   tweetText: string,
   index: number,
   attachmentOrdinal: number,
-  sourceLocation: 'original' | 'quoted'
+  sourceLocation: 'original' | 'quoted',
+  presentationOrdinal: number | null
 ): TweetMediaEntry {
   const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
   const dims = resolveDimensions(media, mediaUrl);
@@ -170,6 +172,7 @@ function createMediaEntry(
     typeOriginal: media.type as 'photo' | 'video' | 'animated_gif',
     index,
     attachmentOrdinal,
+    presentationOrdinal,
     preview_url: media.media_url_https,
     media_id: media.id_str,
     media_key: media.media_key ?? '',
@@ -254,6 +257,17 @@ export function extractMediaFromTweet(
   const tweetId = target.rest_id ?? target.id_str ?? '';
   const inlineMedia = target.note_tweet?.note_tweet_results?.result?.media?.inline_media;
   const orderedMedia = sortByInlineOrder(target.extended_entities.media, inlineMedia);
+  const navigationPositions = orderedMedia.map((media) =>
+    getOwnedNavigationOrdinal(
+      media.expanded_url ?? '',
+      tweetId,
+      screenName,
+      media.type === 'photo' ? 'photo' : 'video'
+    )
+  );
+  const navigationOrderValid =
+    navigationPositions.every((position) => position !== null && position < orderedMedia.length) &&
+    new Set(navigationPositions).size === orderedMedia.length;
 
   const baseTweetText = (target.full_text ?? '').trim();
   const mediaShortUrls = orderedMedia
@@ -295,7 +309,8 @@ export function extractMediaFromTweet(
               normalizedTweetText,
               i,
               attachmentOrdinal,
-              sourceLocation
+              sourceLocation,
+              navigationOrderValid ? (navigationPositions[i] ?? null) : null
             ),
             availability: 'unsupported-hls',
             download_url: '',
@@ -313,7 +328,8 @@ export function extractMediaFromTweet(
           normalizedTweetText,
           i,
           attachmentOrdinal,
-          sourceLocation
+          sourceLocation,
+          navigationOrderValid ? (navigationPositions[i] ?? null) : null
         )
       );
     } catch {
