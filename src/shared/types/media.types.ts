@@ -90,11 +90,6 @@ export interface TweetInfo {
 
 /** Media extraction options */
 export interface MediaExtractionOptions {
-  readonly includeVideos?: boolean | undefined;
-  readonly timeoutMs?: number | undefined;
-  readonly useApiFallback?: boolean | undefined;
-  readonly enableBackgroundLoading?: boolean | undefined;
-  readonly enableValidation?: boolean | undefined;
   readonly signal?: AbortSignal | undefined;
   /** Immutable click-time evidence retained across asynchronous extraction. */
   readonly clickedMediaEvidence?: ClickedMediaEvidence | undefined;
