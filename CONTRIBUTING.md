@@ -382,7 +382,7 @@ Vite+ owns the Vite, Vitest, coverage, and core-tool versions. Dependabot keeps
 `vite`, `vitest`, `@vitest/*`, and `@voidzero-dev/vite-plus-core`. Security updates
 and alerts remain visible. For a Vite+ update, select an exact stable release
 published at least 24 hours earlier and set `VERSION` to that release. The
-current catalog pairs Vite+ and its managed Vite alias at 1.5.0 with Vitest,
+current catalog pairs Vite+ and its managed Vite alias at 1.5.1 with Vitest,
 coverage and Browser Mode at 5.1.0. Update that whole set and the exact peer
 selectors together, then perform a fresh strict lockfile resolution and audit
 its complete graph before invoking the migrator. Follow the
