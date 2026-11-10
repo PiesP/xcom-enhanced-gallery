@@ -4,7 +4,7 @@
     "image": "ghcr.io/google/osv-scanner-action@sha256:d54770fe0b09493894e76a02aaed9f51a0513fa57c5186452a755d257b0068a6"
   },
   "semgrep": {
-    "version": "1.183.0",
-    "image": "semgrep/semgrep:1.183.0@sha256:fb59331f2772da4a9960692ae31961cd58a7c666c014125e9202c96bdfdc38cc"
+    "version": "1.184.0",
+    "image": "semgrep/semgrep:1.184.0@sha256:83b9e9ee3df8ab1482dd7680cc78f25f6d9619a0caab7a687cf9eed31e88e4a1"
   }
 }
