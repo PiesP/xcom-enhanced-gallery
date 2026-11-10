@@ -81,6 +81,9 @@ describe('ZIP order contract for concurrent owned Blobs', () => {
     const admissions: number[] = [];
     let result: Awaited<ReturnType<typeof downloadAsZip>> | undefined;
     let archive: OwnedBlob | undefined;
+    let primaryFailure: unknown;
+    let hasPrimaryFailure = false;
+    const cleanupFailures: unknown[] = [];
     let deadline: ReturnType<typeof setTimeout> | undefined;
     const timedOut = new Promise<never>((_resolve, reject) => {
       deadline = setTimeout(() => reject(new Error('Concurrent ZIP reads did not settle')), 5000);
@@ -113,19 +116,66 @@ describe('ZIP order contract for concurrent owned Blobs', () => {
       expect(parsed.entryOrder).toEqual(['alice_111_1.jpg', 'alice_111_0.jpg']);
     } catch (error) {
       controller.abort();
-      throw error;
+      hasPrimaryFailure = true;
+      primaryFailure = error;
     } finally {
       firstCopy.release();
       secondCopy.release();
-      result ??= await pending.catch(() => undefined);
-      archive?.lease.release();
-      result?.dispose();
+      if (!result) {
+        let cleanupDeadline: ReturnType<typeof setTimeout> | undefined;
+        try {
+          const settled = await Promise.race([
+            pending.then(
+              (value) => ({ kind: 'fulfilled' as const, value }),
+              () => ({ kind: 'rejected' as const })
+            ),
+            new Promise<{ kind: 'timeout' }>((resolve) => {
+              cleanupDeadline = setTimeout(() => resolve({ kind: 'timeout' }), 1000);
+            }),
+          ]);
+          if (settled.kind === 'fulfilled') {
+            result = settled.value;
+          } else if (settled.kind === 'timeout') {
+            cleanupFailures.push(new Error('Cancelled ZIP cleanup did not settle within 1 second'));
+            // The test has already failed; still release any ZIP ownership that arrives later.
+            void pending.then((lateResult) => lateResult.dispose()).catch(() => undefined);
+          }
+        } catch (error) {
+          cleanupFailures.push(error);
+        } finally {
+          if (cleanupDeadline) {
+            clearTimeout(cleanupDeadline);
+          }
+        }
+      }
+      const safely = (release: () => void): void => {
+        try {
+          release();
+        } catch (error) {
+          cleanupFailures.push(error);
+        }
+      };
+      const ownedArchive = archive;
+      if (ownedArchive) {
+        safely(() => ownedArchive.lease.release());
+      }
+      const settledResult = result;
+      if (settledResult) {
+        safely(() => settledResult.dispose());
+      }
       for (const owner of owners) {
-        owner.lease.release();
+        safely(() => owner.lease.release());
       }
       if (deadline) {
         clearTimeout(deadline);
       }
+    }
+    if (hasPrimaryFailure || cleanupFailures.length > 0) {
+      const failures = hasPrimaryFailure ? [primaryFailure, ...cleanupFailures] : cleanupFailures;
+      if (failures.length === 1) {
+        throw failures[0];
+      }
+      throw new AggregateError(failures, 'ZIP order fixture and cleanup failed');
     }
     expect(budget.usedBytes).toBe(0);
   }, 10_000);
