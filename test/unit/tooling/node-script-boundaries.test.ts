@@ -200,12 +200,13 @@ describe('Node script import boundary', () => {
       .map((path) => `validation/windows/${path.toString()}`)
       .filter((path) => path.endsWith('.test.ts'))
       .sort();
-    expect(nativeFiles).toHaveLength(31);
+    expect(nativeFiles).toHaveLength(32);
     expect(nativeFiles).toContain('validation/windows/live-page-attachment-trace.test.ts');
     expect(nativeFiles).toContain('validation/windows/firefox-install.test.ts');
     expect(nativeFiles).toContain('validation/windows/firefox-native-proxy.test.ts');
     expect(nativeFiles).toContain('validation/windows/filename-decision-control.test.ts');
     expect(nativeFiles).toContain('validation/windows/filename-correlation.test.ts');
+    expect(nativeFiles).toContain('validation/windows/filename-correlation-evidence.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-filename.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-filename-target.test.ts');
     expect(nativeFiles).toContain('validation/windows/live-original-fetch.test.ts');
