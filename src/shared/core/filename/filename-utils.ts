@@ -123,8 +123,9 @@ export function finalizeFilename(
 
 /** Add a ZIP collision suffix while retaining the generator-owned identity at the tail. */
 export function appendFilenameSuffix(name: string, suffix: string, identitySuffix = ''): string {
-  const extension = name.match(SAFE_EXTENSION)?.[0] ?? '';
-  const stem = extension ? name.slice(0, -extension.length) : name;
+  const extensionOffset = name.lastIndexOf('.');
+  const extension = extensionOffset > 0 ? name.slice(extensionOffset) : '';
+  const stem = extension ? name.slice(0, extensionOffset) : name;
   const identity = identitySuffix && stem.endsWith(identitySuffix) ? identitySuffix : '';
   if (identitySuffix && !identity) {
     throw new RangeError('ZIP filename identity was truncated before collision allocation');
@@ -133,21 +134,28 @@ export function appendFilenameSuffix(name: string, suffix: string, identitySuffi
   if (identity.length + suffix.length + extension.length + 1 > MAX_BASENAME_UNITS) {
     throw new RangeError('ZIP filename identity leaves no room for a collision suffix');
   }
-  const candidate = finalizeFilename(prefix, {
-    suffix: `${identity}${suffix}`,
-    extension: extension.slice(1),
-    preserveTailUnits: identity ? 0 : 32,
-  });
+  const safeExtension = SAFE_EXTENSION.test(extension);
+  const candidate = safeExtension
+    ? finalizeFilename(prefix, {
+        suffix: `${identity}${suffix}`,
+        extension: extension.slice(1),
+        preserveTailUnits: identity ? 0 : 32,
+      })
+    : finalizeFilename(prefix, {
+        suffix: `${identity}${suffix}${extension}`,
+        extension: '',
+        preserveTailUnits: identity ? 0 : 32,
+      });
   if (candidate === name || !candidate.endsWith(`${identity}${suffix}${extension}`)) {
     throw new RangeError('ZIP filename collision suffix could not be preserved');
   }
   return candidate;
 }
 
-/** Compare finalized ZIP names without their final recognized extension. */
+/** Compare finalized ZIP names without the final extension, including explicit caller names. */
 export function getFilenameStemKey(name: string): string {
-  const extension = name.match(SAFE_EXTENSION)?.[0] ?? '';
-  return (extension ? name.slice(0, -extension.length) : name).toLowerCase();
+  const extensionOffset = name.lastIndexOf('.');
+  return (extensionOffset > 0 ? name.slice(0, extensionOffset) : name).toLowerCase();
 }
 
 function resolveNowMs(nowMs?: number): number {

@@ -148,6 +148,10 @@ describe('filename-utils', () => {
     expect(getFilenameStemKey(finalizeFilename(' Alpha.JPG '))).toBe('alpha');
     expect(getFilenameStemKey(finalizeFilename('alpha.PNG'))).toBe('alpha');
     expect(getFilenameStemKey(finalizeFilename('alpha.tar.gz'))).toBe('alpha.tar');
+    expect(getFilenameStemKey(finalizeFilename('alpha.foo-bar'))).toBe('alpha');
+    expect(getFilenameStemKey(finalizeFilename('alpha.abcdefghijklmnopq'))).toBe('alpha');
+    expect(appendFilenameSuffix('alpha.foo-bar', '-1')).toBe('alpha-1.foo-bar');
+    expect(appendFilenameSuffix('alpha.tar.foo-bar', '-1')).toBe('alpha.tar-1.foo-bar');
   });
 
   it('rejects an overlong generated identity before a counter can be truncated', () => {

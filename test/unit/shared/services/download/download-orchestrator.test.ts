@@ -278,7 +278,7 @@ describe('DownloadOrchestrator bulk resource limits', () => {
   it('allocates extension-independent names around an existing numeric suffix', async () => {
     const orchestrator = new DownloadOrchestrator();
     orchestrator.initialize();
-    const names = ['Alpha.JPG', 'alpha-1.png', 'alpha.png', 'ALPHA.JPG'];
+    const names = ['Alpha.JPG', 'alpha-1.png', 'alpha.foo-bar', 'ALPHA.JPG', 'alpha.png'];
     const media: MediaInfo[] = names.map((filename, index) => ({
       id: `${index}`,
       type: 'image',
@@ -293,15 +293,22 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     const result = await orchestrator.downloadBulk(media, {
       cachedBlobs: new Map(media.map((item) => [item.url, ownedBlob(new Blob([item.id]))])),
     });
-    expect(result).toMatchObject({ success: true, filesSuccessful: 4 });
+    expect(result).toMatchObject({ success: true, filesSuccessful: 5 });
     const entries = verifyStoredZip(saved!, [
       { filename: 'Alpha.JPG', bytes: Buffer.from('0') },
       { filename: 'alpha-1.png', bytes: Buffer.from('1') },
-      { filename: 'alpha-2.png', bytes: Buffer.from('2') },
+      { filename: 'alpha-2.foo-bar', bytes: Buffer.from('2') },
       { filename: 'ALPHA-3.JPG', bytes: Buffer.from('3') },
+      { filename: 'alpha-4.png', bytes: Buffer.from('4') },
     ]).entryOrder;
-    expect(entries).toEqual(['Alpha.JPG', 'alpha-1.png', 'alpha-2.png', 'ALPHA-3.JPG']);
-    expect(new Set(entries.map((name) => name.replace(/\.[^.]+$/, '').toLowerCase())).size).toBe(4);
+    expect(entries).toEqual([
+      'Alpha.JPG',
+      'alpha-1.png',
+      'alpha-2.foo-bar',
+      'ALPHA-3.JPG',
+      'alpha-4.png',
+    ]);
+    expect(new Set(entries.map((name) => name.replace(/\.[^.]+$/, '').toLowerCase())).size).toBe(5);
     orchestrator.destroy();
   });
 
