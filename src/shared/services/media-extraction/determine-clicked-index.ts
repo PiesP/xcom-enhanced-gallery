@@ -11,6 +11,7 @@ import {
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
 import { extractFilenameStemFromUrl } from '@shared/utils/media/media-url-utils';
+import { getCanonicalPhotoIdentity } from '@shared/utils/media/media-source';
 import { findNativeVideoControlMedia } from '@shared/utils/media/native-video-control';
 import { isVideoPreview } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
@@ -132,6 +133,10 @@ export function getMediaSourceKey(url: string | null): string | null {
     return null;
   }
   const parsed = new URL(url, 'https://x.com');
+  const photo = getCanonicalPhotoIdentity(url);
+  if (photo) {
+    return photo.slice(0, photo.lastIndexOf('?format='));
+  }
   if (parsed.hostname === 'video.twimg.com') {
     return `${parsed.hostname}${parsed.pathname}`;
   }

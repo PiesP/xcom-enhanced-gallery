@@ -6,7 +6,8 @@
  */
 
 import type { MediaInfo } from '@shared/types/media.types';
-import { tryParseUrl } from '@shared/utils/url/host';
+import { getCanonicalPhotoIdentity } from '@shared/utils/media/media-source';
+import { isHostMatching, tryParseUrl, TWITTER_HOSTS } from '@shared/utils/url/host';
 
 const dedupKeyCache = new WeakMap<MediaInfo, string | null>();
 
@@ -55,7 +56,20 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
   // Different quote owners can reuse a source; collapsing them changes the
   // clicked post's attribution and download filename.
   const ownerPrefix = media.tweetId ? `tweet:${media.tweetId}:` : '';
-  const prefix = `${typePrefix}${ownerPrefix}`;
+  // Producers validate positions before assigning them. A verified collection
+  // can contain two different attachments that reuse one transport source.
+  const ordinalPrefix =
+    Number.isSafeInteger(media.attachmentOrdinal) && (media.attachmentOrdinal ?? -1) >= 0
+      ? `attachment:${media.attachmentOrdinal}:`
+      : '';
+  const prefix = `${typePrefix}${ownerPrefix}${ordinalPrefix}`;
+
+  const photo = media.type === 'image' ? getCanonicalPhotoIdentity(urlCandidate) : null;
+  if (photo) {
+    const key = `${prefix}${photo}`;
+    dedupKeyCache.set(media, key);
+    return key;
+  }
 
   const parsed = tryParseUrl(urlCandidate, 'https://example.invalid');
   if (parsed) {
@@ -73,6 +87,28 @@ export function getMediaDedupKey(media: MediaInfo): string | null {
   const key = filename ? `${prefix}${filename}` : `${prefix}${urlCandidate}`;
   dedupKeyCache.set(media, key);
   return key;
+}
+
+/** A navigation position is evidence only for its named owner and media kind. */
+export function getOwnedNavigationOrdinal(
+  source: string,
+  tweetId: string,
+  username?: string,
+  kind?: 'photo' | 'video'
+): number | null {
+  const url = tryParseUrl(source);
+  const match = url?.pathname.match(/^\/([^/]+)\/status\/(\d+)\/(photo|video)\/([1-9]\d*)\/?$/u);
+  if (
+    url?.protocol !== 'https:' ||
+    !isHostMatching(url, TWITTER_HOSTS) ||
+    match?.[2] !== tweetId ||
+    (username !== undefined && match[1]?.toLowerCase() !== username.toLowerCase()) ||
+    (kind !== undefined && match[3] !== kind)
+  ) {
+    return null;
+  }
+  const ordinal = Number(match[4]) - 1;
+  return Number.isSafeInteger(ordinal) ? ordinal : null;
 }
 
 export function extractVisualIndexFromUrl(url: string): number {

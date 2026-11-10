@@ -12,7 +12,6 @@ import type { VideoSourceVariant } from '@shared/types/media.types';
 import { isDirectMp4Source } from '@shared/utils/media/direct-mp4-source';
 import { extractDimensionsFromUrl, normalizeDimension } from '@shared/utils/media/media-dimensions';
 import { normalizeOriginalImageUrl } from '@shared/utils/media/media-source';
-import { isHostMatching, tryParseUrl, TWITTER_HOSTS } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 const MAX_VIDEO_VARIANT_URLS = 32;
@@ -190,22 +189,6 @@ function createMediaEntry(
   };
 }
 
-function getOwnedAttachmentOrdinal(
-  media: TwitterMedia,
-  tweetId: string,
-  orderedIndex: number
-): number {
-  const url = tryParseUrl(media.expanded_url);
-  const match = url?.pathname.match(/^\/[^/]+\/status\/(\d+)\/(?:photo|video)\/([1-9]\d*)\/?$/u);
-  if (url?.protocol === 'https:' && isHostMatching(url, TWITTER_HOSTS) && match?.[1] === tweetId) {
-    const position = Number(match[2]);
-    if (Number.isSafeInteger(position)) {
-      return position - 1;
-    }
-  }
-  return orderedIndex;
-}
-
 function sortByInlineOrder(
   mediaList: TwitterMedia[],
   inlineMedia: readonly { media_id: string; index: number }[] | undefined
@@ -213,12 +196,25 @@ function sortByInlineOrder(
   const orderMap = new Map<string, number>();
   if (Array.isArray(inlineMedia)) {
     for (const item of inlineMedia) {
-      if (item.media_id && typeof item.index === 'number') {
-        orderMap.set(item.media_id, item.index);
+      if (
+        !item.media_id ||
+        !Number.isSafeInteger(item.index) ||
+        item.index < 0 ||
+        orderMap.has(item.media_id)
+      ) {
+        return mediaList;
       }
+      orderMap.set(item.media_id, item.index);
     }
   }
-  if (orderMap.size === 0) {
+  // Inline order is authoritative only when it describes this entire owner
+  // collection uniquely. Partial or contradictory note metadata cannot renumber it.
+  if (
+    orderMap.size !== mediaList.length ||
+    new Set(mediaList.map((media) => media.id_str)).size !== mediaList.length ||
+    new Set(orderMap.values()).size !== mediaList.length ||
+    mediaList.some((media) => !orderMap.has(media.id_str))
+  ) {
     return mediaList;
   }
 
@@ -279,7 +275,10 @@ export function extractMediaFromTweet(
     }
 
     try {
-      const attachmentOrdinal = getOwnedAttachmentOrdinal(media, tweetId, i);
+      // The complete owner collection establishes identity before admission.
+      // Navigation URLs are presentation hints, including repeated /photo/1
+      // and per-kind /video/1 links; none may override this source position.
+      const attachmentOrdinal = i;
       const mediaUrl = getHighQualityMediaUrl(media);
       if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
         const unsupportedVariantUrls = getUnsupportedHlsUrls(media);

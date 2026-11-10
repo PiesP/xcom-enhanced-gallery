@@ -45,9 +45,12 @@ import {
   type MediaElement,
   selectMediaSourceUrl,
 } from '@shared/utils/media/media-element-utils';
-import { getImageDownloadSource } from '@shared/utils/media/media-source';
+import {
+  getCanonicalPhotoIdentity,
+  getImageDownloadSource,
+} from '@shared/utils/media/media-source';
+import { getOwnedNavigationOrdinal } from '@shared/utils/media/media-url-utils';
 import { isVideoPreview, isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
-import { isHostMatching, tryParseUrl, TWITTER_HOSTS } from '@shared/utils/url/host';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
 /**
@@ -63,32 +66,66 @@ function findAllMediaInContainer(container: HTMLElement): MediaElement[] {
   );
 }
 
-function getOwnedPhotoOrdinal(element: MediaElement, tweetInfo: TweetInfo): number | null {
-  if (!(element instanceof HTMLImageElement)) {
-    return null;
-  }
+function getOwnedAttachmentOrdinal(element: MediaElement, tweetInfo: TweetInfo): number | null {
   const link = element.closest<HTMLAnchorElement>('a[href]');
   if (!link || link.querySelectorAll('img, video').length !== 1) {
     return null;
   }
-  const url = tryParseUrl(link.getAttribute('href'));
-  if (url?.protocol !== 'https:' || !isHostMatching(url, TWITTER_HOSTS)) {
-    return null;
+  return getOwnedNavigationOrdinal(
+    link.href,
+    tweetInfo.tweetId,
+    tweetInfo.username,
+    element instanceof HTMLImageElement ? 'photo' : 'video'
+  );
+}
+
+/** DOM is a partial observation: validate hints without inventing subset positions. */
+function getObservedOrdinals(
+  elements: readonly MediaElement[],
+  tweetInfo: TweetInfo
+): ReadonlyMap<MediaElement, number> {
+  const observations = elements.flatMap((element) => {
+    if (extractClickContext(element)?.ownership.ownerTweetId !== tweetInfo.tweetId) {
+      return [];
+    }
+    const ordinal = getOwnedAttachmentOrdinal(element, tweetInfo);
+    const source =
+      element instanceof HTMLVideoElement
+        ? selectMediaSourceUrl(element)
+        : extractMediaUrlFromElement(element);
+    const key = source ? (getCanonicalPhotoIdentity(source) ?? getMediaSourceKey(source)) : null;
+    return key ? [{ element, ordinal, key }] : [];
+  });
+  const sourcesAtOrdinal = new Map<number, Set<string>>();
+  const ordinalsForSource = new Map<string, Set<number>>();
+  for (const { ordinal, key } of observations) {
+    if (ordinal === null) {
+      continue;
+    }
+    const sources = sourcesAtOrdinal.get(ordinal) ?? new Set<string>();
+    sources.add(key);
+    sourcesAtOrdinal.set(ordinal, sources);
+    const ordinals = ordinalsForSource.get(key) ?? new Set<number>();
+    ordinals.add(ordinal);
+    ordinalsForSource.set(key, ordinals);
   }
-  const match = url.pathname.match(/^\/([^/]+)\/status\/(\d+)\/photo\/([1-9]\d*)\/?$/u);
-  if (
-    match?.[2] !== tweetInfo.tweetId ||
-    match[1]?.toLowerCase() !== tweetInfo.username.toLowerCase()
-  ) {
-    return null;
-  }
-  const ordinal = Number(match[3]) - 1;
-  return Number.isSafeInteger(ordinal) ? ordinal : null;
+  return new Map(
+    observations.flatMap(({ element, key }) => {
+      const ordinals = ordinalsForSource.get(key);
+      const ordinal = ordinals?.size === 1 ? ordinals.values().next().value : undefined;
+      return ordinal !== undefined && sourcesAtOrdinal.get(ordinal)?.size === 1
+        ? [[element, ordinal] as const]
+        : [];
+    })
+  );
 }
 
 function getSourceFilenameKey(url: string): string | null {
   const source =
-    getMediaSourceKey(url)?.replace(/:(?:thumb|small|medium|large|orig)$/iu, '') ?? null;
+    getMediaSourceKey(url)?.replace(
+      /:(?:thumb|small|medium|large|orig|900x900|4096x4096)$/iu,
+      ''
+    ) ?? null;
   if (!source) {
     return null;
   }
@@ -111,7 +148,8 @@ function createMediaInfoFromDOM(
   element: MediaElement,
   tweetInfo: TweetInfo,
   index: number,
-  tweetTextContent?: string
+  tweetTextContent?: string,
+  attachmentOrdinal?: number
 ): MediaInfo | null {
   try {
     // A video's poster is a matching hint, not a playable fallback source.
@@ -143,7 +181,6 @@ function createMediaInfoFromDOM(
       mediaType === 'image'
         ? getImageDownloadSource(mediaUrl, 'dom')
         : { url: mediaUrl, quality: 'observed' as const, provenance: 'dom' as const };
-    const attachmentOrdinal = getOwnedPhotoOrdinal(element, tweetInfo);
     const attachmentSourceKey = getSourceFilenameKey(mediaUrl);
 
     // Extract dimensions if available
@@ -167,7 +204,7 @@ function createMediaInfoFromDOM(
       url: mediaUrl,
       type: mediaType,
       filename: '',
-      ...(attachmentOrdinal !== null ? { attachmentOrdinal } : {}),
+      ...(attachmentOrdinal !== undefined ? { attachmentOrdinal } : {}),
       ...(attachmentSourceKey ? { attachmentSourceKey } : {}),
       tweetUsername: tweetInfo.username,
       tweetId: tweetInfo.tweetId,
@@ -252,6 +289,8 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       // Build mapping from element to mediaItems index
       const mediaItems: MediaInfo[] = [];
       const elementToIndexMap = new Map<MediaElement, number>();
+      // Inspect the observed owner collection before original-source filtering.
+      const observedOrdinals = getObservedOrdinals(mediaElements, tweetInfo);
 
       for (let i = 0; i < mediaElements.length; i++) {
         const element = mediaElements[i];
@@ -263,7 +302,13 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
           continue;
         }
 
-        const mediaInfo = createMediaInfoFromDOM(element, tweetInfo, i, tweetTextContent);
+        const mediaInfo = createMediaInfoFromDOM(
+          element,
+          tweetInfo,
+          i,
+          tweetTextContent,
+          observedOrdinals.get(element)
+        );
         if (mediaInfo) {
           elementToIndexMap.set(element, mediaItems.length);
           mediaItems.push(mediaInfo);
