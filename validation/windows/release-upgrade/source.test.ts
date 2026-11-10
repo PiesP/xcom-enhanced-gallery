@@ -190,6 +190,7 @@ test('upgrade inputs require the public asset hash, fixed paths and candidate ve
 test.each([
   ['2.3.8', '2.3.9'],
   ['2.3.9', '2.3.10'],
+  ['2.3.10', '2.4.0'],
 ])(
   'v%s public assets upgrade only to a v%s candidate',
   async (previousVersion, candidateVersion) => {
@@ -237,7 +238,7 @@ test.each([
       );
       for (const [changed, error] of [
         [{ ...input, candidateVersion: previousVersion }, /2\.3\./u],
-        [{ ...input, previousVersion: '2.3.10' }, /Unsupported public version: 2\.3\.10/u],
+        [{ ...input, previousVersion: '2.4.0' }, /Unsupported public version: 2\.4\.0/u],
         [
           {
             ...input,
