@@ -291,6 +291,8 @@ runtime acceptance.
 
 The ignored `validation/windows/inputs/attachment-filenames.json` selector
 (`{"scenario":"attachment-filenames"}`) runs the focused extension cycle.
+Its four-source repeated `/photo/1` control verifies JPG/PNG/PNG/JPG native singles
+and parsed ZIP members against literal owner ordinals and exact source bytes.
 An extension run may append ordinary `--live-url` public observations after
 closing the fixture browser and loopback; those observations remain separate
 from the controlled saved-file qualification.

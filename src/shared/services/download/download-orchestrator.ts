@@ -7,7 +7,11 @@ import { mergeAbortSignalsWithCleanup } from '@piesp/browser-core/error';
 import { schedulerYield } from '@piesp/browser-core/util';
 import { getDownloadAdapter } from '@platform/index';
 import { planBulkDownload } from '@shared/core/download/download-plan';
-import { appendFilenameSuffix, finalizeFilename } from '@shared/core/filename/filename-utils';
+import {
+  appendFilenameSuffix,
+  finalizeFilename,
+  getFilenameStemKey,
+} from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
@@ -290,6 +294,19 @@ export class DownloadOrchestrator {
       )
     ) {
       return createErrorResponse('No eligible failed entries to recover', ErrorCode.EMPTY_INPUT, 0);
+    }
+    const stems = entries.map((entry) => getFilenameStemKey(entry.filename));
+    if (
+      entries.some(
+        (entry) => entry.filename !== finalizeFilename(entry.filename, { preserveTailUnits: 32 })
+      ) ||
+      new Set(stems).size !== entries.length
+    ) {
+      return createErrorResponse(
+        'Failed entries have conflicting assigned filenames',
+        ErrorCode.EMPTY_INPUT,
+        0
+      );
     }
     return this.downloadBulk(
       entries.map((entry) => ({ ...entry.media, filename: entry.filename })),

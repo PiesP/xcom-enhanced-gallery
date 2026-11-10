@@ -11,7 +11,11 @@ import {
   ZIP_MAX_ARCHIVE_BYTES,
   ZIP_MAX_ENTRY_BYTES,
 } from '@constants/performance';
-import { appendFilenameSuffix } from '@shared/core/filename/filename-utils';
+import {
+  appendFilenameSuffix,
+  finalizeFilename,
+  getFilenameStemKey,
+} from '@shared/core/filename/filename-utils';
 import { schedulerYield } from '@piesp/browser-core/util';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation';
@@ -121,24 +125,33 @@ class RetainedByteBudget {
 
 const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
   const usedNames = new Set<string>();
+  const usedStems = new Set<string>();
   const baseCounts = new Map<string, number>();
-  return (desired: string, identitySuffix = ''): string => {
+  return (requested: string, identitySuffix = ''): string => {
+    const desired = finalizeFilename(requested);
+    const baseKey = getFilenameStemKey(desired);
     const desiredKey = desired.toLowerCase();
-    if (!usedNames.has(desiredKey)) {
+    if (!usedNames.has(desiredKey) && !usedStems.has(baseKey)) {
       usedNames.add(desiredKey);
-      baseCounts.set(desiredKey, 0);
+      usedStems.add(baseKey);
+      baseCounts.set(baseKey, 0);
       return desired;
     }
-    const baseKey = desiredKey;
     let count = baseCounts.get(baseKey) ?? 0;
-    let candidate = '';
-    do {
+    // Each progressing candidate can collide with at most one previously used stem.
+    for (let attempts = 0; attempts <= usedStems.size; attempts++) {
       count += 1;
-      candidate = appendFilenameSuffix(desired, `-${count}`, identitySuffix);
-    } while (usedNames.has(candidate.toLowerCase()));
-    baseCounts.set(baseKey, count);
-    usedNames.add(candidate.toLowerCase());
-    return candidate;
+      const candidate = appendFilenameSuffix(desired, `-${count}`, identitySuffix);
+      const nameKey = candidate.toLowerCase();
+      const stemKey = getFilenameStemKey(candidate);
+      if (!usedNames.has(nameKey) && !usedStems.has(stemKey)) {
+        baseCounts.set(baseKey, count);
+        usedNames.add(nameKey);
+        usedStems.add(stemKey);
+        return candidate;
+      }
+    }
+    throw new RangeError('ZIP filename collisions could not be resolved');
   };
 };
 
