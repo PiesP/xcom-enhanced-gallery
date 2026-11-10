@@ -70,17 +70,27 @@ export function useToolbarSettingsController(
     undefined
   );
   let openingFocusTimeout: ReturnType<typeof setTimeout> | null = null;
+  let closingFocusTimeout: ReturnType<typeof setTimeout> | null = null;
   const cancelOpeningFocus = (): void => {
     clearScheduledTimeout(openingFocusTimeout);
     openingFocusTimeout = null;
   };
+  const cancelClosingFocus = (): void => {
+    clearScheduledTimeout(closingFocusTimeout);
+    closingFocusTimeout = null;
+  };
 
   createEffect(() => {
-    if (!isSettingsExpanded()) {
+    if (isSettingsExpanded()) {
+      cancelClosingFocus();
+    } else {
       cancelOpeningFocus();
     }
   });
-  onCleanup(cancelOpeningFocus);
+  onCleanup(() => {
+    cancelOpeningFocus();
+    cancelClosingFocus();
+  });
 
   const toThemeOption = (value: unknown): ThemeOption => {
     return isThemeSetting(value) ? value : 'auto';
@@ -253,6 +263,7 @@ export function useToolbarSettingsController(
   const handleSettingsClick = (event: MouseEvent) => {
     event.stopImmediatePropagation?.();
     cancelOpeningFocus();
+    cancelClosingFocus();
     const wasExpanded = isSettingsExpanded();
     const focusedAtOpen = documentRef?.activeElement;
 
@@ -285,11 +296,24 @@ export function useToolbarSettingsController(
     if (event.key === 'Escape' && isSettingsExpanded()) {
       event.preventDefault();
       event.stopPropagation();
+      cancelOpeningFocus();
+      cancelClosingFocus();
+      const closedPanel = settingsPanelRef();
       setSettingsExpanded(false);
+      const focusedAtClose = documentRef?.activeElement;
+      const closedButton = settingsButtonRef();
 
-      scheduleTimeout(() => {
+      closingFocusTimeout = scheduleTimeout(() => {
+        closingFocusTimeout = null;
+        if (
+          isSettingsExpanded() ||
+          settingsPanelRef() !== closedPanel ||
+          documentRef?.activeElement !== focusedAtClose
+        ) {
+          return;
+        }
         const settingsButton = settingsButtonRef();
-        if (settingsButton) {
+        if (settingsButton === closedButton && settingsButton?.isConnected) {
           settingsButton.focus({ preventScroll: true });
         }
       }, focusDelayMs);

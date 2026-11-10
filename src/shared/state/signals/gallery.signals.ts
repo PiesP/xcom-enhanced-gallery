@@ -102,8 +102,8 @@ const [focusedIndexSig, _setFocusedIndex] = createSignal<number | null>(null);
 
 /**
  * Set the focused index directly without triggering navigation events.
- * Used for UI-only focus tracking updates (e.g., IntersectionObserver-based
- * auto-focus) where scroll-to-item behavior is undesirable.
+ * Used for UI-only focus tracking updates based on the displayed item,
+ * where scroll-to-item behavior is undesirable.
  */
 export function setFocusedIndexOnly(index: number | null): void {
   _setFocusedIndex(index);
@@ -232,8 +232,8 @@ export function closeGallery(): void {
 
 /**
  * Resolves the anchor index for prev/next navigation.
- * Prefers focusedIndexSig (what the user is actually looking at via
- * IntersectionObserver) over currentIndexSig (last explicitly navigated to).
+ * Prefers focusedIndexSig (what the user is actually looking at after
+ * manual scrolling) over currentIndexSig (last explicitly navigated to).
  * Only uses focusedIndex when it is a valid in-bounds value.
  */
 function _resolveNavAnchor(): number {

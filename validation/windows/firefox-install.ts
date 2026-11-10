@@ -21,9 +21,17 @@ import type { FileHandle } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { startExtensionNativeFixtureLoopback } from './extension-native-loopback.ts';
 import { startFirefoxNativeProxy } from './firefox-native-proxy.ts';
+import {
+  firefoxNativeKey,
+  prepareFirefoxNativeUiImages,
+  runFirefoxNativeUi,
+} from './firefox-native-ui.ts';
+import { runNativeScrollbarTakeover } from './native-scrollbar-takeover.ts';
+import { prepareNativeScrollbarPointer } from './native-pointer.ts';
 
 const EXTENSION_ID = 'xcom-enhanced-gallery@piesp.dev';
 const FIXTURE_URL = 'https://x.com/testuser/status/1234567890123456789';
+const EXPERIENCE_URL = 'https://x.com/experience/status/4666000000000000002';
 const ORIGINAL_URL = 'https://pbs.twimg.com/media/GkE1234ABCDEF.jpg?format=jpg&name=orig';
 const EXPECTED_NAME = 'testuser_1234567890123456789_0.jpg';
 const DIAGNOSTIC_NAME = 'firefox-download-diagnostic.html';
@@ -265,7 +273,12 @@ export function shouldContinueFirefoxOriginal(url: URL) {
   return url.href === ORIGINAL_URL;
 }
 
-async function installFixtureIntercept(session: FirefoxSession, html: string, image: Buffer) {
+async function installFixtureIntercept(
+  session: FirefoxSession,
+  html: string,
+  image: Buffer,
+  experience?: { html: string; images: Record<string, Buffer> }
+) {
   const requests: Array<{ url: string; navigation: boolean }> = [];
   const events: FixtureNetworkEvent[] = [];
   let omittedEvents = 0;
@@ -320,7 +333,13 @@ async function installFixtureIntercept(session: FirefoxSession, html: string, im
         throw error;
       }
     };
-    if (
+    if (experience && url.href === EXPERIENCE_URL && params.navigation) {
+      await provide(responseBody(experience.html, 'text/html; charset=utf-8', id));
+    } else if (experience && url.hostname === 'pbs.twimg.com' && experience.images[url.pathname]) {
+      await provide(
+        responseBody(experience.images[url.pathname]!.toString('base64'), 'image/jpeg', id, true)
+      );
+    } else if (
       url.hostname === 'x.com' &&
       url.pathname === new URL(FIXTURE_URL).pathname &&
       params.navigation
@@ -567,17 +586,25 @@ export async function validateFirefoxSelectors(root: string) {
   if (selectors.length === 0) {
     return 'default';
   }
-  assert.deepEqual(
-    selectors,
-    ['attachment-filenames.json'],
+  const name = selectors[0];
+  assert(
+    name === 'attachment-filenames.json' || name === 'native-browser-ui.json',
     'Firefox acceptance does not implement this selector'
   );
+  const scenario = name === 'native-browser-ui.json' ? 'native-browser-ui' : 'attachment-filenames';
+  const selector: unknown = JSON.parse(await readFile(join(inputDirectory, name), 'utf8'));
+  const scrollbarTakeover =
+    scenario === 'native-browser-ui' &&
+    typeof selector === 'object' &&
+    selector !== null &&
+    'scrollbarTakeover' in selector &&
+    selector.scrollbarTakeover === true;
   assert.deepEqual(
-    JSON.parse(await readFile(join(inputDirectory, selectors[0]!), 'utf8')),
-    { scenario: 'attachment-filenames' },
-    'Firefox attachment filename selector has unsupported options'
+    selector,
+    { scenario, ...(scrollbarTakeover ? { scrollbarTakeover: true } : {}) },
+    'Firefox focused selector has unsupported options'
   );
-  return 'attachment-filenames';
+  return scenario;
 }
 
 export async function runFirefoxInstallation({
@@ -601,6 +628,17 @@ export async function runFirefoxInstallation({
   );
   assert.deepEqual(liveUrls, [], 'Firefox live original-post acceptance is not implemented');
   const selector = await validateFirefoxSelectors(root);
+  const scrollbarTakeover =
+    selector === 'native-browser-ui' &&
+    JSON.parse(
+      await readFile(join(root, 'validation/windows/inputs/native-browser-ui.json'), 'utf8')
+    ).scrollbarTakeover === true;
+  const takeoverPreferences = scrollbarTakeover
+    ? {
+        'ui.prefersReducedMotion': 0,
+        'layout.css.scroll-snap.spring-constant': '20.0',
+      }
+    : {};
   await mkdir(output, { recursive: true });
   const source = join(root, 'dist-extension-firefox');
   const fixture = await readFile(
@@ -637,6 +675,7 @@ export async function runFirefoxInstallation({
       activeSuggestion: 'not-run',
     },
     selector,
+    takeoverPreferences,
     scenarios: [],
     live: { status: 'not-requested' },
     cleanup: {},
@@ -679,6 +718,7 @@ export async function runFirefoxInstallation({
       headless,
       acceptInsecureCerts: true,
       preferences: {
+        ...takeoverPreferences,
         'browser.download.dir': downloads,
         'browser.download.folderList': 2,
         'browser.download.useDownloadDir': true,
@@ -709,155 +749,310 @@ export async function runFirefoxInstallation({
     } catch (error) {
       receipt.logSubscription = `unavailable: ${errorText(error).slice(0, MAX_NETWORK_FIELD)}`;
     }
-    intercept = await installFixtureIntercept(session, fixture, image);
+    const experience =
+      selector === 'native-browser-ui'
+        ? {
+            html: await readFile(
+              join(root, 'test/e2e/fixtures/installed-gallery-experience-page.html'),
+              'utf8'
+            ),
+            images: await prepareFirefoxNativeUiImages(session, scrollbarTakeover),
+          }
+        : undefined;
+    intercept = await installFixtureIntercept(session, fixture, image, experience);
     fixtureNetwork = intercept;
     extensionId = await session.installExtension(prepared.copy);
     assert.equal(extensionId, EXTENSION_ID, 'Installed Firefox extension ID mismatch');
-    let previous = await readDownloads(session, diagnosticUrl);
-    const capability = receipt.capability as Record<string, unknown>;
-    capability.onDeterminingFilename = previous.determiningFilename;
-    if (previous.determiningFilename === 'unsupported') {
-      capability.passiveSuggestion = 'unsupported';
-      capability.activeSuggestion = 'unsupported';
-    }
-    assert.deepEqual(previous.items, [], 'Fresh Firefox profile has preexisting download history');
-    for (const [index, collision] of [false, true].entries()) {
-      await session.navigate(FIXTURE_URL);
-      await session.waitFor(
-        "document.documentElement.getAttribute('data-xeg-gallery-ready') === 'true'",
-        'installed XCOM gallery bridge'
-      );
-      await click(session, '[data-testid="tweetPhoto"] a');
-      await session.waitFor(
-        "Boolean(document.querySelector('[data-xeg-gallery-container] #xeg-toolbar-counter'))",
-        'gallery opening'
-      );
-      const selected = await session.evaluateJson(
-        "document.querySelector('#xeg-toolbar-counter')?.getAttribute('data-position')"
-      );
-      assert.equal(selected, '1', 'Selected image differs from native source');
-      const nativeMark = nativeLoopback.mark();
-      await click(
+    if (selector === 'native-browser-ui') {
+      assert(experience, 'Firefox UI fixture was not prepared');
+      if (scrollbarTakeover) {
+        experience.html = experience.html.replace('height="900"', 'height="6000"');
+      }
+      receipt.fixture = {
+        url: EXPERIENCE_URL,
+        pageSha256: digest(Buffer.from(experience.html)),
+        images: Object.fromEntries(
+          Object.entries(experience.images).map(([url, bytes]) => [
+            url,
+            {
+              bytes: bytes.length,
+              sha256: digest(bytes),
+            },
+          ])
+        ),
+      };
+      receipt.nativeBrowserUi = await runFirefoxNativeUi(
         session,
-        '[data-xeg-gallery-container] [data-gallery-element="toolbar"] button[aria-label="Download"]'
+        EXPERIENCE_URL,
+        output,
+        scrollbarTakeover
+          ? async () => {
+              let nativePointer:
+                | Awaited<ReturnType<typeof prepareNativeScrollbarPointer>>
+                | undefined;
+              return runNativeScrollbarTakeover(
+                {
+                  launchCondition:
+                    'ui.prefersReducedMotion=0; layout.css.scroll-snap.spring-constant="20.0" in this owned temporary Firefox profile',
+                  prepareInput: async () => {
+                    const viewport = (await session!.evaluateJson(
+                      '(() => ({ width: innerWidth, height: innerHeight }))()'
+                    )) as { width: number; height: number };
+                    await session!.command('browsingContext.setViewport', {
+                      context: session!.context,
+                      viewport: { width: 420, height: 700 },
+                    });
+                    try {
+                      nativePointer = await prepareNativeScrollbarPointer(
+                        (expression) => session!.evaluateJson(expression),
+                        root,
+                        'firefox.exe'
+                      );
+                      const ownedPointer = nativePointer;
+                      return {
+                        mapping: ownedPointer.mapping,
+                        close: async () => {
+                          try {
+                            await ownedPointer.close();
+                          } finally {
+                            nativePointer = undefined;
+                            await session!.command('browsingContext.setViewport', {
+                              context: session!.context,
+                              viewport,
+                            });
+                          }
+                        },
+                      };
+                    } catch (error) {
+                      await session!.command('browsingContext.setViewport', {
+                        context: session!.context,
+                        viewport,
+                      });
+                      throw error;
+                    }
+                  },
+                  evaluate: (expression) => session!.evaluateJson(expression),
+                  waitFor: (expression, description, timeoutMs) =>
+                    session!.waitFor(expression, description, timeoutMs),
+                  press: (key) => firefoxNativeKey(session!, key === 'Home' ? '\uE011' : '\uE010'),
+                  wheel: async (deltaY) => {
+                    const point = (await session!.evaluateJson(`(() => {
+                      const items = document.querySelector('[data-gallery-element="items"]');
+                      if (!(items instanceof HTMLElement)) throw new Error('Missing native scrollport');
+                      const rect = items.getBoundingClientRect();
+                      return { x: Math.floor(rect.left + rect.width / 2),
+                        y: Math.floor(rect.top + rect.height / 2) };
+                    })()`)) as { x: number; y: number };
+                    try {
+                      await session!.command('input.performActions', {
+                        context: session!.context,
+                        actions: [
+                          {
+                            type: 'wheel',
+                            id: 'xeg-firefox-baseline-wheel',
+                            actions: [
+                              {
+                                type: 'scroll',
+                                origin: 'viewport',
+                                ...point,
+                                deltaX: 0,
+                                deltaY,
+                                duration: 200,
+                              },
+                            ],
+                          },
+                        ],
+                      });
+                    } finally {
+                      await session!.command('input.releaseActions', { context: session!.context });
+                    }
+                  },
+                  hover: async (at) => {
+                    assert(nativePointer, 'Native pointer bridge was not prepared');
+                    await nativePointer.hover(at);
+                  },
+                  drag: async (from, to, afterDown) => {
+                    assert(nativePointer, 'Native pointer bridge was not prepared');
+                    await nativePointer.drag(from, to, afterDown);
+                  },
+                  resize: async (width, height) => {
+                    await session!.command('browsingContext.setViewport', {
+                      context: session!.context,
+                      viewport: { width, height },
+                    });
+                  },
+                  screenshot: async (filename) => {
+                    await writeFile(join(output, filename), await session!.captureScreenshot(), {
+                      flag: 'wx',
+                    });
+                  },
+                },
+                output
+              );
+            }
+          : undefined
       );
-      await session.waitFor(
-        "Boolean(document.querySelector('[data-gallery-element=download-filename-notice]'))",
-        'saved-name notice',
-        20_000
+      assert((await readFile(sentinel)).equals(sentinelBytes), 'Preexisting sentinel changed');
+      await intercept.stop();
+      cleanup.fixtureIntercept = 'removed';
+      intercept = undefined;
+      receipt.status = 'passed';
+    } else {
+      let previous = await readDownloads(session, diagnosticUrl);
+      const capability = receipt.capability as Record<string, unknown>;
+      capability.onDeterminingFilename = previous.determiningFilename;
+      if (previous.determiningFilename === 'unsupported') {
+        capability.passiveSuggestion = 'unsupported';
+        capability.activeSuggestion = 'unsupported';
+      }
+      assert.deepEqual(
+        previous.items,
+        [],
+        'Fresh Firefox profile has preexisting download history'
       );
-      const notice = (await session.evaluateJson(`(() => {
+      for (const [index, collision] of [false, true].entries()) {
+        await session.navigate(FIXTURE_URL);
+        await session.waitFor(
+          "document.documentElement.getAttribute('data-xeg-gallery-ready') === 'true'",
+          'installed XCOM gallery bridge'
+        );
+        await click(session, '[data-testid="tweetPhoto"] a');
+        await session.waitFor(
+          "Boolean(document.querySelector('[data-xeg-gallery-container] #xeg-toolbar-counter'))",
+          'gallery opening'
+        );
+        const selected = await session.evaluateJson(
+          "document.querySelector('#xeg-toolbar-counter')?.getAttribute('data-position')"
+        );
+        assert.equal(selected, '1', 'Selected image differs from native source');
+        const nativeMark = nativeLoopback.mark();
+        await click(
+          session,
+          '[data-xeg-gallery-container] [data-gallery-element="toolbar"] button[aria-label="Download"]'
+        );
+        await session.waitFor(
+          "Boolean(document.querySelector('[data-gallery-element=download-filename-notice]'))",
+          'saved-name notice',
+          20_000
+        );
+        const notice = (await session.evaluateJson(`(() => {
         const element = document.querySelector('[data-gallery-element=download-filename-notice]');
         return { name: element?.querySelector('bdi')?.textContent, conforms: element?.getAttribute('data-filename-conforms'), text: element?.textContent };
       })()`)) as { name?: string; conforms?: string; text?: string };
-      assert(
-        notice.name && notice.text?.includes(notice.name),
-        'Saved-name notice missing observed basename'
-      );
-      assert.equal(notice.conforms, 'true', 'Native saved-name notice reported nonconformance');
-      const beforeDismissal = await readDownloads(session, diagnosticUrl);
-      const itemBeforeDismissal = selectOwnedDownload(
-        previous.items,
-        beforeDismissal.items,
-        extensionId
-      );
-      const nativeBeforeDismissal = await readOwnedNativeFile(
-        downloads,
-        itemBeforeDismissal.filename,
-        image
-      );
-      const noticeScreenshot = `firefox-notice-${collision ? 'collision' : 'normal'}.png`;
-      const screenshotBytes = await session.captureScreenshot();
-      await writeFile(join(output, noticeScreenshot), screenshotBytes, { flag: 'wx' });
-      const screenshotSha256 = digest(screenshotBytes);
-      await click(session, '[data-gallery-element="download-filename-notice"] button');
-      assert.equal(
-        await session.evaluateJson(
-          "document.querySelectorAll('[data-gallery-element=download-filename-notice]').length"
-        ),
-        0,
-        'Saved-name notice did not dismiss'
-      );
-      const after = await readDownloads(session, diagnosticUrl);
-      assert.deepEqual(
-        after.items.map((item) => item.id).sort(),
-        beforeDismissal.items.map((item) => item.id).sort(),
-        'Dismissing saved-name notice created another download'
-      );
-      const item = selectOwnedDownload(previous.items, after.items, extensionId);
-      const native = await readOwnedNativeFile(downloads, item.filename, image);
-      const nativeTransfers: NativeTransferRecord[] = nativeLoopback
-        .since(nativeMark)
-        .filter(
-          (event: NativeTransferRecord) =>
-            event.host === 'pbs.twimg.com' &&
-            event.path === '/media/GkE1234ABCDEF.jpg' &&
-            event.method === 'GET' &&
-            event.status === 200 &&
-            event.result === 'served'
+        assert(
+          notice.name && notice.text?.includes(notice.name),
+          'Saved-name notice missing observed basename'
         );
-      assert.equal(nativeTransfers.length, 1, 'Expected one task HTTPS original transfer');
-      assert.equal(nativeTransfers[0]?.bytes, image.length, 'Task HTTPS transfer size differs');
-      assert.equal(nativeTransfers[0]?.sha256, digest(image), 'Task HTTPS transfer bytes differ');
-      assert.deepEqual(
-        native,
-        nativeBeforeDismissal,
-        'Native file changed during notice dismissal'
-      );
-      if (collision) {
-        assert.notEqual(native.basename, EXPECTED_NAME, 'Filename collision overwrote original');
-        assert.equal(
-          native.basename,
-          'testuser_1234567890123456789_0(1).jpg',
-          'Unexpected collision name'
+        assert.equal(notice.conforms, 'true', 'Native saved-name notice reported nonconformance');
+        const beforeDismissal = await readDownloads(session, diagnosticUrl);
+        const itemBeforeDismissal = selectOwnedDownload(
+          previous.items,
+          beforeDismissal.items,
+          extensionId
         );
-        const first = (receipt.scenarios as Array<{ native?: { basename?: string } }>)[0]?.native;
-        assert(first?.basename === EXPECTED_NAME, 'Original normal download is missing');
-        const original = await readOwnedNativeFile(
+        const nativeBeforeDismissal = await readOwnedNativeFile(
           downloads,
-          join(downloads, EXPECTED_NAME),
+          itemBeforeDismissal.filename,
           image
         );
-        assert.equal(original.basename, EXPECTED_NAME, 'Collision changed original native file');
-      } else {
+        const noticeScreenshot = `firefox-notice-${collision ? 'collision' : 'normal'}.png`;
+        const screenshotBytes = await session.captureScreenshot();
+        await writeFile(join(output, noticeScreenshot), screenshotBytes, { flag: 'wx' });
+        const screenshotSha256 = digest(screenshotBytes);
+        await click(session, '[data-gallery-element="download-filename-notice"] button');
         assert.equal(
-          native.basename,
-          EXPECTED_NAME,
-          'Native basename differs from owner and attachment'
+          await session.evaluateJson(
+            "document.querySelectorAll('[data-gallery-element=download-filename-notice]').length"
+          ),
+          0,
+          'Saved-name notice did not dismiss'
         );
+        const after = await readDownloads(session, diagnosticUrl);
+        assert.deepEqual(
+          after.items.map((item) => item.id).sort(),
+          beforeDismissal.items.map((item) => item.id).sort(),
+          'Dismissing saved-name notice created another download'
+        );
+        const item = selectOwnedDownload(previous.items, after.items, extensionId);
+        const native = await readOwnedNativeFile(downloads, item.filename, image);
+        const nativeTransfers: NativeTransferRecord[] = nativeLoopback
+          .since(nativeMark)
+          .filter(
+            (event: NativeTransferRecord) =>
+              event.host === 'pbs.twimg.com' &&
+              event.path === '/media/GkE1234ABCDEF.jpg' &&
+              event.method === 'GET' &&
+              event.status === 200 &&
+              event.result === 'served'
+          );
+        assert.equal(nativeTransfers.length, 1, 'Expected one task HTTPS original transfer');
+        assert.equal(nativeTransfers[0]?.bytes, image.length, 'Task HTTPS transfer size differs');
+        assert.equal(nativeTransfers[0]?.sha256, digest(image), 'Task HTTPS transfer bytes differ');
+        assert.deepEqual(
+          native,
+          nativeBeforeDismissal,
+          'Native file changed during notice dismissal'
+        );
+        if (collision) {
+          assert.notEqual(native.basename, EXPECTED_NAME, 'Filename collision overwrote original');
+          assert.equal(
+            native.basename,
+            'testuser_1234567890123456789_0(1).jpg',
+            'Unexpected collision name'
+          );
+          const first = (receipt.scenarios as Array<{ native?: { basename?: string } }>)[0]?.native;
+          assert(first?.basename === EXPECTED_NAME, 'Original normal download is missing');
+          const original = await readOwnedNativeFile(
+            downloads,
+            join(downloads, EXPECTED_NAME),
+            image
+          );
+          assert.equal(original.basename, EXPECTED_NAME, 'Collision changed original native file');
+        } else {
+          assert.equal(
+            native.basename,
+            EXPECTED_NAME,
+            'Native basename differs from owner and attachment'
+          );
+        }
+        assert.equal(notice.name, native.basename, 'Notice differs from native saved basename');
+        const retainedName = `firefox-native-${index + 1}.jpg`;
+        await writeFile(join(output, retainedName), image, { flag: 'wx' });
+        assert(
+          (await readFile(join(output, retainedName))).equals(image),
+          'Retained native copy differs'
+        );
+        (receipt.scenarios as unknown[]).push({
+          name: collision ? 'collision' : 'normal',
+          status: 'passed',
+          native: {
+            id: item.id,
+            byExtensionId: item.byExtensionId,
+            ...native,
+            filename: undefined,
+          },
+          notice,
+          noticeScreenshot,
+          screenshotSha256,
+          nativeTransfer: nativeTransfers[0],
+          retainedName,
+        });
+        previous = after;
       }
-      assert.equal(notice.name, native.basename, 'Notice differs from native saved basename');
-      const retainedName = `firefox-native-${index + 1}.jpg`;
-      await writeFile(join(output, retainedName), image, { flag: 'wx' });
-      assert(
-        (await readFile(join(output, retainedName))).equals(image),
-        'Retained native copy differs'
+      receipt.nativeBidiOriginalObserved = intercept.requests.some(
+        (request) => request.url === ORIGINAL_URL
       );
-      (receipt.scenarios as unknown[]).push({
-        name: collision ? 'collision' : 'normal',
-        status: 'passed',
-        native: { id: item.id, byExtensionId: item.byExtensionId, ...native, filename: undefined },
-        notice,
-        noticeScreenshot,
-        screenshotSha256,
-        nativeTransfer: nativeTransfers[0],
-        retainedName,
-      });
-      previous = after;
+      assert(
+        nativeProxy.snapshot().pbsConnectedCount > 0,
+        'Native original did not traverse task CONNECT proxy'
+      );
+      receipt.requests = intercept.requests;
+      assert((await readFile(sentinel)).equals(sentinelBytes), 'Preexisting sentinel changed');
+      await intercept.stop();
+      cleanup.fixtureIntercept = 'removed';
+      intercept = undefined;
+      receipt.status = 'passed';
     }
-    receipt.nativeBidiOriginalObserved = intercept.requests.some(
-      (request) => request.url === ORIGINAL_URL
-    );
-    assert(
-      nativeProxy.snapshot().pbsConnectedCount > 0,
-      'Native original did not traverse task CONNECT proxy'
-    );
-    receipt.requests = intercept.requests;
-    assert((await readFile(sentinel)).equals(sentinelBytes), 'Preexisting sentinel changed');
-    await intercept.stop();
-    cleanup.fixtureIntercept = 'removed';
-    intercept = undefined;
-    receipt.status = 'passed';
   } catch (error) {
     errors.push(errorText(error));
     if (session) {

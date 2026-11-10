@@ -297,7 +297,12 @@ describe('gallery host-state recovery', () => {
     ));
 
     expect(document.body.style.position).toBe('fixed');
-    expect(outside.hasAttribute('inert')).toBe(true);
+    const dialog = host.querySelector<HTMLDialogElement>('[data-xeg-gallery-container]');
+    expect(dialog?.open).toBe(true);
+    expect(dialog?.matches(':modal')).toBe(true);
+    expect(outside.hasAttribute('inert')).toBe(false);
+    outside.focus();
+    expect(document.activeElement).not.toBe(outside);
     triggerError();
     await Promise.resolve();
 
@@ -311,6 +316,7 @@ describe('gallery host-state recovery', () => {
     expect(window.history.scrollRestoration).toBe('manual');
     expect(outside.getAttribute('aria-hidden')).toBe('false');
     expect(outside.hasAttribute('inert')).toBe(false);
+    expect(dialog?.open).toBe(false);
     expect(document.activeElement).toBe(outside);
     expect(scrollTo).toHaveBeenCalledWith(0, 321);
 

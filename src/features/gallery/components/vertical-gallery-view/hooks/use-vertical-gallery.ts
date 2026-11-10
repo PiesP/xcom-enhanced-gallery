@@ -56,6 +56,8 @@ interface ScrollState {
   readonly scrollToItem: (index: number) => void;
   /** Scroll to the current active item */
   readonly scrollToCurrentItem: () => void;
+  /** Claim wheel input redirected from gallery background to the scrollport. */
+  readonly claimRedirectedWheel: () => void;
 }
 
 /**
@@ -148,13 +150,14 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
   });
 
   // 3. Scroll tracking - Detects user scrolling and programmatic scroll timing
-  const { isScrolling, lastScrollTime } = useGalleryScroll({
-    container: containerEl,
-    scrollTarget: itemsContainerEl,
-    enabled: isVisible,
-    programmaticScrollTimestamp: () => navigationState.programmaticScrollTimestamp(),
-    onScrollEnd: (): void => focusSyncCallback?.(),
-  });
+  const { isScrolling, lastScrollTime, beginProgrammaticScroll, claimRedirectedWheel } =
+    useGalleryScroll({
+      container: containerEl,
+      scrollTarget: itemsContainerEl,
+      enabled: isVisible,
+      programmaticScrollTimestamp: () => navigationState.programmaticScrollTimestamp(),
+      onScrollEnd: (): void => focusSyncCallback?.(),
+    });
 
   // 4. Item scroll handling - Provides scroll-to-item functionality
   const { scrollToItem, scrollToCurrentItem, realignToItem } = useGalleryItemScroll(
@@ -162,10 +165,15 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
     currentIndex,
     mediaItemsCount,
     {
-      enabled: () => !isScrolling() && navigationState.lastNavigationTrigger() !== 'scroll',
+      // Explicit navigation supersedes prior wheel activity; the hook's
+      // automatic index effect still checks isScrolling separately.
+      enabled: () => navigationState.lastNavigationTrigger() !== 'scroll',
       block: 'start',
       isScrolling,
-      onScrollStart: (): void => navigationState.setProgrammaticScrollTimestamp(performance.now()),
+      onScrollStart: (): void => {
+        beginProgrammaticScroll();
+        navigationState.setProgrammaticScrollTimestamp(performance.now());
+      },
     }
   );
 
@@ -240,6 +248,7 @@ export function useVerticalGallery(options: UseVerticalGalleryOptions): UseVerti
       lastUserScrollTime: lastScrollTime,
       scrollToItem,
       scrollToCurrentItem,
+      claimRedirectedWheel,
     },
     navigation: {
       lastNavigationTrigger: navigationState.lastNavigationTrigger,

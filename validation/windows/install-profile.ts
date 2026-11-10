@@ -51,6 +51,8 @@ import { withFilenameCorrelation } from './filename-correlation.ts';
 import { admitReportedLiveFilenameInstall } from './live-filename-target.ts';
 import { flattenUserscriptLiveEvidence } from './userscript-live-output.ts';
 import { runFirefoxInstallation, type FirefoxLauncher } from './firefox-install.ts';
+import { runNativeScrollbarTakeover } from './native-scrollbar-takeover.ts';
+import { prepareNativeScrollbarPointer } from './native-pointer.ts';
 import {
   createControlledVideoSettings,
   decodeStoredValue,
@@ -1124,6 +1126,7 @@ type InstallResult = {
   videoSaveFormat?: unknown;
   failedEntryRecovery?: unknown;
   galleryExperience?: unknown;
+  nativeBrowserUi?: unknown;
   mediaApiReuse?: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>>;
   sourceImageFailures?: SourceImageFailureEvidence;
   uxDetails?: unknown;
@@ -1357,6 +1360,58 @@ async function waitForValue<T>(
     await delay(50);
   }
   throw new Error(`Timed out waiting for ${description}: ${JSON.stringify(lastValue)}`);
+}
+
+/** Verify native modal isolation without relying on an authored background marker. */
+export async function assertLateHostPanelIsolation(
+  page: Page,
+  panelId: string,
+  phase: 'open' | 'closed'
+): Promise<void> {
+  const panel = page.locator(`#${panelId}`);
+  await panel.waitFor({ state: 'attached' });
+  const state = await panel.evaluate((element) => ({
+    directBodyChild: element.parentElement === document.body,
+    ariaHidden: element.getAttribute('aria-hidden'),
+    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
+    inert: element.hasAttribute('inert'),
+    nativeModalOpen: document.querySelector('dialog[data-xeg-gallery-container]:modal') !== null,
+  }));
+  assert.equal(state.directBodyChild, true, 'Late host panel must be a body sibling');
+  assert.deepEqual(
+    { ariaHidden: state.ariaHidden, hiddenMarker: state.hiddenMarker, inert: state.inert },
+    { ariaHidden: 'false', hiddenMarker: false, inert: false },
+    'Gallery must preserve the late host panel authored attributes'
+  );
+  assert.equal(state.nativeModalOpen, phase === 'open', `Native gallery modal must be ${phase}`);
+
+  const actionName = `Late host action ${panelId}`;
+  await waitForValue(
+    async () => {
+      const session = await page.context().newCDPSession(page);
+      try {
+        const { nodes } = await session.send('Accessibility.getFullAXTree');
+        const exposed = nodes.filter(
+          (node) =>
+            !node.ignored && node.role?.value === 'button' && node.name?.value === actionName
+        ).length;
+        return exposed === (phase === 'open' ? 0 : 1) ? true : undefined;
+      } finally {
+        await session.detach();
+      }
+    },
+    `late host action ${phase} accessibility state`,
+    5_000
+  );
+  const focusAcquired = await panel.locator('button').evaluate((button) => {
+    button.focus();
+    return document.activeElement === button;
+  });
+  assert.equal(
+    focusAcquired,
+    phase === 'closed',
+    `Late host action focus must be ${phase === 'open' ? 'excluded' : 'restored'}`
+  );
 }
 
 function safeError(error: unknown, depth = 0): string {
@@ -1736,7 +1791,10 @@ async function createServiceWorkerObserver(browserCdp: CDPSession, pageCdp: CDPS
   };
 }
 
-async function createExperienceImages(context: BrowserContext): Promise<Buffer[]> {
+async function createExperienceImages(
+  context: BrowserContext,
+  longScroll = false
+): Promise<Buffer[]> {
   const page = await context.newPage();
   try {
     await page.goto('about:blank');
@@ -1757,7 +1815,9 @@ async function createExperienceImages(context: BrowserContext): Promise<Buffer[]
           drawing.fillText(label, 10, Math.min(height - 10, 55));
           return canvas.toDataURL('image/jpeg', 0.9).split(',')[1];
         }),
-      EXPERIENCE_IMAGES
+      EXPERIENCE_IMAGES.map((image, index) =>
+        longScroll && index === 0 ? { ...image, height: 6000 } : image
+      )
     );
     const images = encoded.map((value) => Buffer.from(value ?? '', 'base64'));
     assert(images.length === EXPERIENCE_IMAGES.length && images.every((image) => image.length));
@@ -5077,8 +5137,12 @@ async function runPublicFixtureCycle({
   await trigger.click();
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
-  assert.equal(await gallery.getAttribute('role'), 'dialog');
-  assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+  assert.equal(
+    await gallery.evaluate(
+      (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+    ),
+    true
+  );
   assert.equal(
     await gallery.locator('#xeg-toolbar-counter').getAttribute('data-position'),
     '2',
@@ -5160,11 +5224,33 @@ type CompactEvidence = {
   api: ApiRecord[];
   images: QualityRequest[];
   steps: Record<string, unknown>[];
+  expectedConsoleErrors?: ConsoleErrorRecord[];
   error?: string;
   failureScreenshot?: string;
   screenshotError?: string;
   cleanupErrors?: string[];
 };
+
+export function collectFilenameFaultConsoleErrors(
+  consoleErrors: ConsoleErrorRecord[],
+  start: number,
+  url: string,
+  contextFaultCount: number
+): ConsoleErrorRecord[] {
+  const expected = consoleErrors
+    .slice(start)
+    .filter(
+      (record) =>
+        record.location === url &&
+        record.text ===
+          'Failed to load resource: the server responded with a status of 404 (Not Found)'
+    );
+  assert(
+    expected.length <= contextFaultCount,
+    'Filename failure logged more resource errors than its observed context faults'
+  );
+  return expected;
+}
 
 async function compactHostSnapshot(page: Page, selector: string) {
   return page.evaluate((target) => {
@@ -5498,7 +5584,8 @@ async function runCompactQuotePhotoCycle({
   const bNativeMark = nativeLoopback.mark();
   const bFetchMark = pageFetches.length;
   await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
-  const bSingleName = `middle_fixture_${COMPACT_MIDDLE_ID}_1.webp`;
+  // B owns one attachment (ordinal 0), though it is the second gallery item.
+  const bSingleName = `middle_fixture_${COMPACT_MIDDLE_ID}_0.webp`;
   const bSingle = await waitForDownload(extensionPage, knownBSingle, bSingleName);
   const bSinglePath = relative(downloads, bSingle.filename);
   assert(bSinglePath && !bSinglePath.startsWith('..') && !isAbsolute(bSinglePath));
@@ -5641,6 +5728,7 @@ async function runCompactQuotePhotoCycle({
 async function runAttachmentFilenameCycle({
   page,
   extensionPage,
+  consoleErrors,
   downloads,
   output,
   images,
@@ -5657,6 +5745,7 @@ async function runAttachmentFilenameCycle({
 }: {
   page: Page;
   extensionPage: Page;
+  consoleErrors?: ConsoleErrorRecord[];
   downloads: string;
   output: string;
   images: ImageFixtures;
@@ -6018,6 +6107,7 @@ async function runAttachmentFilenameCycle({
     });
     const faultNativeMark = nativeLoopback.mark();
     const faultContextMark = routes.filenameFaults.length;
+    const filenameConsoleMark = consoleErrors?.length;
     routes.armFilenameB1Failure();
     nativeLoopback.armHttpFailure(b1Url, 404);
     const knownPartial = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
@@ -6043,6 +6133,17 @@ async function runAttachmentFilenameCycle({
       .events.slice(faultNativeMark)
       .filter((event) => event.status === 404 && event.path === '/media/GkE5678GHIJKL.jpg');
     assert(contextFaults.length + nativeFaults.length > 0, 'B1 failure transport was not observed');
+    if (consoleErrors && filenameConsoleMark !== undefined) {
+      evidence.expectedConsoleErrors ??= [];
+      evidence.expectedConsoleErrors.push(
+        ...collectFilenameFaultConsoleErrors(
+          consoleErrors,
+          filenameConsoleMark,
+          b1Url,
+          contextFaults.length
+        )
+      );
+    }
     routes.clearFilenameB1Failure();
     nativeLoopback.clearHttpFailure();
     const recover = retry.getByRole('button', {
@@ -6300,6 +6401,7 @@ async function runAttachmentFilenameFocusedProbe({
     });
     evidence.api = routes.compactApiResponses;
     evidence.images = routes.compactImageRequests;
+    routes.assertNoQualityRequestOverflow();
     evidence.status = 'passed';
     evidence.diagnosticOnly = diagnosticOnly;
   } catch (error) {
@@ -6748,8 +6850,12 @@ async function assertQuotedGallery(
 ) {
   const gallery = page.locator('[data-xeg-gallery-container]');
   await gallery.waitFor({ state: 'visible', timeout: 15_000 });
-  assert.equal(await gallery.getAttribute('role'), 'dialog');
-  assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+  assert.equal(
+    await gallery.evaluate(
+      (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+    ),
+    true
+  );
   const counter = gallery.locator('#xeg-toolbar-counter');
   const expectedTotal =
     ('expectedTotal' in quotedCase ? quotedCase.expectedTotal : undefined) ??
@@ -6963,7 +7069,8 @@ async function runOuterVideoControl({
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
-  const filename = `${quotedCase.handle}_${quotedCase.outer}_2.mp4`;
+  // The outer video is attachment 0 even when it is the third gallery item.
+  const filename = `${quotedCase.handle}_${quotedCase.outer}_0.mp4`;
   await gallery.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
   const download = await waitForDownload(extensionPage, knownIds, filename);
   const relativeDownload = relative(downloads, download.filename);
@@ -10681,7 +10788,7 @@ async function runModelessRenderRecovery({
     assert.deepEqual(
       modelessRestoration.background,
       hostBefore.background,
-      'Modeless recovery must restore host isolation markers'
+      'Modeless recovery must restore host state'
     );
     assert.equal(modelessRestoration.scrollRestoration, hostBefore.scrollRestoration);
     assert.equal(modelessRestoration.scrollY, hostBefore.scrollY);
@@ -12567,17 +12674,26 @@ async function runQuotedVideoCycle({
     const panel = document.createElement('aside');
     panel.id = 'late-quote-panel';
     panel.setAttribute('aria-hidden', 'false');
-    panel.textContent = 'Late quote host panel';
+    const action = document.createElement('button');
+    action.textContent = 'Late host action late-quote-panel';
+    panel.append(action);
     document.body.append(panel);
     return panel.id;
   });
-  await page.locator(`#${latePanel}[data-xeg-gallery-hidden]`).waitFor({ state: 'attached' });
+  await assertLateHostPanelIsolation(page, latePanel, 'open');
   await page.screenshot({ path: join(output, `${artifactName}-playing-gallery.png`) });
 
   const knownIds = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
   const nativeMark = nativeLoopback.mark();
   const fetchMark = pageFetches.length;
-  const filename = `${quotedCase.username}_${quotedCase.owner}_${quotedCase.expectedPosition - 1}${quotedCase.name === 'unmarked-no-outer' ? ' (1)' : ''}.mp4`;
+  // Direct nested quote view places the owner's sole video second in the gallery.
+  const ownerOrdinal =
+    quotedCase.name === 'nested-direct-quote' ? 0 : quotedCase.expectedPosition - 1;
+  const collisionSuffix =
+    quotedCase.name === 'unmarked-no-outer' || quotedCase.name === 'nested-direct-quote'
+      ? ' (1)'
+      : '';
+  const filename = `${quotedCase.username}_${quotedCase.owner}_${ownerOrdinal}${collisionSuffix}.mp4`;
   await playing.gallery
     .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
     .click();
@@ -12603,15 +12719,7 @@ async function runQuotedVideoCycle({
   });
   const copiedName = `${artifactName}-download.mp4`;
   await copyFile(download.filename, join(output, copiedName));
-  const lateState = await page.locator(`#${latePanel}`).evaluate((element) => ({
-    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
-    inert: element.hasAttribute('inert'),
-  }));
-  assert.deepEqual(
-    lateState,
-    { hiddenMarker: true, inert: true },
-    'Late-added host panel must be isolated while the gallery is open'
-  );
+  await assertLateHostPanelIsolation(page, latePanel, 'open');
   const playingClose = await closeQuotedGallery({
     gallery: playing.gallery,
     page,
@@ -12665,12 +12773,7 @@ async function runQuotedVideoCycle({
     URL.revokeObjectURL(video.src);
     video.remove();
   });
-  const restoredPanel = await page.locator(`#${latePanel}`).evaluate((element) => ({
-    ariaHidden: element.getAttribute('aria-hidden'),
-    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
-    inert: element.hasAttribute('inert'),
-  }));
-  assert.deepEqual(restoredPanel, { ariaHidden: 'false', hiddenMarker: false, inert: false });
+  await assertLateHostPanelIsolation(page, latePanel, 'closed');
   await page.locator(`#${latePanel}`).evaluate((element) => element.remove());
   const pausedControl =
     quotedCase.route === 'unmarked' || postPlayOverlay
@@ -12966,11 +13069,13 @@ async function runCycle({
     const node = document.createElement('aside');
     node.id = 'late-host-panel';
     node.setAttribute('aria-hidden', 'false');
-    node.textContent = 'Late host panel';
+    const action = document.createElement('button');
+    action.textContent = 'Late host action late-host-panel';
+    node.append(action);
     document.body.append(node);
     return node.id;
   });
-  await page.locator(`#${lateBackground}[data-xeg-gallery-hidden]`).waitFor({ state: 'attached' });
+  await assertLateHostPanelIsolation(page, lateBackground, 'open');
 
   let shiftedLayout = false;
   if (cycle.expectedIndex === 0) {
@@ -13143,12 +13248,7 @@ async function runCycle({
   const after = await hostSnapshot(page, cycle.triggerIndex);
   await page.screenshot({ path: join(output, `cycle-${number}-after.png`) });
 
-  const lateState = await page.locator(`#${lateBackground}`).evaluate((element) => ({
-    ariaHidden: element.getAttribute('aria-hidden'),
-    hiddenMarker: element.hasAttribute('data-xeg-gallery-hidden'),
-    inert: element.hasAttribute('inert'),
-  }));
-  assert.deepEqual(lateState, { ariaHidden: 'false', hiddenMarker: false, inert: false });
+  await assertLateHostPanelIsolation(page, lateBackground, 'closed');
   assert.deepEqual(
     after.background,
     before.background,
@@ -15865,6 +15965,7 @@ async function runFailedEntryRecoveryProbe({
       [],
       'Failed-entry fixture reported unexpected console errors'
     );
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primaryError = error;
   } finally {
@@ -16205,6 +16306,7 @@ async function runMediaDownloadRecoveryProbe({
       qualityRequests: routes.qualityRequests,
       nativeTransport: nativeLoopback.snapshot(),
     };
+    routes.assertNoQualityRequestOverflow();
     result = {
       status: 'observed',
       scope: 'installed extension and deterministic owned X fixture',
@@ -17661,6 +17763,7 @@ async function runUxDetailsProbe({
     if (failures.length) {
       throw new AggregateError(failures, 'UX details cases failed');
     }
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primaryError = error;
   } finally {
@@ -17696,6 +17799,457 @@ async function runUxDetailsProbe({
     );
   }
   return { status: 'passed', ...observations };
+}
+
+/** Focused installed-extension check for native modal, anchor and scroll completion. */
+async function runNativeBrowserUiProbe({
+  context,
+  browserName,
+  extensionId,
+  nativeLoopback,
+  output,
+  root,
+  images,
+  displayImages,
+  scrollbarTakeover,
+}: {
+  context: BrowserContext;
+  browserName: string;
+  extensionId: string;
+  nativeLoopback: NativeLoopback;
+  output: string;
+  root: string;
+  images: ImageFixtures;
+  displayImages: ImageFixtures;
+  scrollbarTakeover: boolean;
+}) {
+  const experienceImages = await createExperienceImages(context, scrollbarTakeover);
+  const routes = await installFixtureRoutes(
+    context,
+    root,
+    images,
+    displayImages,
+    undefined,
+    experienceImages
+  );
+  nativeLoopback.setPayloads(images, routes.videoPayloads);
+  nativeLoopback.setExperienceImages(experienceImages);
+  const page = await context.newPage();
+  const observations: Record<string, unknown> = {};
+  const pageErrors: string[] = [];
+  const cleanupErrors: string[] = [];
+  let error: unknown;
+  page.on('pageerror', (failure) => pageErrors.push(failure.message));
+  const captureTooltip = async (button: Locator, file: string) => {
+    await button.focus();
+    const tooltip = button.locator('xpath=..').locator('[role="tooltip"]:popover-open');
+    await tooltip.waitFor({ state: 'visible' });
+    const geometry = await tooltip.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const anchor = document.activeElement;
+      const anchorRect = anchor?.getBoundingClientRect();
+      const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      const textRange = document.createRange();
+      textRange.selectNodeContents(element);
+      return {
+        text: element.textContent?.trim() ?? '',
+        textLines: textRange.getClientRects().length,
+        rect: rect.toJSON(),
+        anchor: anchorRect?.toJSON() ?? null,
+        viewport: {
+          width: innerWidth,
+          height: innerHeight,
+          devicePixelRatio,
+          visualScale: visualViewport?.scale ?? null,
+        },
+        inDialog: element.closest('dialog') !== null,
+        described:
+          anchor?.getAttribute('aria-describedby')?.split(/\s+/).includes(element.id) ?? false,
+        anchorName: anchor ? getComputedStyle(anchor).getPropertyValue('anchor-name').trim() : '',
+        positionAnchor: getComputedStyle(element).getPropertyValue('position-anchor').trim(),
+        centerHit: hit === element || element.contains(hit),
+      };
+    });
+    assert(geometry.text, 'Focused tooltip has no text');
+    if (geometry.text === 'Open Settings') {
+      assert.equal(geometry.textLines, 1, 'Short English help must fit on one line');
+    }
+    assert(geometry.anchor, 'Focused tooltip has no anchor rectangle');
+    assert(geometry.inDialog && geometry.described, 'Focused tooltip lost its modal description');
+    assert(geometry.anchorName && geometry.positionAnchor === geometry.anchorName);
+    assert(geometry.rect.left >= -1 && geometry.rect.top >= -1);
+    assert(geometry.rect.right <= geometry.viewport.width + 1);
+    assert(geometry.rect.bottom <= geometry.viewport.height + 1);
+    assert(geometry.centerHit, 'Focused tooltip center is occluded');
+    await page.screenshot({ path: join(output, file) });
+    return { ...geometry, screenshot: file };
+  };
+  try {
+    if (scrollbarTakeover) {
+      // Keep the focused UI/zoom route's established CSS viewport. The later
+      // native scrollbar tab retains this context's un-emulated viewport.
+      await page.setViewportSize({ width: 1280, height: 800 });
+    }
+    await page.goto(`chrome-extension://${extensionId}/manifest.json`);
+    await page.goto(EXPERIENCE_FIXTURE_URL);
+    await page.locator('html[data-xeg-gallery-ready="true"]').waitFor({ state: 'attached' });
+    const trigger = page.locator('[data-testid="tweetPhoto"] img').first();
+    if (scrollbarTakeover) {
+      await trigger.evaluate((image) => image.setAttribute('height', '6000'));
+    }
+    await trigger.scrollIntoViewIfNeeded();
+    await trigger.focus();
+    const hostScroll = await page.evaluate(() => window.scrollY);
+    assert(hostScroll > 0, 'The host page was not scrolled before gallery entry');
+    await trigger.click();
+    const gallery = page.locator('dialog[data-xeg-gallery-container]');
+    await gallery.waitFor({ state: 'visible' });
+    assert(await gallery.evaluate((element) => element.matches(':modal')));
+    assert.equal(
+      await page
+        .locator('[data-testid="tweetPhoto"] img')
+        .first()
+        .evaluate(
+          (element) => element.closest('dialog') === null && document.activeElement !== element
+        ),
+      true
+    );
+    await page.keyboard.press('Tab');
+    assert(await page.evaluate(() => document.activeElement?.closest('dialog') !== null));
+    await page.keyboard.press('Shift+Tab');
+    assert(
+      await page.evaluate(() => {
+        const active = document.activeElement;
+        return (
+          active?.closest('dialog') !== null ||
+          active === document.body ||
+          active === document.documentElement
+        );
+      }),
+      'Native Shift+Tab focused the host page'
+    );
+    assert(!(await trigger.evaluate((element) => document.activeElement === element)));
+    observations.modal = { hostScroll, nativeModal: true, nativeTab: true };
+
+    const settings = gallery.locator('#settings-button');
+    assert.equal(await settings.getAttribute('aria-label'), 'Open Settings');
+    observations.tooltip = await captureTooltip(settings, 'native-browser-ui-tooltip-en.png');
+
+    await settings.click();
+    assert.equal(await settings.getAttribute('aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await settings.getAttribute('aria-expanded'), 'false');
+    assert(await gallery.isVisible(), 'Settings Escape closed the gallery');
+    const help = gallery.locator('#keyboard-help-button');
+    await help.click();
+    assert.equal(await help.getAttribute('aria-expanded'), 'true');
+    await page.keyboard.press('Escape');
+    assert.equal(await help.getAttribute('aria-expanded'), 'false');
+    assert(await gallery.isVisible(), 'Help Escape closed the gallery');
+    observations.innerEscape = { settings: true, help: true };
+
+    const originalViewport = page.viewportSize();
+    assert(originalViewport, 'Native tooltip viewport is unavailable');
+    const baseline = await page.evaluate(() => ({
+      devicePixelRatio,
+      innerWidth,
+      visualScale: visualViewport?.scale ?? null,
+    }));
+    const priorZoom = await fixtureTabZoom(
+      context,
+      extensionId,
+      page,
+      null,
+      null,
+      EXPERIENCE_FIXTURE_URL
+    );
+    const language = gallery.locator('#settings-language-select');
+    let priorLanguage: string | undefined;
+    let zoomAttempted = false;
+    try {
+      await settings.click();
+      priorLanguage = await language.inputValue();
+      await language.selectOption('es');
+      await settings.click();
+      await page.waitForFunction(
+        () =>
+          document.querySelector(
+            'button[aria-label="Descargar los 3 archivos visibles como ZIP"]'
+          ) !== null
+      );
+      zoomAttempted = true;
+      const appliedZoom = await fixtureTabZoom(
+        context,
+        extensionId,
+        page,
+        2,
+        null,
+        EXPERIENCE_FIXTURE_URL
+      );
+      assert.equal(appliedZoom.observed, 2, 'Installed browser did not accept 200% tab zoom');
+      const zoomRatio = appliedZoom.observed / priorZoom.previous;
+      await page.waitForFunction(
+        (before) =>
+          devicePixelRatio >= before.devicePixelRatio * before.zoomRatio * 0.95 &&
+          innerWidth <= before.innerWidth / (before.zoomRatio * 0.95) &&
+          Math.abs((visualViewport?.scale ?? 1) - 1) <= 0.05,
+        { ...baseline, zoomRatio }
+      );
+      const bulk = gallery.locator(
+        'button[aria-label="Descargar los 3 archivos visibles como ZIP"]'
+      );
+      const zoomed = await captureTooltip(bulk, 'native-browser-ui-tooltip-es-zoom200.png');
+      assert.equal(zoomed.text, 'Descargar los 3 archivos visibles como ZIP');
+      await page.setViewportSize({ width: 840, height: 592 });
+      await page.waitForFunction(
+        ({ width, height, factor }) =>
+          Math.abs(innerWidth - width / factor) <= 1 &&
+          Math.abs(innerHeight - height / factor) <= 1,
+        { width: 840, height: 592, factor: 2 }
+      );
+      const narrow = await captureTooltip(bulk, 'native-browser-ui-tooltip-es-zoom200-narrow.png');
+      assert.equal(narrow.text, zoomed.text);
+      observations.localizedZoomTooltip = {
+        language: 'es',
+        baseline,
+        priorZoom,
+        appliedZoom,
+        zoomed,
+        narrow,
+      };
+    } finally {
+      for (const [name, restore] of [
+        ['tooltip viewport', () => page.setViewportSize(originalViewport)],
+        [
+          'tab zoom',
+          async () => {
+            if (!zoomAttempted) {
+              return;
+            }
+            const restored = await fixtureTabZoom(
+              context,
+              extensionId,
+              page,
+              priorZoom.previous,
+              priorZoom.settings,
+              EXPERIENCE_FIXTURE_URL
+            );
+            assert.equal(
+              restored.observed,
+              priorZoom.previous,
+              'Native browser UI zoom was not restored'
+            );
+            assert.equal(restored.observedSettings.mode, priorZoom.settings.mode);
+            assert.equal(restored.observedSettings.scope, priorZoom.settings.scope);
+          },
+        ],
+        [
+          'tooltip language',
+          async () => {
+            if (priorLanguage === undefined || !(await gallery.isVisible())) {
+              return;
+            }
+            if ((await settings.getAttribute('aria-expanded')) !== 'true') {
+              await settings.click();
+            }
+            await language.selectOption(priorLanguage);
+            await settings.click();
+          },
+        ],
+      ] as const) {
+        try {
+          await restore();
+        } catch (failure) {
+          cleanupErrors.push(`${name}: ${safeError(failure)}`);
+        }
+      }
+    }
+    assert.deepEqual(cleanupErrors, [], 'Native tooltip state restoration failed');
+
+    const items = gallery.locator('[data-gallery-element="items"]');
+    await items.evaluate((element) => {
+      element.dataset.nativeScrollEnds = '0';
+      element.addEventListener('scrollend', () => {
+        element.dataset.nativeScrollEnds = String(Number(element.dataset.nativeScrollEnds) + 1);
+      });
+    });
+    const before = await items.evaluate((element) => element.scrollTop);
+    await items.hover();
+    await page.mouse.wheel(0, 500);
+    await page.waitForFunction(() => {
+      const element = document.querySelector<HTMLElement>('[data-gallery-element="items"]');
+      return element && Number(element.dataset.nativeScrollEnds) > 0;
+    });
+    const after = await items.evaluate((element) => element.scrollTop);
+    assert(after !== before, 'Wheel input did not displace the gallery scrollport');
+    observations.scroll = {
+      before,
+      after,
+      nativeScrollEnds: await items.getAttribute('data-native-scroll-ends'),
+    };
+
+    if (scrollbarTakeover) {
+      const scrollPage = await context.newPage();
+      let nativePointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
+      try {
+        await scrollPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+        await scrollPage.goto(EXPERIENCE_FIXTURE_URL);
+        await scrollPage.locator('html[data-xeg-gallery-ready="true"]').waitFor({
+          state: 'attached',
+        });
+        const scrollTrigger = scrollPage.locator('[data-testid="tweetPhoto"] img').first();
+        await scrollTrigger.evaluate((image) => image.setAttribute('height', '6000'));
+        await scrollTrigger.scrollIntoViewIfNeeded();
+        await scrollTrigger.click();
+        const scrollGallery = scrollPage.locator('dialog[data-xeg-gallery-container]');
+        await scrollGallery.waitFor({ state: 'visible' });
+        assert(await scrollGallery.evaluate((element) => element.matches(':modal')));
+        observations.scrollbarTakeover = await runNativeScrollbarTakeover(
+          {
+            launchCondition:
+              browserName === 'chrome'
+                ? '--enable-smooth-scrolling in this owned temporary Chrome profile'
+                : 'browser default',
+            prepareInput: async () => {
+              assert.equal(
+                scrollPage.viewportSize(),
+                null,
+                'Native scrollbar tab inherited an emulated viewport'
+              );
+              const cdp = await context.newCDPSession(scrollPage);
+              const target = await cdp.send('Target.getTargetInfo');
+              const window = await cdp.send('Browser.getWindowForTarget', {
+                targetId: target.targetInfo.targetId,
+              });
+              const previousBounds = window.bounds;
+              let pointer: Awaited<ReturnType<typeof prepareNativeScrollbarPointer>> | undefined;
+              try {
+                await cdp.send('Browser.setWindowBounds', {
+                  windowId: window.windowId,
+                  bounds: { windowState: 'normal', left: 0, top: 0, width: 540, height: 850 },
+                });
+                await scrollPage.evaluate(
+                  () =>
+                    new Promise<void>((resolve) =>
+                      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+                    )
+                );
+                pointer = await prepareNativeScrollbarPointer(
+                  (expression) => scrollPage.evaluate(expression),
+                  root,
+                  browserName === 'msedge' ? 'msedge.exe' : 'chrome.exe'
+                );
+                const ownedPointer = pointer;
+                nativePointer = ownedPointer;
+                return {
+                  mapping: ownedPointer.mapping,
+                  close: async () => {
+                    try {
+                      await ownedPointer.close();
+                    } finally {
+                      nativePointer = undefined;
+                      await cdp.send('Browser.setWindowBounds', {
+                        windowId: window.windowId,
+                        bounds: previousBounds,
+                      });
+                      await cdp.detach();
+                    }
+                  },
+                };
+              } catch (error) {
+                await pointer?.close();
+                await cdp.send('Browser.setWindowBounds', {
+                  windowId: window.windowId,
+                  bounds: previousBounds,
+                });
+                await cdp.detach();
+                throw error;
+              }
+            },
+            evaluate: (expression) => scrollPage.evaluate(expression),
+            waitFor: async (expression, _description, timeoutMs = 5000) => {
+              await scrollPage.waitForFunction(expression, undefined, { timeout: timeoutMs });
+            },
+            press: (key) => scrollPage.keyboard.press(key),
+            wheel: async (deltaY) => {
+              const box = await scrollPage.locator('[data-gallery-element="items"]').boundingBox();
+              assert(box, 'Native scrollport has no visible wheel target');
+              await scrollPage.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+              await scrollPage.mouse.wheel(0, deltaY);
+            },
+            hover: async (at) => {
+              assert(nativePointer, 'Native pointer bridge was not prepared');
+              await nativePointer.hover(at);
+            },
+            drag: async (from, to, afterDown) => {
+              assert(nativePointer, 'Native pointer bridge was not prepared');
+              await nativePointer.drag(from, to, afterDown);
+            },
+            resize: (width, height) => scrollPage.setViewportSize({ width, height }),
+            screenshot: async (filename) => {
+              await scrollPage.screenshot({ path: join(output, filename) });
+            },
+          },
+          output
+        );
+      } finally {
+        try {
+          await scrollPage.close();
+          await page.bringToFront();
+        } catch (failure) {
+          observations.scrollbarPageCleanupError = safeError(failure);
+          error ??= failure;
+        }
+      }
+    }
+
+    await page.keyboard.press('Escape');
+    await gallery.waitFor({ state: 'detached' });
+    assert.equal(await page.evaluate(() => window.scrollY), hostScroll);
+    assert(await trigger.evaluate((element) => document.activeElement === element));
+    await trigger.click();
+    await gallery.waitFor({ state: 'visible' });
+    await gallery.locator('button[aria-label="Close"]').click();
+    await gallery.waitFor({ state: 'detached' });
+    observations.reopen = true;
+    assert.deepEqual(pageErrors, []);
+    routes.assertNoQualityRequestOverflow();
+  } catch (failure) {
+    error = failure;
+  } finally {
+    for (const [name, close] of [
+      ['fixture page', () => page.close()],
+      ['fixture routes', () => routes.remove()],
+    ] as const) {
+      try {
+        await close();
+      } catch (failure) {
+        cleanupErrors.push(`${name}: ${safeError(failure)}`);
+      }
+    }
+    await writeFile(
+      join(output, 'native-browser-ui.json'),
+      JSON.stringify(
+        {
+          status: error || pageErrors.length || cleanupErrors.length ? 'failed' : 'passed',
+          scope: 'installed extension on owned deterministic X fixture',
+          observations,
+          pageErrors,
+          cleanupErrors,
+          ...(error ? { error: safeError(error) } : {}),
+        },
+        null,
+        2
+      )
+    );
+  }
+  if (error || pageErrors.length || cleanupErrors.length) {
+    throw new AggregateError(
+      [...(error ? [error] : []), ...pageErrors, ...cleanupErrors],
+      'Native browser UI probe or cleanup failed'
+    );
+  }
+  return { status: 'passed', observations };
 }
 
 async function runGalleryExperienceProbe({
@@ -18666,7 +19220,8 @@ async function runGalleryExperienceProbe({
           status:
             Object.values(phases).every(({ status }) => status === 'passed') &&
             !pageErrors.length &&
-            !cleanupErrors.length
+            !cleanupErrors.length &&
+            !routes.getQualityRequestOverflow()
               ? 'passed'
               : 'failed',
           scope:
@@ -18685,6 +19240,7 @@ async function runGalleryExperienceProbe({
     Object.values(phases).every(({ status }) => status === 'passed'),
     'Gallery experience phase failed'
   );
+  routes.assertNoQualityRequestOverflow();
   assert.deepEqual(pageErrors, []);
   assert.deepEqual(cleanupErrors, []);
   return { status: 'passed', phases, documentationScreenshots };
@@ -18817,6 +19373,7 @@ async function runOpeningFeedbackProbe({
       page,
     });
     assert.deepEqual(pageErrors, [], 'Opening probe page errors');
+    fixtureRoutes.assertNoQualityRequestOverflow();
     observations.runtime = { pageErrors, consoleErrors, pageFetches };
     result = {
       status: 'passed',
@@ -18942,6 +19499,9 @@ async function exerciseInstalledExtension(
   };
   const compactQuotePhoto: CompactEvidence = { status: 'pending', api: [], images: [], steps: [] };
   let apiReuse: unknown = { status: 'pending' };
+  let sourceQualityRequests: QualityRequest[] | null = null;
+  let apiReuseStartCount: number | null = null;
+  let apiReuseEndCount: number | null = null;
   let capacityNotification: unknown = { status: 'pending' };
   let videoLoading: unknown = { status: 'pending' };
   let nativeRedirect: unknown = { status: 'pending' };
@@ -19193,6 +19753,7 @@ async function exerciseInstalledExtension(
       await runAttachmentFilenameCycle({
         page,
         extensionPage,
+        consoleErrors,
         downloads,
         output,
         images,
@@ -19585,6 +20146,9 @@ async function exerciseInstalledExtension(
       capacityNotification = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
+    // Retain the completed source and installed-flow observations before API reuse.
+    sourceQualityRequests = fixtureRoutes.handoffQualityRequests();
+    apiReuseStartCount = fixtureRoutes.qualityRequests.length;
     try {
       apiReuse = await runInstalledMediaApiReuseProfile({
         context,
@@ -19595,10 +20159,12 @@ async function exerciseInstalledExtension(
         output,
         videoPayloads: fixtureRoutes.videoPayloads,
       });
+      fixtureRoutes.assertNoQualityRequestOverflow();
     } catch (error) {
       apiReuse = { status: 'failed', error: safeError(error) };
       followupFailures.push(error);
     }
+    apiReuseEndCount = fixtureRoutes.qualityRequests.length;
     try {
       videoLoading = await runVideoLoadingProfile({
         context,
@@ -19626,18 +20192,20 @@ async function exerciseInstalledExtension(
     const expectedMemoryErrors = new Set(downloadMemory.expectedConsoleErrors ?? []);
     const expectedRenderFaultErrors = new Set(modelessRenderRecovery.expectedConsoleErrors ?? []);
     const expectedOriginalErrors = new Set(originalAvailability.expectedConsoleErrors);
+    const expectedFilenameErrors = new Set(compactQuotePhoto.expectedConsoleErrors ?? []);
     const unexpectedConsoleErrors = consoleErrors.filter(
       (record) =>
         !isExpectedFixtureApiConsoleError(record) &&
         !expectedMemoryErrors.has(record) &&
         !expectedOriginalErrors.has(record) &&
+        !expectedFilenameErrors.has(record) &&
         !expectedRenderFaultErrors.has(record)
     );
     assert.deepEqual(pageErrors, [], 'Installed content script must not raise page errors');
     assert.deepEqual(
       unexpectedConsoleErrors,
       [],
-      'Installed fixture must not log errors beyond its exact mocked API 403'
+      'Installed fixture logged unexpected console errors'
     );
     const nativeTransport = nativeLoopback.snapshot();
     assert.equal(
@@ -19656,6 +20224,7 @@ async function exerciseInstalledExtension(
       cycles.every(({ scroll }) => scroll.restored),
       'Every close must restore the saved scroll position'
     );
+    fixtureRoutes.assertNoQualityRequestOverflow();
     flowResult = {
       cleanup: flowCleanup,
       cycles,
@@ -19670,7 +20239,15 @@ async function exerciseInstalledExtension(
       capacityNotification,
       videoLoading,
       sourceQualityApiResponses: fixtureRoutes.qualityApiResponses,
-      sourceQualityRequests: fixtureRoutes.qualityRequests,
+      sourceQualityRequests: sourceQualityRequests ?? fixtureRoutes.qualityRequests,
+      apiReuseQualityRequests: sourceQualityRequests ? fixtureRoutes.qualityRequests : [],
+      qualityRequestOverflow: fixtureRoutes.getQualityRequestOverflow(),
+      qualityObservation: {
+        retiredCount: sourceQualityRequests?.length ?? null,
+        apiReuseStartCount,
+        apiReuseEndCount,
+        currentCount: fixtureRoutes.qualityRequests.length,
+      },
       mv3RestartCancellation,
       directRestart,
       trustedDownloadInput,
@@ -19759,7 +20336,17 @@ async function exerciseInstalledExtension(
             capacityNotification,
             videoLoading,
             sourceQualityApiResponses: fixtureRoutes?.qualityApiResponses ?? [],
-            sourceQualityRequests: fixtureRoutes?.qualityRequests ?? [],
+            sourceQualityRequests: sourceQualityRequests ?? fixtureRoutes?.qualityRequests ?? [],
+            apiReuseQualityRequests: sourceQualityRequests
+              ? (fixtureRoutes?.qualityRequests ?? [])
+              : [],
+            qualityRequestOverflow: fixtureRoutes?.getQualityRequestOverflow() ?? null,
+            qualityObservation: {
+              retiredCount: sourceQualityRequests?.length ?? null,
+              apiReuseStartCount,
+              apiReuseEndCount,
+              currentCount: fixtureRoutes?.qualityRequests.length ?? null,
+            },
             quotedApiResponses: fixtureRoutes?.quotedApiResponses ?? [],
             flowCleanup,
             mv3RestartCancellation,
@@ -20088,6 +20675,7 @@ async function runExtensionUpgrade({
       await candidatePage.close();
     }
     receipt.method = 'same-path-unpacked-extension-runtime-reload';
+    routes.assertNoQualityRequestOverflow();
     receipt.status = 'passed';
   } catch (error) {
     if (!extensionPage.isClosed()) {
@@ -20395,6 +20983,7 @@ async function runSameVersionAttribution({
       receipt.cases.every((item) => item.status === 'passed'),
       'Same-version case failed'
     );
+    routes.assertNoQualityRequestOverflow();
     receipt.status = 'passed';
   } catch (error) {
     primaryError = error;
@@ -20573,6 +21162,7 @@ async function runSettingsPersistenceProbe({
       retryStillUnsaved: true,
     };
     assert.deepEqual(errors, []);
+    routes.assertNoQualityRequestOverflow();
     evidence.status = 'passed';
     return evidence;
   } catch (error) {
@@ -20662,6 +21252,7 @@ async function runMediaApiReuseFocusedProbe({
     assert.equal(transport.overflow, false, 'API reuse fixture exceeded its transport cap');
     assert.equal(transport.serverError, false, 'API reuse fixture listener failed');
     assert.equal(transport.activeCount, 0, 'API reuse fixture retains an active response');
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primarySeen = true;
     primaryError = error;
@@ -20746,6 +21337,7 @@ async function runSourceImageFailureFocusedProbe({
     assert.equal(transport.overflow, false, 'Source image fixture exceeded its transport cap');
     assert.equal(transport.serverError, false, 'Source image fixture listener failed');
     assert.equal(transport.activeCount, 0, 'Source image fixture retains an active response');
+    routes.assertNoQualityRequestOverflow();
   } catch (error) {
     primaryError = error;
     evidence.status = 'failed';
@@ -21210,6 +21802,41 @@ export async function run({
     );
     assert.equal(liveUrls.length, 0, 'Settings probe uses only the owned fixture');
   }
+  const nativeUiSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/native-browser-ui.json'),
+    'utf8'
+  ).catch((failure: unknown) => {
+    if (failure && typeof failure === 'object' && 'code' in failure && failure.code === 'ENOENT') {
+      return null;
+    }
+    throw failure;
+  });
+  const nativeUiProbe = nativeUiSelectorText !== null;
+  let nativeScrollbarTakeover = false;
+  if (nativeUiSelectorText !== null) {
+    const selector: unknown = JSON.parse(nativeUiSelectorText);
+    nativeScrollbarTakeover =
+      typeof selector === 'object' &&
+      selector !== null &&
+      'scrollbarTakeover' in selector &&
+      selector.scrollbarTakeover === true;
+    assert.deepEqual(selector, {
+      scenario: 'native-browser-ui',
+      ...(nativeScrollbarTakeover ? { scrollbarTakeover: true } : {}),
+    });
+    assert.equal(installation, 'extension', 'Native UI probe requires the installed extension');
+    assert.equal(liveUrls.length, 0, 'Native UI probe uses only the owned fixture');
+    assert.equal(liveObservation, null);
+    assert(!upgradeInput && !sameVersionInput);
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['native-browser-ui.json'],
+      'Native UI probe requires an exclusive selector'
+    );
+  }
   if (uxDetailsProbe) {
     assert(
       !openingProbe && !recoveryProbe && !failedEntryProbe && !experienceProbe && !settingsProbe,
@@ -21279,6 +21906,7 @@ export async function run({
         mediaApiProbe ||
         sourceImageProbe ||
         settingsProbe ||
+        nativeUiProbe ||
         uxDetailsProbe ||
         videoFormatProbe,
     }
@@ -21401,10 +22029,13 @@ export async function run({
       acceptDownloads: true,
       downloadsPath: downloads,
       locale: 'en-US',
-      viewport: { width: 1280, height: 800 },
+      viewport: nativeScrollbarTakeover ? null : { width: 1280, height: 800 },
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
+        ...(nativeScrollbarTakeover && browserName === 'chrome'
+          ? ['--enable-smooth-scrolling']
+          : []),
         `--host-resolver-rules=MAP pbs.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP video.twimg.com:443 127.0.0.1:${nativeLoopback.port},MAP x.com:443 127.0.0.1:${nativeLoopback.port}`,
         `--ignore-certificate-errors-spki-list=${nativeLoopback.spkiSha256}`,
       ],
@@ -21536,6 +22167,18 @@ export async function run({
           nativeLoopback,
           images,
           displayImages,
+        });
+      } else if (nativeUiProbe) {
+        result.nativeBrowserUi = await runNativeBrowserUiProbe({
+          context,
+          browserName,
+          extensionId,
+          nativeLoopback,
+          output,
+          root,
+          images,
+          displayImages,
+          scrollbarTakeover: nativeScrollbarTakeover,
         });
       } else if (experienceProbe) {
         result.galleryExperience = await runGalleryExperienceProbe({

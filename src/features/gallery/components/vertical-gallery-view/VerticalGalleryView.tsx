@@ -227,6 +227,7 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
   useGalleryWheelRedirect({
     containerEl,
     itemsContainerEl,
+    onRedirectedWheel: scroll.claimRedirectedWheel,
   });
 
   // Memoized handlers object to prevent unnecessary Toolbar re-renders

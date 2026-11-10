@@ -7,12 +7,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 
 const mockStorageGet = vi.fn().mockResolvedValue(undefined);
 const mockStorageSet = vi.fn().mockResolvedValue(undefined);
+const mockStorageGetState = vi.fn();
 const mockStorageRemove = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@shared/services/persistent-storage', () => ({
   getPersistentStorage: () => ({
     get: mockStorageGet,
     set: mockStorageSet,
+    getState: mockStorageGetState,
     remove: mockStorageRemove,
     has: vi.fn().mockResolvedValue(false),
     getString: vi.fn().mockResolvedValue(undefined),
@@ -57,6 +59,10 @@ describe('LanguageService', () => {
   beforeEach(() => {
     mockStorageGet.mockReset().mockResolvedValue(undefined);
     mockStorageSet.mockReset().mockResolvedValue(undefined);
+    mockStorageGetState.mockReset().mockImplementation(async () => ({
+      value: mockStorageSet.mock.lastCall?.[1],
+      available: true,
+    }));
     mockStorageRemove.mockReset().mockResolvedValue(undefined);
     restoreNavigatorLanguage();
   });

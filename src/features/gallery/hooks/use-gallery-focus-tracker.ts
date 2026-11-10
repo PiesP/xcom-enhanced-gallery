@@ -2,7 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 /**
- * Tracks focused gallery item based on scroll position using IntersectionObserver.
+ * Tracks focused gallery item based on scroll position.
  */
 
 import { FocusCoordinator } from '@features/gallery/logic/focus-coordinator';
@@ -26,10 +26,6 @@ interface UseGalleryFocusTrackerOptions {
   isScrolling: Accessor<boolean>;
   /** Last navigation trigger */
   lastNavigationTrigger: Accessor<string | null>;
-  /** IntersectionObserver threshold (default: 0) */
-  threshold?: number | number[];
-  /** IntersectionObserver root margin (default: '0px') */
-  rootMargin?: string;
 }
 
 /** Return type for useGalleryFocusTracker. */
@@ -60,8 +56,6 @@ export function useGalleryFocusTracker(
     isEnabled: shouldTrack,
     container,
     activeIndex: () => gallerySignals.currentIndex,
-    ...(options.threshold !== undefined && { threshold: options.threshold }),
-    rootMargin: options.rootMargin ?? '0px',
     onFocusChange: (index, source) => {
       if (source === 'auto' && index !== null) {
         // Update focused index for UI tracking only — do NOT trigger

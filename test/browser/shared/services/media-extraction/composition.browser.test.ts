@@ -7,7 +7,7 @@ import type {
   MediaExtractionResult,
   TweetClickContext,
 } from '@shared/types/media.types';
-import { createFailureResult } from '@shared/types/media.types';
+import { createFailureResult, ErrorCode } from '@shared/types/media.types';
 import { describe, expect, it, vi } from 'vite-plus/test';
 
 const context: TweetClickContext = {
@@ -30,7 +30,7 @@ const selected: MediaExtractionResult = {
 };
 
 function collaborators() {
-  const readContext = vi.fn(() => context);
+  const readContext = vi.fn<() => TweetClickContext | null>(() => context);
   const api = {
     extract: vi.fn(),
     invalidateMetadata: vi.fn(),
@@ -41,6 +41,37 @@ function collaborators() {
 }
 
 describe('composed extraction session', () => {
+  it('identifies an already aborted extraction without dispatching to its collaborators', async () => {
+    const ports = collaborators();
+    const session = new MediaExtractionService(ports);
+    const controller = new AbortController();
+    controller.abort();
+    const result = await session.extractFromClickedElement(document.createElement('img'), {
+      signal: controller.signal,
+    });
+    expect(result).toMatchObject({ success: false, failureKind: 'cancelled' });
+    expect(result.errors?.[0]?.code).toBe(ErrorCode.CANCELLED);
+    expect(ports.readContext).not.toHaveBeenCalled();
+    expect(ports.api.extract).not.toHaveBeenCalled();
+    expect(ports.dom.extract).not.toHaveBeenCalled();
+    session.dispose();
+  });
+
+  it('keeps missing click context distinct from cancellation', async () => {
+    const ports = collaborators();
+    ports.readContext.mockReturnValue(null);
+    const session = new MediaExtractionService(ports);
+    try {
+      const result = await session.extractFromClickedElement(document.createElement('img'));
+      expect(result).toMatchObject({ success: false });
+      expect(result.errors?.[0]?.code).toBe(ErrorCode.NO_MEDIA_FOUND);
+      expect(result.failureKind).toBeUndefined();
+      expect(ports.api.extract).not.toHaveBeenCalled();
+    } finally {
+      session.dispose();
+    }
+  });
+
   it('passes click ownership to the API and uses DOM recovery only after API failure', async () => {
     const ports = collaborators();
     ports.api.extract
@@ -92,11 +123,79 @@ describe('composed extraction session', () => {
     const late = await pending;
     expect(late.success).toBe(false);
     expect(late.metadata?.error).toBe('Extraction cancelled');
+    expect(late.failureKind).toBe('cancelled');
+    expect(late.errors?.[0]?.code).toBe(ErrorCode.CANCELLED);
     expect(ports.dom.extract).not.toHaveBeenCalled();
     expect(ports.api.dispose).toHaveBeenCalledTimes(1);
     expect(ports.api.invalidateMetadata).not.toHaveBeenCalled();
-    expect((await session.extractFromClickedElement(element)).metadata?.error).toBe(
-      'Extraction cancelled'
+    const retired = await session.extractFromClickedElement(element);
+    expect(retired).toMatchObject({ success: false, failureKind: 'cancelled' });
+    expect(retired.errors?.[0]?.code).toBe(ErrorCode.CANCELLED);
+  });
+
+  it('cancels while waiting to start DOM recovery without invoking the DOM extractor', async () => {
+    const ports = collaborators();
+    ports.api.extract.mockResolvedValue(
+      createFailureResult('provider unavailable', 'twitter-api', 'api-failed')
     );
+    let releaseYield!: () => void;
+    let enteredYield!: () => void;
+    const entered = new Promise<void>((resolve) => {
+      enteredYield = resolve;
+    });
+    vi.stubGlobal('scheduler', {
+      yield: () => {
+        enteredYield();
+        return new Promise<void>((resolve) => {
+          releaseYield = resolve;
+        });
+      },
+    });
+    const session = new MediaExtractionService(ports);
+    const controller = new AbortController();
+    try {
+      const pending = session.extractFromClickedElement(document.createElement('img'), {
+        signal: controller.signal,
+      });
+      await entered;
+      controller.abort();
+      releaseYield();
+      const result = await pending;
+      expect(result).toMatchObject({ success: false, failureKind: 'cancelled' });
+      expect(result.errors?.[0]?.code).toBe(ErrorCode.CANCELLED);
+      expect(ports.dom.extract).not.toHaveBeenCalled();
+    } finally {
+      session.dispose();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('does not return DOM media after its caller cancels while recovery is pending', async () => {
+    const ports = collaborators();
+    ports.api.extract.mockResolvedValue(
+      createFailureResult('provider unavailable', 'twitter-api', 'api-failed')
+    );
+    let complete!: (value: MediaExtractionResult) => void;
+    ports.dom.extract.mockImplementationOnce(
+      () =>
+        new Promise<MediaExtractionResult>((resolve) => {
+          complete = resolve;
+        })
+    );
+    const session = new MediaExtractionService(ports);
+    const controller = new AbortController();
+    try {
+      const pending = session.extractFromClickedElement(document.createElement('img'), {
+        signal: controller.signal,
+      });
+      await vi.waitFor(() => expect(ports.dom.extract).toHaveBeenCalledTimes(1));
+      controller.abort();
+      complete(selected);
+      const result = await pending;
+      expect(result).toMatchObject({ success: false, failureKind: 'cancelled' });
+      expect(result.errors?.[0]?.code).toBe(ErrorCode.CANCELLED);
+    } finally {
+      session.dispose();
+    }
   });
 });

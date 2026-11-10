@@ -54,6 +54,11 @@
       "validation/windows/userscript-live-output.ts",
       "validation/windows/live-filename.ts",
       "validation/windows/firefox-install.ts",
+      "validation/windows/firefox-native-ui.ts",
+      "validation/windows/native-scrollbar-takeover.ts",
+      "validation/windows/native-pointer.ts",
+      "validation/windows/native-scrollbar-pointer.ps1",
+
       "validation/windows/firefox-native-proxy.ts",
       "validation/windows/https-loopback-lifecycle.ts",
       "validation/windows/media-api-reuse-profile.ts",

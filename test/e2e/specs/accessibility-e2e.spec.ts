@@ -5,15 +5,15 @@
  * @fileoverview Accessibility E2E tests for X.com Enhanced Gallery userscript.
  *
  * Tests verify ARIA attributes, focus management, and accessibility features
- * by rendering the gallery in a real browser and inspecting the DOM:
- * 1. Gallery container has role='dialog' and aria-modal='true'
+ * by rendering the gallery and inspecting the DOM and browser accessibility tree:
+ * 1. Gallery container is a named native modal dialog
  * 2. Gallery container has lang attribute (not empty)
  * 3. Gallery items have role='listitem' and aria-posinset/aria-setsize
  * 4. Image alt text contains position info (e.g., 'Image 1 of' pattern)
  * 5. Video elements have aria-label
- * 6. Toolbar element has role='toolbar'
- * 7. Focus trap: Tab key cycles within gallery (doesn't escape to page)
- * 8. Body siblings are inert and hidden from assistive technology while the gallery is open
+ * 6. Toolbar uses native fieldset and group semantics
+ * 7. Native modal Tab key cannot focus the background page
+ * 8. Body siblings are implicitly inert and absent from the accessibility tree
  * 9. Focus returns to trigger element when gallery closes
  *
  * Environment: Playwright + Chromium (headless)
@@ -24,9 +24,24 @@
 import { existsSync } from 'node:fs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page, test } from '@playwright/test';
-import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML } from '../fixtures/artifacts';
+import { DEV_USERSCRIPT_PATH, MOCK_GALLERY_HTML, MOCK_IMAGE } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
+
+async function exposedAccessibilityNodes(page: Page, role: string, name?: string): Promise<number> {
+  const session = await page.context().newCDPSession(page);
+  try {
+    const { nodes } = await session.send('Accessibility.getFullAXTree');
+    return nodes.filter(
+      (node) =>
+        !node.ignored &&
+        node.role?.value === role &&
+        (name === undefined || node.name?.value === name)
+    ).length;
+  } finally {
+    await session.detach();
+  }
+}
 
 /**
  * Setup: Navigate to mock page + install GM mocks + inject userscript.
@@ -133,14 +148,17 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     }
   });
 
-  test('Gallery container has role=dialog and aria-modal=true', async ({ page }) => {
+  test('Gallery container is a named native modal dialog', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
     const container = page.locator('[data-xeg-gallery-container]');
     await expect(container).toBeVisible();
-    await expect(container).toHaveAttribute('role', 'dialog');
-    await expect(container).toHaveAttribute('aria-modal', 'true');
+    expect(
+      await container.evaluate(
+        (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+      )
+    ).toBe(true);
     await expect(page.getByRole('dialog', { name: 'Image gallery' })).toBeVisible();
 
     await closeGallery(page);
@@ -148,10 +166,25 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
   test('clicking the empty gallery background closes the dialog', async ({ page }) => {
     await setupGalleryPage(page);
+    await page.route('https://pbs.twimg.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: MOCK_IMAGE,
+      })
+    );
     await openGallery(page);
 
     const container = page.locator('[data-xeg-gallery-container]');
     const items = page.locator('[data-gallery-element="items"]');
+    await expect(items.locator('[data-gallery-element="item"]').nth(0)).toHaveAttribute(
+      'data-media-loaded',
+      'true'
+    );
+    await expect(items.locator('[data-gallery-element="item"]').nth(1)).toHaveAttribute(
+      'data-media-loaded',
+      'true'
+    );
     const backgroundPoint = await items.evaluate((element) => {
       const item = element.querySelector<HTMLElement>('[data-gallery-element="item"]');
       if (!item) {
@@ -170,8 +203,21 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       }
       return { x, y };
     });
+    await page.evaluate(() => {
+      document.addEventListener(
+        'pointerdown',
+        (event) => {
+          document.documentElement.dataset.backdropPointerTarget =
+            event.target instanceof Element
+              ? (event.target.getAttribute('data-gallery-element') ?? event.target.tagName)
+              : 'unknown';
+        },
+        { capture: true, once: true }
+      );
+    });
 
     await items.click({ position: backgroundPoint });
+    expect(await page.locator('html').getAttribute('data-backdrop-pointer-target')).toBe('items');
 
     await expect(container).toHaveCount(0);
   });
@@ -304,6 +350,17 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
+  test('unconsumed Escape on a focused video closes the gallery', async ({ page }) => {
+    await setupGalleryPage(page);
+    await openGallery(page);
+
+    const video = page.locator('[data-gallery-element="item"] video').first();
+    await video.focus();
+    await expect(video).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('dialog[data-xeg-gallery-container]')).toHaveCount(0);
+  });
+
   test('Toolbar controls use group semantics and native Tab navigation', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
@@ -324,7 +381,7 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
     await closeGallery(page);
   });
 
-  test('background content is hidden from assistive technology when gallery is open', async ({
+  test('native modal hides background content from assistive technology and focus', async ({
     page,
   }) => {
     await setupGalleryPage(page);
@@ -334,14 +391,22 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     await openGallery(page);
 
-    await expect(outside).toHaveAttribute('aria-hidden', 'true');
+    await expect.poll(() => exposedAccessibilityNodes(page, 'main')).toBe(0);
+    expect(
+      await outside.evaluate((element) => {
+        element.setAttribute('tabindex', '-1');
+        (element as HTMLElement).focus();
+        return document.activeElement === element;
+      })
+    ).toBe(false);
 
     await closeGallery(page);
 
     await expect(outside).not.toHaveAttribute('aria-hidden', 'true');
+    await expect.poll(() => exposedAccessibilityNodes(page, 'main')).toBe(1);
   });
 
-  test('body siblings added while open are hidden and restored with their prior state', async ({
+  test('late body siblings stay implicitly inert and retain their authored ARIA state', async ({
     page,
   }) => {
     await setupGalleryPage(page);
@@ -352,23 +417,38 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       const element = document.createElement('aside');
       element.id = 'late-background-sibling';
       element.setAttribute('aria-hidden', 'false');
+      const button = document.createElement('button');
+      button.textContent = 'Late background action';
+      element.append(button);
       document.body.append(element);
     });
 
-    await expect(lateSibling).toHaveAttribute('aria-hidden', 'true');
-    await expect(lateSibling).toHaveAttribute('inert', '');
+    await expect(lateSibling).toHaveAttribute('aria-hidden', 'false');
+    await expect(lateSibling).not.toHaveAttribute('inert', '');
+    await expect
+      .poll(() => exposedAccessibilityNodes(page, 'button', 'Late background action'))
+      .toBe(0);
+    expect(
+      await lateSibling.locator('button').evaluate((button) => {
+        button.focus();
+        return document.activeElement === button;
+      })
+    ).toBe(false);
 
     await closeGallery(page);
 
     await expect(lateSibling).toHaveAttribute('aria-hidden', 'false');
     await expect(lateSibling).not.toHaveAttribute('inert', '');
+    await expect
+      .poll(() => exposedAccessibilityNodes(page, 'button', 'Late background action'))
+      .toBe(1);
   });
 
-  test('focus trap excludes hidden and negative-tabindex descendants', async ({ page }) => {
+  test('native Tab excludes hidden and negative-tabindex descendants', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
-    const result = await page.evaluate(() => {
+    await page.evaluate(() => {
       const container = document.querySelector<HTMLElement>('[data-xeg-gallery-container]');
       if (!container) {
         throw new Error('Gallery container missing');
@@ -387,31 +467,32 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
       container.append(hiddenButton);
 
       visibleButton.focus();
-      const event = new KeyboardEvent('keydown', {
-        key: 'Tab',
-        bubbles: true,
-        cancelable: true,
-      });
-      visibleButton.dispatchEvent(event);
-
-      return {
-        defaultPrevented: event.defaultPrevented,
-        focusStayedInGallery: container.contains(document.activeElement),
-      };
     });
-
-    expect(result).toEqual({ defaultPrevented: true, focusStayedInGallery: true });
+    await page.keyboard.press('Shift+Tab');
+    expect(
+      await page.evaluate(() => {
+        const active = document.activeElement;
+        return (
+          active?.closest('dialog') !== null &&
+          active?.textContent !== 'Visible last button' &&
+          active?.getAttribute('tabindex') !== '-2' &&
+          !active?.hasAttribute('hidden')
+        );
+      })
+    ).toBe(true);
     await closeGallery(page);
   });
 
-  test('Shift+Tab from the initially focused dialog wraps to its last control', async ({
-    page,
-  }) => {
+  test('Shift+Tab from the dialog never focuses the background page', async ({ page }) => {
     await setupGalleryPage(page);
     await openGallery(page);
 
     const container = page.locator('[data-xeg-gallery-container]');
-    const lastButton = page.locator('#focus-trap-last-button');
+    await page.evaluate(() => {
+      const button = document.createElement('button');
+      button.id = 'background-focus-check';
+      document.body.append(button);
+    });
     await container.evaluate((element) => {
       const button = document.createElement('button');
       button.id = 'focus-trap-last-button';
@@ -422,7 +503,9 @@ test.describe('X.com Enhanced Gallery Accessibility E2E', () => {
 
     await page.keyboard.press('Shift+Tab');
 
-    await expect(lastButton).toBeFocused();
+    expect(await page.evaluate(() => document.activeElement?.id === 'background-focus-check')).toBe(
+      false
+    );
     await closeGallery(page);
   });
 

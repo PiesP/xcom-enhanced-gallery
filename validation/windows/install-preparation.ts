@@ -520,7 +520,22 @@ export async function installFixtureRoutes(
   const quotedApiResponses: ApiRecord[] = [];
   const unavailableApiResponses: ApiRecord[] = [];
   const qualityApiResponses: ApiRecord[] = [];
-  const qualityRequests: QualityRequest[] = [];
+  let qualityRequests: QualityRequest[] = [];
+  let qualityRequestsHandedOff = false;
+  let qualityRequestOverflow: {
+    path: string;
+    name: string | null;
+    resourceType: string;
+    currentCount: number;
+    limit: number;
+  } | null = null;
+  const assertNoQualityRequestOverflow = () => {
+    assert.equal(
+      qualityRequestOverflow,
+      null,
+      `Source-quality request observation overflow: ${JSON.stringify(qualityRequestOverflow)}`
+    );
+  };
   const compactApiResponses: ApiRecord[] = [];
   const compactImageRequests: QualityRequest[] = [];
   const filenameFaults: Array<{ transport: 'context'; status: 404; path: string }> = [];
@@ -1073,10 +1088,17 @@ export async function installFixtureRoutes(
         url.pathname.startsWith('/media/') &&
         IMAGE_URL_MARKERS.some((marker) => url.pathname.includes(marker))
       ) {
-        assert(
-          qualityRequests.length < MAX_QUALITY_IMAGE_REQUESTS,
-          'Source-quality request observation overflow'
-        );
+        if (qualityRequests.length >= MAX_QUALITY_IMAGE_REQUESTS) {
+          qualityRequestOverflow ??= {
+            path: url.pathname,
+            name: url.searchParams.get('name'),
+            resourceType: route.request().resourceType(),
+            currentCount: qualityRequests.length,
+            limit: MAX_QUALITY_IMAGE_REQUESTS,
+          };
+          await route.abort('blockedbyclient');
+          return;
+        }
         qualityRequests.push({
           path: url.pathname,
           name: url.searchParams.get('name'),
@@ -1110,7 +1132,19 @@ export async function installFixtureRoutes(
     qualityApiResponses,
     quotedApiResponses,
     unavailableApiResponses,
-    qualityRequests,
+    get qualityRequests() {
+      return qualityRequests;
+    },
+    getQualityRequestOverflow: () => qualityRequestOverflow,
+    assertNoQualityRequestOverflow,
+    handoffQualityRequests() {
+      assertNoQualityRequestOverflow();
+      assert.equal(qualityRequestsHandedOff, false, 'Quality observations already handed off');
+      const completed = qualityRequests;
+      qualityRequests = [];
+      qualityRequestsHandedOff = true;
+      return completed;
+    },
     compactApiResponses,
     compactImageRequests,
     filenameFaults,

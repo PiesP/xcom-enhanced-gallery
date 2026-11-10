@@ -25,6 +25,7 @@ const mocks = vi.hoisted(() => ({
   readUpgradeInput: vi.fn(),
   readSameVersionInput: vi.fn(),
 }));
+const routeOverflowAssertion = vi.fn();
 
 vi.mock('./extension-native-loopback.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./extension-native-loopback.ts')>()),
@@ -54,6 +55,7 @@ const qualityImages = [Buffer.from('first'), Buffer.from('second'), Buffer.from(
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  routeOverflowAssertion.mockReset();
   root = await mkdtemp(join(tmpdir(), 'xeg-api-selector-'));
   output = join(root, 'output');
   inputs = join(root, 'validation/windows/inputs');
@@ -63,6 +65,7 @@ beforeEach(async () => {
   mocks.installRoutes.mockResolvedValue({
     videoPayloads: { fixture: Buffer.from('video') },
     unhandledRequests: [],
+    assertNoQualityRequestOverflow: routeOverflowAssertion,
     remove: vi.fn(async () => {}),
   });
   mocks.startLoopback.mockResolvedValue({
@@ -141,6 +144,7 @@ test('exclusive selector reaches the unchanged API helper with shared quality ro
   assert.equal(page.close.mock.calls.length, 1);
   const routes = await mocks.installRoutes.mock.results[0]?.value;
   assert(routes);
+  assert.equal(routes.assertNoQualityRequestOverflow.mock.calls.length, 1);
   assert.equal(routes.remove.mock.calls.length, 1);
   assert.equal(context.close.mock.calls.length, 1);
   const receipt = JSON.parse(await readFile(join(output, 'installation-result.json'), 'utf8'));
@@ -163,6 +167,30 @@ test('helper failure retains a failed installation result and still closes owned
   const routes = await mocks.installRoutes.mock.results[0]?.value;
   assert(routes);
   assert.equal(routes.remove.mock.calls.length, 1);
+});
+
+test('quality observation overflow fails the focused owner and still closes owned resources', async () => {
+  const { page, context, chromium } = installedBrowser();
+  routeOverflowAssertion.mockImplementationOnce(() => {
+    throw new Error('Source-quality request observation overflow: controlled route boundary');
+  });
+  await assert.rejects(run(options(chromium)), /Source-quality request observation overflow/u);
+  assert.equal(mocks.runApiReuse.mock.calls.length, 1);
+  assert.equal(routeOverflowAssertion.mock.calls.length, 1);
+  const routes = await mocks.installRoutes.mock.results[0]?.value;
+  assert(routes);
+  assert.equal(routes.remove.mock.calls.length, 1);
+  assert.equal(page.close.mock.calls.length, 1);
+  assert.equal(context.close.mock.calls.length, 1);
+  const loopback = await mocks.startLoopback.mock.results[0]?.value;
+  assert(loopback);
+  assert.equal(loopback.close.mock.calls.length, 1);
+  const receipt = JSON.parse(await readFile(join(output, 'installation-result.json'), 'utf8'));
+  assert.equal(receipt.status, 'failed');
+  assert.match(receipt.error, /Source-quality request observation overflow/u);
+  assert.equal(receipt.cleanup.browserClosed, true);
+  assert.equal(receipt.cleanup.fixtureLoopbackClosed, true);
+  assert.equal(receipt.cleanup.profileRemoved, true);
 });
 
 test('selector rejects extra fields, other selectors, userscript, and public URLs before browser launch', async () => {

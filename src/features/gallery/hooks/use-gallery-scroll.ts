@@ -23,11 +23,11 @@ interface UseGalleryScrollOptions {
   readonly container: MaybeAccessor<HTMLElement | null>;
   /** Scroll target (defaults to container) */
   readonly scrollTarget?: MaybeAccessor<HTMLElement | null>;
-  /** Callback when scrolling ends (after idle timeout) */
+  /** Callback when displacement ends, or bounded scroll input has no displacement */
   readonly onScrollEnd?: () => void;
   /** Whether scroll handling is enabled */
   readonly enabled?: MaybeAccessor<boolean>;
-  /** Timestamp of last programmatic scroll (events within 100ms ignored) */
+  /** Timestamp used to recognize the start of a programmatic scroll sequence */
   readonly programmaticScrollTimestamp?: Accessor<number>;
 }
 
@@ -35,12 +35,16 @@ interface UseGalleryScrollOptions {
 interface UseGalleryScrollReturn {
   readonly isScrolling: Accessor<boolean>;
   readonly lastScrollTime: Accessor<number>;
+  /** Explicit navigation supersedes earlier user scroll activity. */
+  readonly beginProgrammaticScroll: () => void;
+  /** Gallery-background wheel is redirected before reaching the scrollport. */
+  readonly claimRedirectedWheel: () => void;
 }
 
-/** Idle timeout after scroll ends (ms) */
-const SCROLL_IDLE_TIMEOUT = SCROLL_IDLE_TIMEOUT_MS;
+/** Bounds user input when no scroll position changes and scrollend cannot fire. */
+const INPUT_IDLE_TIMEOUT = SCROLL_IDLE_TIMEOUT_MS;
 
-/** Window to ignore programmatic scroll events (ms) */
+/** Window to recognize the first event in a programmatic scroll sequence. */
 const PROGRAMMATIC_SCROLL_WINDOW = PROGRAMMATIC_SCROLL_WINDOW_MS;
 
 /** Listener context prefix used for managed EventManager entries */
@@ -49,9 +53,8 @@ const LISTENER_CONTEXT_PREFIX = 'useGalleryScroll';
 /**
  * Hook for tracking user scroll activity on the gallery container.
  *
- * Monitors scroll events with idle detection — after scrolling stops for
- * a configurable timeout, the `isScrolling` signal flips to false and
- * the `onScrollEnd` callback fires.
+ * Uses native scrollend for displaced scrolling. A short timer owns only
+ * input without displacement, for which no scrollend is emitted.
  *
  * @param options - Container, scroll target, and end-of-scroll callback
  * @returns Reactive isScrolling signal and lastScrollTime timestamp
@@ -73,25 +76,31 @@ export function useGalleryScroll({
 
   const [isScrolling, setIsScrolling] = createSignal(false);
   const [lastScrollTime, setLastScrollTime] = createSignal(0);
-  const scrollIdleTimer = createTimeout();
+  const inputIdleTimer = createTimeout();
+  let inputAwaitingMovement = false;
+  let userScrollObserved = false;
+  let programmaticScrollActive = false;
 
   const markScrolling = (): void => {
     setIsScrolling(true);
     setLastScrollTime(performance.now());
   };
 
-  const scheduleScrollEnd = (): void => {
-    scrollIdleTimer.set(() => {
-      setIsScrolling(false);
-      if (__DEV__) {
-        logger.debug('useGalleryScroll: Scroll ended');
-      }
-      onScrollEnd?.();
-    }, SCROLL_IDLE_TIMEOUT);
+  const settleScroll = (): void => {
+    inputIdleTimer.clear();
+    inputAwaitingMovement = false;
+    userScrollObserved = false;
+    setIsScrolling(false);
+    if (__DEV__) {
+      logger.debug('useGalleryScroll: Scroll ended');
+    }
+    onScrollEnd?.();
   };
 
-  const shouldIgnoreScroll = (): boolean =>
-    performance.now() - programmaticTimestampAccessor() < PROGRAMMATIC_SCROLL_WINDOW;
+  const shouldIgnoreScroll = (): boolean => {
+    const programmaticAt = programmaticTimestampAccessor();
+    return programmaticAt > 0 && performance.now() - programmaticAt < PROGRAMMATIC_SCROLL_WINDOW;
+  };
 
   /**
    * Check if wheel event originated from toolbar or its panels
@@ -112,6 +121,22 @@ export function useGalleryScroll({
     );
   };
 
+  const claimScrollInput = (): void => {
+    markScrolling();
+    programmaticScrollActive = false;
+    if (userScrollObserved) {
+      // A displaced scroll already has a native completion event. Boundary
+      // input must not replace that ownership with an idle deadline.
+      return;
+    }
+    inputAwaitingMovement = true;
+    inputIdleTimer.set(() => {
+      if (inputAwaitingMovement) {
+        settleScroll();
+      }
+    }, INPUT_IDLE_TIMEOUT);
+  };
+
   const handleWheel = (event: WheelEvent): void => {
     if (!isGalleryOpen()) {
       return;
@@ -123,25 +148,72 @@ export function useGalleryScroll({
     const isInternal =
       Array.isArray(path) &&
       path.some((el) => el instanceof HTMLElement && isGalleryInternalElement(el));
-    if (!isInternal) {
+    if (!isInternal || isToolbarScroll(event)) {
+      return;
+    }
+    claimScrollInput();
+  };
+
+  const handlePointerDown = (event: PointerEvent, scrollElement: HTMLElement): void => {
+    if (
+      !isGalleryOpen() ||
+      event.target !== scrollElement ||
+      !event.isPrimary ||
+      event.pointerType !== 'mouse' ||
+      event.button !== 0 ||
+      scrollElement.scrollHeight <= scrollElement.clientHeight ||
+      (!programmaticScrollActive && !shouldIgnoreScroll())
+    ) {
       return;
     }
 
-    // Ignore wheel events from toolbar and its panels
-    if (isToolbarScroll(event)) {
-      return;
-    }
+    // Native scrollbar presses target the scrollport in both classic and
+    // overlay engines. Direct surface input can interrupt smooth navigation;
+    // descendant media, forms, and panels retain their own pointer handling.
+    claimScrollInput();
+    scrollElement.scrollTo({
+      left: scrollElement.scrollLeft,
+      top: scrollElement.scrollTop,
+      behavior: 'instant',
+    });
+  };
 
-    markScrolling();
-    scheduleScrollEnd();
+  const beginProgrammaticScroll = (): void => {
+    inputIdleTimer.clear();
+    inputAwaitingMovement = false;
+    userScrollObserved = false;
+    programmaticScrollActive = false;
+    setIsScrolling(false);
   };
 
   const handleScroll = (): void => {
-    if (!isGalleryOpen() || shouldIgnoreScroll()) {
+    if (!isGalleryOpen()) {
       return;
     }
+    if (
+      !inputAwaitingMovement &&
+      !userScrollObserved &&
+      (programmaticScrollActive || shouldIgnoreScroll())
+    ) {
+      // Smooth programmatic scrolling can outlive the timestamp window.
+      // Its native completion, or later user input, releases this ownership.
+      programmaticScrollActive = true;
+      return;
+    }
+    inputAwaitingMovement = false;
+    inputIdleTimer.clear();
+    userScrollObserved = true;
     markScrolling();
-    scheduleScrollEnd();
+  };
+
+  const handleScrollEnd = (): void => {
+    if (programmaticScrollActive) {
+      programmaticScrollActive = false;
+      return;
+    }
+    if (isGalleryOpen() && userScrollObserved) {
+      settleScroll();
+    }
   };
 
   createEffect(() => {
@@ -152,7 +224,10 @@ export function useGalleryScroll({
 
     if (!isEnabled || !eventTarget) {
       setIsScrolling(false);
-      scrollIdleTimer.clear();
+      inputIdleTimer.clear();
+      inputAwaitingMovement = false;
+      userScrollObserved = false;
+      programmaticScrollActive = false;
       return;
     }
 
@@ -167,7 +242,10 @@ export function useGalleryScroll({
     };
 
     registerListener('wheel', handleWheel as EventListener);
+    registerListener('pointerdown', ((event: PointerEvent) =>
+      handlePointerDown(event, eventTarget)) as EventListener);
     registerListener('scroll', handleScroll as EventListener);
+    registerListener('scrollend', handleScrollEnd as EventListener);
 
     if (__DEV__) {
       logger.debug('useGalleryScroll: Listeners registered', { context: listenerContext });
@@ -175,12 +253,24 @@ export function useGalleryScroll({
 
     onCleanup(() => {
       eventManager.removeByContext(listenerContext);
-      scrollIdleTimer.clear();
+      inputIdleTimer.clear();
+      inputAwaitingMovement = false;
+      userScrollObserved = false;
+      programmaticScrollActive = false;
       setIsScrolling(false);
     });
 
-    // scrollIdleTimer auto-cleans up via createTimeout's onCleanup.
+    // inputIdleTimer auto-cleans up via createTimeout's onCleanup.
   });
 
-  return { isScrolling, lastScrollTime };
+  return {
+    isScrolling,
+    lastScrollTime,
+    beginProgrammaticScroll,
+    claimRedirectedWheel: () => {
+      if (isGalleryOpen()) {
+        claimScrollInput();
+      }
+    },
+  };
 }

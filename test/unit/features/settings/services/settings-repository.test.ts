@@ -90,7 +90,7 @@ describe('PersistentSettingsRepository', () => {
       },
     });
 
-    const result = await new PersistentSettingsRepository().load();
+    const result = (await new PersistentSettingsRepository().loadState()).settings;
 
     expect(result.gallery).toEqual(DEFAULT_SETTINGS.gallery);
     expect(result.toolbar.autoHideDelay).toBe(DEFAULT_SETTINGS.toolbar.autoHideDelay);
@@ -108,7 +108,7 @@ describe('PersistentSettingsRepository', () => {
       },
     });
 
-    const result = await new PersistentSettingsRepository().load();
+    const result = (await new PersistentSettingsRepository().loadState()).settings;
 
     expect(mockStorageSet).toHaveBeenCalledWith('xeg-app-settings', {
       ...result,
@@ -132,7 +132,7 @@ describe('PersistentSettingsRepository', () => {
     Reflect.deleteProperty(stored.gallery, 'videoClickMode');
     mockStorageGet.mockResolvedValue(stored);
 
-    const result = await new PersistentSettingsRepository().load();
+    const result = (await new PersistentSettingsRepository().loadState()).settings;
 
     expect(result.gallery.preloadCount).toBe(100);
     expect(result.gallery.videoVolume).toBe(DEFAULT_SETTINGS.gallery.videoVolume);
@@ -154,7 +154,7 @@ describe('PersistentSettingsRepository', () => {
       await repository.saveChanges(new Map([[key, value]]), 12_345);
     }
 
-    const reloaded = await new PersistentSettingsRepository().load();
+    const reloaded = (await new PersistentSettingsRepository().loadState()).settings;
     for (const key of SETTINGS_LEAF_KEYS) {
       expect(resolveNestedPath(reloaded, key), key).toBe(alternateValues[key]);
     }
@@ -186,7 +186,7 @@ describe('PersistentSettingsRepository', () => {
       'xeg-app-settings:field:gallery.theme',
       'xeg-app-settings:field:gallery.animations',
     ]);
-    const reloaded = await new PersistentSettingsRepository().load();
+    const reloaded = (await new PersistentSettingsRepository().loadState()).settings;
     expect(reloaded.gallery).toEqual({
       ...DEFAULT_SETTINGS.gallery,
       theme: 'dark',

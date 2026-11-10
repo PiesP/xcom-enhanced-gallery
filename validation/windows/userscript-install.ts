@@ -5423,6 +5423,7 @@ async function runUserscriptUpgrade({
       crossUpdateUiVerified: ['fit', 'language', 'videoVolume'],
     };
     receipt.method = 'same-manager-profile-utilities-import-defer-then-update';
+    routes.assertNoQualityRequestOverflow();
     receipt.status = 'passed';
   } catch (error) {
     receipt.error = safeRouteError(error);
@@ -6136,7 +6137,7 @@ async function captureUserscriptLiveEntryFailure(
             document.querySelectorAll('a[href="/login"], a[href*="/i/flow/login"]').length,
             20
           ),
-          dialogCount: Math.min(document.querySelectorAll('[role="dialog"]').length, 20),
+          dialogCount: Math.min(document.querySelectorAll('dialog, [role="dialog"]').length, 20),
         };
       },
       { statusPath, mediaBasename: target.mediaBasename }
@@ -6289,8 +6290,12 @@ export async function runUserscriptLiveInstallation(options: {
     receipt.liveEntryBeforeScreenshot = liveEntry.beforeScreenshot;
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible', timeout: 20_000 });
-    assert.equal(await gallery.getAttribute('role'), 'dialog');
-    assert.equal(await gallery.getAttribute('aria-modal'), 'true');
+    assert.equal(
+      await gallery.evaluate(
+        (element) => element instanceof HTMLDialogElement && element.matches(':modal')
+      ),
+      true
+    );
     const selected = await gallery.evaluate((element, mediaBasename) => {
       const toolbar = element.querySelector('[data-gallery-element="toolbar"]');
       const index = toolbar?.getAttribute('data-focused-index');

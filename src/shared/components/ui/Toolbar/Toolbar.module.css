@@ -125,8 +125,9 @@
   /* Layout: provide a relative context for absolutely-positioned panels */
   position: fixed;
   top: max(1.25em, env(safe-area-inset-top)); /* 20px → 1.25em */
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  margin-inline: auto;
   z-index: var(--xeg-z-toolbar, 2147483620);
   display: var(--toolbar-display, inline-flex);
   /* Phase 49: removed flex-direction override (default row) */
@@ -242,7 +243,6 @@
       --toolbar-button-interaction-bg,
       var(--xeg-toolbar-element-bg, var(--xeg-color-neutral-100))
     );
-    transform: translateY(var(--xeg-button-lift));
   }
 }
 
@@ -251,7 +251,6 @@
     --toolbar-button-interaction-bg,
     var(--xeg-toolbar-element-bg-strong, var(--xeg-color-neutral-200))
   );
-  transform: translateY(0);
 }
 
 .toolbarButton[aria-pressed='true'] {
@@ -493,12 +492,10 @@ button.fitButton {
   overflow-x: hidden;
   overflow-y: auto;
   opacity: 0;
-  transform: translateY(-0.5em);
   visibility: hidden;
   pointer-events: none;
   transition:
     var(--xeg-toolbar-panel-transition),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s var(--xeg-duration-normal);
   background: var(
     --toolbar-surface-base,
@@ -508,7 +505,7 @@ button.fitButton {
     var(--toolbar-surface-border, var(--xeg-toolbar-border));
   border-radius: 0 0 var(--xeg-radius-lg) var(--xeg-radius-lg);
   z-index: var(--xeg-z-toolbar-panel);
-  will-change: transform, opacity;
+  will-change: opacity;
   overscroll-behavior: contain;
 }
 
@@ -582,13 +579,11 @@ button.fitButton {
 :where(.settingsPanel, .tweetPanel, .helpPanel).panelExpanded {
   height: auto;
   opacity: 1;
-  transform: translateY(0);
   visibility: visible;
   pointer-events: auto;
   border-top-color: var(--toolbar-surface-border, var(--xeg-toolbar-border));
   transition:
     var(--xeg-toolbar-panel-transition),
-    transform var(--xeg-duration-normal) var(--xeg-ease-standard),
     visibility 0s 0s;
   /* Exclusive panels: float above toolbar when opened */
   z-index: var(--xeg-z-toolbar-panel-active);
