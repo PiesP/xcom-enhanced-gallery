@@ -8,10 +8,30 @@ roughly adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-11
+
 ### Fixed
 
-- **Gallery entry** — Handle admitted media clicks at document capture so a host listener that stops propagation before body does not leave the native photo link in control.
-- **DOM image originals** — Confirm the original format of an extensionless WebP display before saving. When that original is missing, use a verified JPEG or PNG original of the same attachment while preserving the displayed image and attachment filename identity.
+- **Attachment filenames and ZIP recovery** — Keep verified media-owner and attachment identities through filtering, sorting, quote contexts, and retries. Reserve case-insensitive, extensionless ZIP stems so different files cannot receive colliding names.
+- **Saved-name feedback** — Report confirmed filenames after native extension downloads, including Firefox's numeric conflict names, without repeating a completed save.
+- **Gallery entry and image originals** — Admit eligible media clicks before host listeners stop propagation. When an extensionless WebP display lacks its original, use a verified JPEG or PNG original of the same attachment while preserving its filename identity.
+- **Userscript cancellation** — Use the supported abortable legacy manager download route and retain uncertain outcomes without starting duplicate saves.
+- **Gallery presentation** — Preserve pending-image space and update the native dialog, anchored tooltips, scrolling, and animation completion behavior.
+- **Language saves** — Keep a pending language choice until the effective stored value confirms it; retain visible retry intent after a failed or unreadable save.
+
+### Changed
+
+- **Current-browser baseline** — Raise the userscript floors to Chrome/Edge 157, Firefox 159, and Safari 27.2; raise the temporary Firefox extension minimum to 159. Android remains outside the desktop support scope. These are declarations, not complete browser or platform acceptance results.
+
+### Known limitations
+
+- Numeric attachment ordinals require reliable source-position data; a genuinely unknown partial-DOM position uses a `source-16hex` fallback. Browser or extension filename arbitration can change a requested native name, and userscript managers do not universally expose the final basename.
+- Concurrent, already-owned Blob inputs preserve the association between ZIP names and bytes but do not promise the archive's physical member enumeration order.
+
+### Upgrade and rollback
+
+- An existing userscript with a version-pinned `@downloadURL` needs one manual update from the public Latest asset; a correct Latest header does not prove automatic update discovery. Unpacked Chromium and temporary Firefox extensions require manual replacement. Keep the existing browser profile to retain local settings.
+- To return to v2.3.10, reinstall its original release files and reload the extension or userscript manager. Its older browser baseline and behavior return with that version; make a settings backup before replacing an installation.
 
 ## [2.3.10] - 2026-11-03
 

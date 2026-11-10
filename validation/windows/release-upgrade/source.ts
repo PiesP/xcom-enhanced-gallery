@@ -13,6 +13,7 @@ const UPGRADE_TRANSITIONS = [
   { previousVersion: '2.3.7', candidateVersion: '2.3.8' },
   { previousVersion: '2.3.8', candidateVersion: '2.3.9' },
   { previousVersion: '2.3.9', candidateVersion: '2.3.10' },
+  { previousVersion: '2.3.10', candidateVersion: '2.4.0' },
 ] as const;
 const CANDIDATE_USER_PATH = 'dist/xcom-enhanced-gallery.user.js';
 const SCRIPT_NAME = 'X.com Enhanced Gallery';
