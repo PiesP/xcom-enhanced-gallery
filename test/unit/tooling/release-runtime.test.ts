@@ -16,9 +16,9 @@ describe('release runtime selection', () => {
       packageManager: string;
     };
     expect(pin).toMatch(/^\d+\.\d+\.\d+\n$/);
-    expect(pin.trim()).toBe('26.13.0');
+    expect(pin.trim()).toBe('26.13.1');
     expect(manifest.volta).toBeUndefined();
-    expect(manifest.engines.node).toContain('>=26.12.1');
+    expect(manifest.engines.node).toContain('>=26.13.1');
     expect(manifest.packageManager).toBe('pnpm@12.18.0');
   });
 
