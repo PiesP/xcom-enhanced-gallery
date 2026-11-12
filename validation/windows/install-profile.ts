@@ -22173,7 +22173,7 @@ export async function run({
     );
     nativeLoopback = await startExtensionNativeFixtureLoopback(
       join(root, 'validation/windows/userscript-fixture-certificate.ps1'),
-      zipCrcSelector?.diagnostic === true
+      zipCrcSelector !== null
     );
     result.fixtureTransport = {
       kind: 'task-owned-https-loopback',

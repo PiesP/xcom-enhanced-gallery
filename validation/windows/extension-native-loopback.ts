@@ -892,6 +892,7 @@ export async function startExtensionNativeFixtureLoopback(
     ...fixture,
     port: lifecycle.port,
     spkiSha256: certificate.spkiSha256,
+    releaseIdleConnections: () => lifecycle.releaseIdleConnections(),
     snapshot: () => ({
       ...fixture.snapshot(),
       serverError: lifecycle.serverError(),

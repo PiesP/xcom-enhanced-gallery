@@ -219,11 +219,13 @@ Then freeze candidate budgets and validate the final optimized module/glue.
 
 This branch preserves reproducible, opt-in experimental instrumentation and the
 consumer-owned harness as **unqualified draft work**. It is not an acceleration
-backend ready for admission. Its task profile currently lists all four owned
+backend ready for admission. At the reviewed `8806e150` snapshot, its task profile listed all four owned
 MP4 inputs as bundle assets, including when another installed scenario is
-selected. A clean checkout without those measurement-owned inputs cannot prepare
-that Windows bundle. Isolate those task input prerequisites before admitting any
-retained harness into the ordinary validation workflow; this draft is not ready
-to merge. The issue remains open. No merge, deployment,
+selected. That historical checkout without those measurement-owned inputs could not prepare
+the Windows bundle. Follow-up `931165b8` removes the redundant global assets and
+loads originals only for the large CRC case; missing/wrong originals still fail.
+The historical diagnostic remains failed, and the corrected transport needs its
+own fresh primary cohort. See [the follow-up record](534-transport-followup.md).
+The issue remains open. No merge, deployment,
 publication, #473 final-ZIP work, provider-setting change or infrastructure
 campaign is included.

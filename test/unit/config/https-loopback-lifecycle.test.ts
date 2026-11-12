@@ -3,7 +3,7 @@
 // @vitest-environment node
 
 import { once } from 'node:events';
-import { createServer, get } from 'node:http';
+import { Agent, createServer, get } from 'node:http';
 import type { ServerResponse } from 'node:http';
 import { connect } from 'node:net';
 import type { Socket } from 'node:net';
@@ -127,6 +127,58 @@ describe('owned loopback listener lifecycle', () => {
     } finally {
       client.destroy();
       await listener.close(() => {});
+    }
+  });
+
+  it('releases an idle keep-alive while preserving a held response and connection cap', async () => {
+    let idleSocket!: Socket;
+    let heldResponse!: ServerResponse;
+    let signalHeld!: () => void;
+    const held = new Promise<void>((resolve) => {
+      signalHeld = resolve;
+    });
+    const server = createServer((request, response) => {
+      if (request.url === '/held') {
+        heldResponse = response;
+        response.write('held');
+        signalHeld();
+      } else {
+        idleSocket = request.socket;
+        response.end('ok');
+      }
+    });
+    const listener = await startHttpsLoopback(server, 'caller-loopback-unavailable', true);
+    // Keep the test client from proactively closing the advertised one-second
+    // keep-alive before this test exercises the fixture owner's idle reap.
+    const idleAgent = new Agent({ keepAlive: true, agentKeepAliveTimeoutBuffer: 0 });
+    const heldAgent = new Agent({ keepAlive: true, agentKeepAliveTimeoutBuffer: 0 });
+    const fetch = (path: string, agent: Agent) =>
+      new Promise<void>((resolve, reject) => {
+        const request = get({ host: '127.0.0.1', port: listener.port, path, agent }, (response) => {
+          response.resume();
+          response.once('end', resolve);
+          response.once('error', reject);
+        });
+        request.once('error', reject);
+      });
+    try {
+      await fetch('/idle', idleAgent);
+      const heldFinished = fetch('/held', heldAgent);
+      await held;
+      const idleClosed = once(idleSocket, 'close');
+      listener.releaseIdleConnections();
+      await idleClosed;
+      expect(heldResponse.destroyed).toBe(false);
+      expect(heldResponse.socket?.destroyed).toBe(false);
+      expect(server.maxConnections).toBe(8);
+      await fetch('/next', idleAgent);
+      heldResponse.end('done');
+      await heldFinished;
+      expect(listener.transportSnapshot()?.counts).toMatchObject({ accepted: 3, drop: 0 });
+    } finally {
+      idleAgent.destroy();
+      heldAgent.destroy();
+      await listener.close(() => heldResponse?.destroy());
     }
   });
 });

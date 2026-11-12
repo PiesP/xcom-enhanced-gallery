@@ -769,6 +769,9 @@ export async function runZipCrcProfile({
           )
         );
         const prior = new Set((await queryDownloads(extensionPage)).map((item) => item.id));
+        sample.transportBeforeIdleRelease = nativeLoopback.snapshot().transport;
+        nativeLoopback.releaseIdleConnections();
+        sample.idleReleaseAtMs = performance.now();
         const nativeMark = nativeLoopback.mark();
         sample.nativeRequestsBeforeAction = nativeLoopback.since(pageNativeMark);
         phase = 'action';
@@ -916,6 +919,11 @@ export async function runZipCrcProfile({
         assert.deepEqual(consoleErrors, []);
         assert.deepEqual(httpErrors, []);
         assert.deepEqual(unexplainedFailedRequests, []);
+        assert.notEqual(sample.browserRequestOverflow, true);
+        const transport = nativeLoopback.snapshot().transport;
+        assert(transport, 'CRC transport observations are required');
+        assert.equal(transport.counts.eventOverflow, 0);
+        assert.equal(transport.counts.drop, 0, 'Connection admission dropped a fixture request');
         sample.status = 'passed';
         sample.performanceEligibility = zipCrcPerformanceEligibility(
           index,
@@ -930,9 +938,7 @@ export async function runZipCrcProfile({
         sample.error = String(error);
         throw error;
       } finally {
-        if (diagnostic) {
-          sample.transport = nativeLoopback.snapshot().transport;
-        }
+        sample.transport = nativeLoopback.snapshot().transport;
         try {
           sample.videoObservation = await readVideoObservation(page);
         } catch (error) {

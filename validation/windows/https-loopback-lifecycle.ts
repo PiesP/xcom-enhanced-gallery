@@ -159,6 +159,15 @@ export async function startHttpsLoopback(
     return {
       port: address.port,
       serverError: () => serverError,
+      releaseIdleConnections() {
+        if (observeTransport) {
+          record({ kind: 'release-idle-connections' });
+        }
+        // A fixture phase boundary may retire renderer/media keep-alives before
+        // the archive's distinct connection pool needs admission. Active HTTP
+        // requests/responses remain under their existing owners and limits.
+        server.closeIdleConnections();
+      },
       transportSnapshot: () =>
         observeTransport
           ? {
