@@ -716,7 +716,13 @@ export async function runZipCrcProfile({
         sample.resourceTimings = await page.evaluate(() =>
           performance
             .getEntriesByType('resource')
-            .filter((entry) => /(?:pbs|video)\.twimg\.com/u.test(entry.name))
+            .filter((entry) => {
+              const url = new URL(entry.name);
+              return (
+                url.protocol === 'https:' &&
+                (url.hostname === 'pbs.twimg.com' || url.hostname === 'video.twimg.com')
+              );
+            })
             .map((entry) => {
               const resource = entry as PerformanceResourceTiming;
               const deliveryType = Reflect.get(resource, 'deliveryType');
