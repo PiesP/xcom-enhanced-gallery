@@ -531,13 +531,11 @@ export async function runZipCrcProfile({
       manifestSha256: sha256(packagedManifestBytes),
       contentJsSha256: sha256(await readFile(join(root, 'dist-extension/content.js'))),
     };
-    if (diagnostic) {
-      assert.equal(
-        (receipt.packagedBytes as { contentJsSha256: string }).contentJsSha256,
-        'a8bb70a80c7113c454f7df36eabfbbd0bedccc335776ee8010f0516a95667859',
-        'Diagnostic must retain the historical opt-in product artifact'
-      );
-    }
+    assert.equal(
+      (receipt.packagedBytes as { contentJsSha256: string }).contentJsSha256,
+      'a8bb70a80c7113c454f7df36eabfbbd0bedccc335776ee8010f0516a95667859',
+      'Frozen CRC Phase 0 must retain the historical opt-in product artifact'
+    );
     const expectedEntries =
       workload === 'large'
         ? CLIPS.map((_, index) => ({
