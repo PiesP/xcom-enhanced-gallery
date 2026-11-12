@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, isAbsolute, join, relative } from 'node:path';
 
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, Page, Request } from '@playwright/test';
 
 import {
   expectedStoredZipBytes,
@@ -256,9 +256,9 @@ function parseReport(raw: string | null, count: number): ZipReport {
   return report as ZipReport;
 }
 
-function unionCrcActiveMs(spans: readonly ZipSpan[]) {
+function unionCrcSpanMs(spans: readonly ZipSpan[], phases: readonly string[]) {
   const intervals = spans
-    .filter((span) => span.phase === 'crc-active')
+    .filter((span) => phases.includes(span.phase))
     .map(({ startMs, endMs }) => ({ startMs, endMs }))
     .sort((left, right) => left.startMs - right.startMs);
   let total = 0;
@@ -268,6 +268,26 @@ function unionCrcActiveMs(spans: readonly ZipSpan[]) {
     end = Math.max(end, interval.endMs);
   }
   return total;
+}
+
+export function unionCrcKernelUpperBoundMs(spans: readonly ZipSpan[]): number {
+  return unionCrcSpanMs(spans, ['crc-table', 'crc-active']);
+}
+
+export function zipCrcPerformanceEligibility(
+  sampleIndex: number,
+  functionalPassed: boolean,
+  cacheConditionQualified: boolean | null
+): { eligible: boolean; reason: string } {
+  if (!functionalPassed) {
+    return { eligible: false, reason: 'functional-not-passed' };
+  }
+  if (sampleIndex === 0) {
+    return { eligible: true, reason: 'first-use' };
+  }
+  return cacheConditionQualified === true
+    ? { eligible: true, reason: 'warm-cache-qualified' }
+    : { eligible: false, reason: 'warm-cache-unqualified' };
 }
 
 async function rendererHeap(page: Page) {
@@ -395,6 +415,20 @@ export function classifyOwnedMediaAbort({
   return null;
 }
 
+export async function loadZipCrcClips(root: string, workload: Workload): Promise<Buffer[]> {
+  if (workload === 'small') {
+    return [];
+  }
+  return Promise.all(
+    CLIPS.map(async (expected) => {
+      const bytes = await readFile(join(root, 'validation/windows/inputs', expected.file));
+      assert.equal(bytes.length, expected.bytes, `Owned clip size differs: ${expected.file}`);
+      assert.equal(sha256(bytes), expected.sha256, `Owned clip hash differs: ${expected.file}`);
+      return bytes;
+    })
+  );
+}
+
 export async function runZipCrcProfile({
   context,
   extensionId,
@@ -405,6 +439,7 @@ export async function runZipCrcProfile({
   displayImages,
   nativeLoopback,
   workload,
+  diagnostic = false,
   readContentRealm,
 }: {
   context: BrowserContext;
@@ -416,16 +451,10 @@ export async function runZipCrcProfile({
   displayImages: ImageFixtures;
   nativeLoopback: Awaited<ReturnType<typeof startExtensionNativeFixtureLoopback>>;
   workload: Workload;
+  diagnostic?: boolean;
   readContentRealm: (page: Page) => Promise<{ id: number; name: string; origin: string }>;
 }) {
-  const clips = await Promise.all(
-    CLIPS.map(async (expected) => {
-      const bytes = await readFile(join(root, 'validation/windows/inputs', expected.file));
-      assert.equal(bytes.length, expected.bytes, `Owned clip size differs: ${expected.file}`);
-      assert.equal(sha256(bytes), expected.sha256, `Owned clip hash differs: ${expected.file}`);
-      return bytes;
-    })
-  );
+  const clips = await loadZipCrcClips(root, workload);
   nativeLoopback.setZipCrcProfile({
     smallHtml: smallPage(),
     smallApi: smallApiResponse(),
@@ -436,10 +465,12 @@ export async function runZipCrcProfile({
     clips,
   });
   const extensionPage = await context.newPage();
-  const samples: unknown[] = [];
+  const samples: Array<Record<string, unknown>> = [];
   const receipt: Record<string, unknown> = {
     status: 'running',
     workload,
+    purpose: diagnostic ? 'transport-diagnostic-only' : 'production-baseline',
+    browserRequestClock: 'guest Node performance.now; epoch = requestTimeOrigin + atMs',
     fixture:
       workload === 'large'
         ? CLIPS
@@ -500,6 +531,13 @@ export async function runZipCrcProfile({
       manifestSha256: sha256(packagedManifestBytes),
       contentJsSha256: sha256(await readFile(join(root, 'dist-extension/content.js'))),
     };
+    if (diagnostic) {
+      assert.equal(
+        (receipt.packagedBytes as { contentJsSha256: string }).contentJsSha256,
+        'a8bb70a80c7113c454f7df36eabfbbd0bedccc335776ee8010f0516a95667859',
+        'Diagnostic must retain the historical opt-in product artifact'
+      );
+    }
     const expectedEntries =
       workload === 'large'
         ? CLIPS.map((_, index) => ({
@@ -515,7 +553,13 @@ export async function runZipCrcProfile({
     for (let index = 0; index < SAMPLE_LIMIT; index++) {
       const condition = index === 0 ? 'fresh-profile-first-use' : 'warm-cache-attempt-fresh-page';
       const page = await context.newPage();
-      const sample: Record<string, unknown> = { index, condition, status: 'started' };
+      const sample: Record<string, unknown> = {
+        index,
+        condition,
+        status: 'started',
+        performanceEligibility: { eligible: false, reason: 'not-finished' },
+      };
+      sample.performanceEligibility = zipCrcPerformanceEligibility(index, false, null);
       samples.push(sample);
       const pageErrors: string[] = [];
       const consoleErrors: Array<{ text: string; locationUrl: string }> = [];
@@ -531,6 +575,39 @@ export async function runZipCrcProfile({
         expectedBlobAborts: false,
       };
       let phase = 'navigation';
+      const browserRequests: Array<Record<string, unknown>> = [];
+      const requestIdentities = new WeakMap<Request, Record<string, unknown>>();
+      let nextRequestId = 0;
+      if (diagnostic) {
+        sample.browserRequests = browserRequests;
+        page.on('request', (request) => {
+          if (browserRequests.length >= 128) {
+            sample.browserRequestOverflow = true;
+            return;
+          }
+          const observation: Record<string, unknown> = {
+            id: ++nextRequestId,
+            url: request.url(),
+            method: request.method(),
+            resourceType: request.resourceType(),
+            range: request.headers().range ?? null,
+            requestStartPhase: phase,
+            atMs: performance.now(),
+            requestTimeOrigin: performance.timeOrigin,
+            browserStartEpochMs: request.timing().startTime,
+          };
+          requestIdentities.set(request, observation);
+          browserRequests.push(observation);
+        });
+        page.on('requestfinished', (request) => {
+          const observation = requestIdentities.get(request);
+          if (observation) {
+            observation.finishedAtMs = performance.now();
+            observation.finishedPhase = phase;
+            observation.finalBrowserTiming = request.timing();
+          }
+        });
+      }
       page.on('pageerror', (error) => {
         if (pageErrors.length < 32) {
           pageErrors.push(error.message.slice(0, 300));
@@ -562,6 +639,13 @@ export async function runZipCrcProfile({
       page.on('requestfailed', (request) => {
         const url = new URL(request.url());
         const error = request.failure()?.errorText ?? 'unknown';
+        const observation = requestIdentities.get(request);
+        if (observation) {
+          observation.failedAtMs = performance.now();
+          observation.failurePhase = phase;
+          observation.error = error;
+          observation.finalBrowserTiming = request.timing();
+        }
         if (url.protocol === 'blob:' && error === 'net::ERR_ABORTED') {
           if (expectedBlobAborts.length < 32) {
             expectedBlobAborts.push(`${request.resourceType()}:blob:`);
@@ -710,8 +794,8 @@ export async function runZipCrcProfile({
         assert.equal(report.timeOrigin, observed.timeOrigin);
         assert(typeof observed.clickMs === 'number' && observed.clickMs <= report.startedMs);
         sample.profile = report;
-        sample.crcActiveUnionMs = unionCrcActiveMs(report.spans);
-        sample.idealCrcRemovalUpperBoundMs = sample.crcActiveUnionMs;
+        sample.crcActiveUnionMs = unionCrcSpanMs(report.spans, ['crc-active']);
+        sample.idealCrcRemovalUpperBoundMs = unionCrcKernelUpperBoundMs(report.spans);
         sample.nativeRequestsAfterAction = nativeLoopback.since(nativeMark);
         sample.resourceTimings = await page.evaluate(() =>
           performance
@@ -833,11 +917,22 @@ export async function runZipCrcProfile({
         assert.deepEqual(httpErrors, []);
         assert.deepEqual(unexplainedFailedRequests, []);
         sample.status = 'passed';
+        sample.performanceEligibility = zipCrcPerformanceEligibility(
+          index,
+          true,
+          sample.cacheConditionQualified as boolean | null
+        );
+        if (diagnostic) {
+          sample.performanceEligibility = { eligible: false, reason: 'transport-diagnostic-only' };
+        }
       } catch (error) {
         sample.status = 'failed';
         sample.error = String(error);
         throw error;
       } finally {
+        if (diagnostic) {
+          sample.transport = nativeLoopback.snapshot().transport;
+        }
         try {
           sample.videoObservation = await readVideoObservation(page);
         } catch (error) {
@@ -859,6 +954,11 @@ export async function runZipCrcProfile({
       }
     }
     receipt.status = 'passed';
+    receipt.performanceEligible = samples.every(
+      (sample) =>
+        (sample as { performanceEligibility?: { eligible: boolean } }).performanceEligibility
+          ?.eligible === true
+    );
   } catch (error) {
     primaryError = error;
     receipt.status = 'failed';
@@ -872,6 +972,15 @@ export async function runZipCrcProfile({
       receipt.extensionPageCloseError = String(error);
     }
     receipt.cleanupErrors = cleanupErrors.map(String);
+    receipt.performanceCohort = samples.flatMap((sample) => {
+      const eligibility = sample.performanceEligibility as { eligible: boolean };
+      return !diagnostic &&
+        sample.status === 'passed' &&
+        eligibility.eligible === true &&
+        (sample.index === 0 || sample.cacheConditionQualified === true)
+        ? [{ index: sample.index, condition: sample.condition }]
+        : [];
+    });
     if (cleanupErrors.length) {
       receipt.status = 'failed';
     }

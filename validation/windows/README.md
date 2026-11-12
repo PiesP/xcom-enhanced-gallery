@@ -2,12 +2,28 @@
 
 ## ZIP CRC Phase 0 fixture (#534)
 
+For the one bounded transport diagnostic, add `"diagnostic":true` to the large
+selector. This keeps the historical product content.js hash and all listener,
+trust, origin, request and byte limits. It records bounded TCP admission/drop,
+TLS, first HTTP, close and owned-timeout events using the guest Node clock.
+Browser request start and failure phases are separate. A fresh owned browser
+also captures default-privacy NetLog (5 MiB target, at most 120 seconds) so a
+pre-HTTP dropped connection can be correlated without inventing its URL. Raw
+NetLog stays private. All diagnostic actions are excluded from performance
+cohorts, even if their saved ZIPs pass. Response `finish` describes server writes
+to the OS; actual browser completion and saved-member verification are separate.
+No HTTP `clientError` or server/request/response `timeout` listener is installed;
+Node's default error response/termination and the existing socket timeout owner
+remain in control. Cleanup records accepted sockets after listener shutdown.
+
 The primary large-workload baseline is **BLOCKED** by an observed source fetch
 failure. This opt-in task branch is unqualified draft work. See the dated
 [evidence and resume conditions](../../docs/experiments/534-phase0.md).
-The task profile currently requires all four owned MP4 inputs for Windows bundle
-preparation, including other installed scenarios; isolate that prerequisite
-before admitting the harness into the ordinary workflow.
+The original task profile required all four owned MP4 inputs for every Windows
+installation bundle. That preparation defect is corrected on this branch:
+the existing profile-owned `validation/windows/inputs` directory remains the
+bundle source, while only the large CRC runner requires and verifies the four
+MP4 files. Small JPEG and ordinary installed scenarios can prepare without them.
 
 Supply the existing owned WMC fixture outputs before preparing a bundle. Their
 producer is `scripts/test/generate-e2e-video.ts` (`prepare:e2e:fixture`) in
@@ -58,6 +74,13 @@ document, before the native save adapter. Native completion and exact saved ZIP
 member bytes, CRCs, headers, flags, names and commit order are checked later.
 The resulting ZIP is under the existing 4 MiB saved-file verification bound.
 The 300 ms UI indicator floor is not the primary interval.
+Each sample records functional status separately from performance eligibility.
+First use is eligible after functional success; a warm sample additionally
+requires observed `cacheConditionQualified === true`. An unqualified warm
+sample remains in the raw receipt and is excluded from the performance cohort.
+The conservative ideal CRC-removal bound unions `crc-table` and `crc-active`
+intervals without counting overlap twice; `crcActiveUnionMs` remains separately
+reported for comparison with the earlier dated receipts.
 The confirmatory large-profile diagnostic records exact rejected native fixture
 paths, HTTP failures, failed-request method/type/range/timing, console location,
 and observed video source and lifecycle transitions. Only the exact owned

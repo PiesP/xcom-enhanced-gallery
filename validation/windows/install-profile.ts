@@ -1120,6 +1120,7 @@ type InstallResult = {
     hosts: string[];
     certificateScope: string;
     observations?: ReturnType<NativeLoopback['snapshot']>;
+    cleanupObservations?: ReturnType<NativeLoopback['snapshot']>;
   };
   browserVersion?: string;
   upgrade?: UpgradeReceipt;
@@ -21516,15 +21517,24 @@ export async function run({
   const zipCrcSelector =
     zipCrcSelectorText === null
       ? null
-      : (JSON.parse(zipCrcSelectorText) as { scenario?: unknown; workload?: unknown });
+      : (JSON.parse(zipCrcSelectorText) as {
+          scenario?: unknown;
+          workload?: unknown;
+          diagnostic?: unknown;
+        });
   if (zipCrcSelector !== null) {
     assert.deepEqual(zipCrcSelector, {
       scenario: 'zip-crc',
       workload: zipCrcSelector.workload,
+      ...(zipCrcSelector.diagnostic === undefined ? {} : { diagnostic: true }),
     });
     assert(
       ['large', 'small'].includes(String(zipCrcSelector.workload)),
       'Unsupported ZIP CRC workload'
+    );
+    assert(
+      zipCrcSelector.diagnostic !== true || zipCrcSelector.workload === 'large',
+      'Transport diagnostic requires the frozen larger workload'
     );
     assert(
       ['chrome', 'msedge'].includes(browserName),
@@ -22162,7 +22172,8 @@ export async function run({
       })
     );
     nativeLoopback = await startExtensionNativeFixtureLoopback(
-      join(root, 'validation/windows/userscript-fixture-certificate.ps1')
+      join(root, 'validation/windows/userscript-fixture-certificate.ps1'),
+      zipCrcSelector?.diagnostic === true
     );
     result.fixtureTransport = {
       kind: 'task-owned-https-loopback',
@@ -22181,6 +22192,13 @@ export async function run({
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
+        ...(zipCrcSelector?.diagnostic === true
+          ? [
+              `--log-net-log=${join(output, 'zip-crc-netlog.json')}`,
+              '--net-log-max-size-mb=5',
+              '--net-log-duration=120',
+            ]
+          : []),
         ...(nativeScrollbarTakeover && browserName === 'chrome'
           ? ['--enable-smooth-scrolling']
           : []),
@@ -22246,6 +22264,7 @@ export async function run({
           displayImages,
           nativeLoopback,
           workload: zipCrcSelector.workload as 'large' | 'small',
+          diagnostic: zipCrcSelector.diagnostic === true,
           readContentRealm: async (page) => {
             const { cdp, realm } = await installedContentRealm(
               installedContext,
@@ -22413,6 +22432,7 @@ export async function run({
       assert(result.fixtureTransport, 'Fixture transport receipt is missing');
       result.fixtureTransport.observations = nativeLoopback.snapshot();
       await nativeLoopback.close();
+      result.fixtureTransport.cleanupObservations = nativeLoopback.snapshot();
       nativeLoopback = undefined;
       result.cleanup.fixtureLoopbackClosed = true;
       context = await chromium.launchPersistentContext(profile, {
@@ -22525,6 +22545,7 @@ export async function run({
       result.fixtureTransport.observations = nativeLoopback.snapshot();
       try {
         await nativeLoopback.close();
+        result.fixtureTransport.cleanupObservations = nativeLoopback.snapshot();
         result.cleanup.fixtureLoopbackClosed = true;
       } catch (error) {
         cleanupErrors.push(error);

@@ -482,14 +482,19 @@ export function createExtensionNativeFixtureHandler() {
     }) {
       assert.equal(allowed.size, 0, 'Native fixture payloads already installed');
       assert.equal(crcApi.size, 0, 'CRC API fixture already installed');
-      assert.equal(clips.length, CRC_CLIPS.length);
-      for (const [index, expected] of CRC_CLIPS.entries()) {
-        const clip = clips[index];
-        assert(Buffer.isBuffer(clip), `CRC clip ${index} is absent`);
-        assert.equal(clip.length, expected.bytes);
-        assert.equal(createHash('sha256').update(clip).digest('hex'), expected.sha256);
-        if (index > 0) {
-          assert(clip.length <= MAX_BODY_BYTES);
+      assert(
+        clips.length === 0 || clips.length === CRC_CLIPS.length,
+        'CRC fixture requires zero or all four exact clips'
+      );
+      if (clips.length > 0) {
+        for (const [index, expected] of CRC_CLIPS.entries()) {
+          const clip = clips[index];
+          assert(Buffer.isBuffer(clip), `CRC clip ${index} is absent`);
+          assert.equal(clip.length, expected.bytes);
+          assert.equal(createHash('sha256').update(clip).digest('hex'), expected.sha256);
+          if (index > 0) {
+            assert(clip.length <= MAX_BODY_BYTES);
+          }
         }
       }
       assert.equal(images.length, 3);
@@ -522,24 +527,28 @@ export function createExtensionNativeFixtureHandler() {
         bounded(Buffer.from(smallHtml)),
         'text/html; charset=utf-8'
       );
-      add(
-        'x.com',
-        `/crc_fixture/status/${largeId}`,
-        bounded(Buffer.from(largeHtml)),
-        'text/html; charset=utf-8'
-      );
+      if (clips.length > 0) {
+        add(
+          'x.com',
+          `/crc_fixture/status/${largeId}`,
+          bounded(Buffer.from(largeHtml)),
+          'text/html; charset=utf-8'
+        );
+      }
       crcApi.set(smallId, {
         host: 'x.com',
         path: CRC_GRAPHQL_PATH,
         bytes: bounded(Buffer.from(JSON.stringify(smallApi))),
         contentType: 'application/json',
       });
-      crcApi.set(largeId, {
-        host: 'x.com',
-        path: CRC_GRAPHQL_PATH,
-        bytes: bounded(Buffer.from(JSON.stringify(largeApi))),
-        contentType: 'application/json',
-      });
+      if (clips.length > 0) {
+        crcApi.set(largeId, {
+          host: 'x.com',
+          path: CRC_GRAPHQL_PATH,
+          bytes: bounded(Buffer.from(JSON.stringify(largeApi))),
+          contentType: 'application/json',
+        });
+      }
       const markers = ['GkE1234ABCDEF.jpg', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
       for (const [index, marker] of markers.entries()) {
         const original = bounded(images[index]!);
@@ -568,21 +577,23 @@ export function createExtensionNativeFixtureHandler() {
           'public, max-age=3600'
         );
       }
-      for (const [index, expected] of CRC_CLIPS.entries()) {
-        add(
-          'pbs.twimg.com',
-          `/ext_tw_video_thumb/${largeId}/pu/img/crc-${index}.jpg`,
-          bounded(displayImages[0]!),
-          'image/jpeg',
-          'public, max-age=3600'
-        );
-        add(
-          'video.twimg.com',
-          `/ext_tw_video/${largeId}/pu/vid/${expected.width}x${expected.height}/crc-${index}.mp4`,
-          clips[index]!,
-          'video/mp4',
-          'public, max-age=3600'
-        );
+      if (clips.length > 0) {
+        for (const [index, expected] of CRC_CLIPS.entries()) {
+          add(
+            'pbs.twimg.com',
+            `/ext_tw_video_thumb/${largeId}/pu/img/crc-${index}.jpg`,
+            bounded(displayImages[0]!),
+            'image/jpeg',
+            'public, max-age=3600'
+          );
+          add(
+            'video.twimg.com',
+            `/ext_tw_video/${largeId}/pu/vid/${expected.width}x${expected.height}/crc-${index}.mp4`,
+            clips[index]!,
+            'video/mp4',
+            'public, max-age=3600'
+          );
+        }
       }
     },
     setPayloads(images: Buffer[], videoPayloads: Record<string, Buffer>) {
@@ -862,19 +873,30 @@ export function createExtensionNativeFixtureHandler() {
   };
 }
 
-export async function startExtensionNativeFixtureLoopback(helperPath: string) {
+export async function startExtensionNativeFixtureLoopback(
+  helperPath: string,
+  observeTransport = false
+) {
   const certificate = await generateFixtureCertificate(helperPath, undefined, true, true);
   const fixture = createExtensionNativeFixtureHandler();
   const server = createServer(
     { key: certificate.keyPem, cert: certificate.certPem, maxHeaderSize: 4_096 },
     fixture.handle
   );
-  const lifecycle = await startHttpsLoopback(server, 'extension-native-loopback-unavailable');
+  const lifecycle = await startHttpsLoopback(
+    server,
+    'extension-native-loopback-unavailable',
+    observeTransport
+  );
   return {
     ...fixture,
     port: lifecycle.port,
     spkiSha256: certificate.spkiSha256,
-    snapshot: () => ({ ...fixture.snapshot(), serverError: lifecycle.serverError() }),
+    snapshot: () => ({
+      ...fixture.snapshot(),
+      serverError: lifecycle.serverError(),
+      transport: lifecycle.transportSnapshot(),
+    }),
     close: () => lifecycle.close(fixture.destroyActive),
   };
 }
