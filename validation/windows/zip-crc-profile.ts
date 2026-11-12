@@ -74,6 +74,15 @@ type ZipReport = {
   timerPairCalibration: { iterations: number; elapsedMs: number };
 };
 type NativeDownload = { id: number; filename: string; state: string; error?: string };
+type FailedRequest = {
+  url: string;
+  method: string;
+  resourceType: string;
+  range: string | null;
+  startedAtMs: number;
+  phase: string;
+  error: string;
+};
 
 declare const chrome: {
   runtime: { getManifest(): { version: string } };
@@ -271,6 +280,31 @@ async function rendererHeap(page: Page) {
   }
 }
 
+async function readVideoObservation(page: Page) {
+  return page.evaluate(() => {
+    const state = Reflect.get(globalThis, '__xegCrcVideoDiagnostic') as
+      | {
+          initial: unknown[];
+          transitions: unknown[];
+          videos: HTMLVideoElement[];
+          overflow: boolean;
+        }
+      | undefined;
+    return state
+      ? {
+          initial: state.initial,
+          transitions: state.transitions,
+          final: state.videos.map((video) => ({
+            src: video.src.slice(0, 240),
+            currentSrc: video.currentSrc.slice(0, 240),
+            readyState: video.readyState,
+          })),
+          overflow: state.overflow,
+        }
+      : null;
+  });
+}
+
 export async function runZipCrcProfile({
   context,
   extensionId,
@@ -387,25 +421,81 @@ export async function runZipCrcProfile({
       const sample: Record<string, unknown> = { index, condition, status: 'started' };
       samples.push(sample);
       const pageErrors: string[] = [];
-      const consoleErrors: string[] = [];
-      const failedRequests: string[] = [];
+      const consoleErrors: Array<{ text: string; locationUrl: string }> = [];
+      const httpErrors: Array<{ url: string; status: number }> = [];
+      const failedRequests: FailedRequest[] = [];
       const expectedBlobAborts: string[] = [];
-      page.on('pageerror', (error) => pageErrors.push(error.message.slice(0, 300)));
+      const classifiedMediaAborts: FailedRequest[] = [];
+      const diagnosticOverflow = {
+        pageErrors: false,
+        consoleErrors: false,
+        httpErrors: false,
+        failedRequests: false,
+        expectedBlobAborts: false,
+      };
+      let phase = 'navigation';
+      page.on('pageerror', (error) => {
+        if (pageErrors.length < 32) {
+          pageErrors.push(error.message.slice(0, 300));
+        } else {
+          diagnosticOverflow.pageErrors = true;
+        }
+      });
       page.on('console', (message) => {
         if (message.type() === 'error') {
-          consoleErrors.push(message.text().slice(0, 300));
+          if (consoleErrors.length < 32) {
+            consoleErrors.push({
+              text: message.text().slice(0, 300),
+              locationUrl: message.location().url.slice(0, 300),
+            });
+          } else {
+            diagnosticOverflow.consoleErrors = true;
+          }
+        }
+      });
+      page.on('response', (response) => {
+        if (response.status() >= 400) {
+          if (httpErrors.length < 32) {
+            httpErrors.push({ url: response.url().slice(0, 300), status: response.status() });
+          } else {
+            diagnosticOverflow.httpErrors = true;
+          }
         }
       });
       page.on('requestfailed', (request) => {
         const url = new URL(request.url());
         const error = request.failure()?.errorText ?? 'unknown';
         if (url.protocol === 'blob:' && error === 'net::ERR_ABORTED') {
-          expectedBlobAborts.push(`${request.resourceType()}:blob:`);
+          if (expectedBlobAborts.length < 32) {
+            expectedBlobAborts.push(`${request.resourceType()}:blob:`);
+          } else {
+            diagnosticOverflow.expectedBlobAborts = true;
+          }
         } else {
-          failedRequests.push(`${url.pathname}:${error}`.slice(0, 300));
+          if (failedRequests.length < 32) {
+            failedRequests.push({
+              url: request.url().slice(0, 300),
+              method: request.method(),
+              resourceType: request.resourceType(),
+              range: request.headers().range ?? null,
+              startedAtMs: request.timing().startTime,
+              phase,
+              error,
+            });
+          } else {
+            diagnosticOverflow.failedRequests = true;
+          }
         }
       });
-      sample.diagnostics = { pageErrors, consoleErrors, failedRequests, expectedBlobAborts };
+      sample.diagnostics = {
+        pageErrors,
+        consoleErrors,
+        httpErrors,
+        failedRequests,
+        expectedBlobAborts,
+        classifiedMediaAborts,
+        diagnosticOverflow,
+      };
       try {
         const pageNativeMark = nativeLoopback.mark();
         const documentResponse = await page.goto(workload === 'large' ? LARGE_URL : SMALL_URL);
@@ -415,6 +505,7 @@ export async function runZipCrcProfile({
         sample.fixtureDocumentCsp =
           (await documentResponse?.allHeaders())?.['content-security-policy'] ?? null;
         sample.installedContentRealm = await readContentRealm(page);
+        phase = 'gallery-opening';
         const trigger =
           workload === 'large'
             ? page.locator('[data-crc-video="0"] img')
@@ -426,6 +517,51 @@ export async function runZipCrcProfile({
         await trigger.click();
         const gallery = page.locator('[data-xeg-gallery-container]');
         await gallery.waitFor({ state: 'visible', timeout: 15_000 });
+        phase = 'before-action';
+        sample.videoObservation = await page.evaluate(() => {
+          const galleryRoot = document.querySelector('[data-xeg-gallery-container]');
+          const videos = Array.from(galleryRoot?.querySelectorAll('video') ?? []).slice(0, 8);
+          const describe = (video: HTMLVideoElement) => ({
+            src: video.src.slice(0, 240),
+            currentSrc: video.currentSrc.slice(0, 240),
+            readyState: video.readyState,
+          });
+          const initial = videos.map(describe);
+          const transitions: Array<{
+            event: string;
+            index: number;
+            atMs: number;
+            src: string;
+            currentSrc: string;
+            readyState: number;
+          }> = [];
+          let overflow = false;
+          for (const [videoIndex, video] of videos.entries()) {
+            for (const eventName of ['abort', 'error', 'loadedmetadata']) {
+              video.addEventListener(eventName, () => {
+                if (transitions.length < 32) {
+                  transitions.push({
+                    event: eventName,
+                    index: videoIndex,
+                    atMs: performance.now(),
+                    ...describe(video),
+                  });
+                } else {
+                  overflow = true;
+                }
+              });
+            }
+          }
+          Reflect.set(globalThis, '__xegCrcVideoDiagnostic', {
+            initial,
+            transitions,
+            videos,
+            get overflow() {
+              return overflow;
+            },
+          });
+          return { initial, transitions: [], overflow: false };
+        });
         const count = workload === 'large' ? 4 : 3;
         assert.equal(
           await gallery.locator('#xeg-toolbar-counter').getAttribute('data-total'),
@@ -454,6 +590,7 @@ export async function runZipCrcProfile({
         const prior = new Set((await queryDownloads(extensionPage)).map((item) => item.id));
         const nativeMark = nativeLoopback.mark();
         sample.nativeRequestsBeforeAction = nativeLoopback.since(pageNativeMark);
+        phase = 'action';
         await button.click();
         await page.waitForFunction(
           (attribute) => {
@@ -471,6 +608,7 @@ export async function runZipCrcProfile({
           REPORT_ATTRIBUTE
         );
         sample.rawProfile = observed.raw;
+        phase = 'verification';
         const report = parseReport(observed.raw, count);
         assert.equal(report.timeOrigin, observed.timeOrigin);
         assert(typeof observed.clickMs === 'number' && observed.clickMs <= report.startedMs);
@@ -523,6 +661,7 @@ export async function runZipCrcProfile({
           identity,
           parsed,
         };
+        sample.videoObservation = await readVideoObservation(page);
         sample.nativeRequestsAfterAction = nativeLoopback.since(nativeMark);
         const sourceTransfers = (
           sample.nativeRequestsAfterAction as ReturnType<typeof nativeLoopback.since>
@@ -541,16 +680,78 @@ export async function runZipCrcProfile({
           false,
           'Owned native fixture byte/request cap was exceeded'
         );
+        assert.equal(
+          nativeLoopback.snapshot().unexpectedCount,
+          0,
+          'Owned native fixture received an undeclared request'
+        );
         sample.heapAfterSavedVerification = await rendererHeap(page);
+        const servedRanges = (
+          sample.nativeRequestsBeforeAction as ReturnType<typeof nativeLoopback.since>
+        ).filter(
+          ({ host, status, range, result }) =>
+            host === 'video.twimg.com' &&
+            status === 206 &&
+            range?.start === 0 &&
+            result === 'served'
+        );
+        const videoSources =
+          (
+            sample.videoObservation as {
+              initial: Array<{ src: string; currentSrc: string }>;
+            } | null
+          )?.initial.flatMap(({ src, currentSrc }) => [src, currentSrc]) ?? [];
+        const unexplainedFailedRequests = failedRequests.filter((failure) => {
+          const url = new URL(failure.url);
+          const ownedClip = CLIPS.find(
+            (clip, clipIndex) =>
+              failure.url ===
+              `https://video.twimg.com/ext_tw_video/${LARGE_TWEET_ID}/pu/vid/${clip.width}x${clip.height}/crc-${clipIndex}.mp4`
+          );
+          if (
+            workload === 'large' &&
+            failure.method === 'GET' &&
+            failure.resourceType === 'media' &&
+            failure.error === 'net::ERR_ABORTED' &&
+            url.protocol === 'https:' &&
+            url.hostname === 'video.twimg.com' &&
+            ownedClip !== undefined &&
+            servedRanges.some(
+              ({ path, range, bytes, sha256: servedSha256 }) =>
+                path === url.pathname &&
+                range?.end === ownedClip.bytes - 1 &&
+                bytes === ownedClip.bytes &&
+                servedSha256 === ownedClip.sha256
+            ) &&
+            videoSources.includes(failure.url)
+          ) {
+            classifiedMediaAborts.push(failure);
+            return false;
+          }
+          return true;
+        });
+        sample.unexplainedFailedRequests = unexplainedFailedRequests;
+        assert(Object.values(diagnosticOverflow).every((value) => value === false));
+        assert.equal(
+          (sample.videoObservation as { overflow: boolean } | null)?.overflow,
+          false,
+          'Video diagnostic transition cap was exceeded'
+        );
         assert.deepEqual(pageErrors, []);
         assert.deepEqual(consoleErrors, []);
-        assert.deepEqual(failedRequests, []);
+        assert.deepEqual(httpErrors, []);
+        assert.deepEqual(unexplainedFailedRequests, []);
         sample.status = 'passed';
       } catch (error) {
         sample.status = 'failed';
         sample.error = String(error);
         throw error;
       } finally {
+        try {
+          sample.videoObservation = await readVideoObservation(page);
+        } catch (error) {
+          sample.videoObservationError = String(error);
+        }
         try {
           await page.close();
           sample.pageClosed = true;

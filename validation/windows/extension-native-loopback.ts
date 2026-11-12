@@ -57,6 +57,7 @@ type NativeRoute = {
 type NativeEvent = {
   host: string;
   path: string;
+  requestTarget?: string;
   method: string;
   purpose: string;
   status: number;
@@ -135,8 +136,35 @@ export function createExtensionNativeFixtureHandler() {
     prefix.event.prefixBytesQueued = prefix.bytes.length;
     prefix.event.firstByteQueuedAtMs = prefix.bytes.length > 0 ? performance.now() : null;
   };
-  const reject = (response: ServerResponse, status = 404) => {
+  const reject = (request: IncomingMessage, response: ServerResponse, status = 404) => {
     unexpectedCount += 1;
+    const target = (request.url ?? '').slice(0, 300);
+    const event: NativeEvent = {
+      host: (request.headers.host ?? '').replace(/:443$/u, '').slice(0, 100),
+      path: target.split('?')[0] ?? '',
+      requestTarget: target,
+      method: request.method ?? '',
+      purpose: 'rejected',
+      status,
+      range: null,
+      bytes: 0,
+      sha256: null,
+      result: 'started',
+      atMs: performance.now(),
+    };
+    events.push(event);
+    active.add(response);
+    response.once('close', () => {
+      if (!response.writableFinished) {
+        event.result = 'aborted';
+        event.closedAtMs = performance.now();
+      }
+      active.delete(response);
+    });
+    response.once('finish', () => {
+      event.result = 'rejected';
+      event.finishedAtMs = performance.now();
+    });
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
     response.end();
   };
@@ -150,6 +178,36 @@ export function createExtensionNativeFixtureHandler() {
     const host = request.headers.host;
     const sni = request.socket instanceof TLSSocket ? request.socket.servername : undefined;
     const normalizedHost = host?.replace(/:443$/u, '');
+    if (
+      allowed.size > 0 &&
+      normalizedHost === 'x.com' &&
+      request.url === '/favicon.ico' &&
+      ['GET', 'HEAD'].includes(request.method ?? '') &&
+      (!sni || sni === 'x.com')
+    ) {
+      const event: NativeEvent = {
+        host: 'x.com',
+        path: '/favicon.ico',
+        method: request.method ?? '',
+        purpose: 'favicon',
+        status: 204,
+        range: null,
+        bytes: 0,
+        sha256: null,
+        result: 'started',
+        atMs: performance.now(),
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => active.delete(response));
+      response.once('finish', () => {
+        event.result = 'served';
+        event.finishedAtMs = performance.now();
+      });
+      response.writeHead(204, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
+      response.end();
+      return;
+    }
     let route = allowed.get(`${normalizedHost}${request.url ?? ''}`);
     if (!route && normalizedHost === 'x.com' && crcApi.size > 0) {
       const url = new URL(request.url ?? '/', 'https://x.com');
@@ -174,7 +232,7 @@ export function createExtensionNativeFixtureHandler() {
       }
     }
     if (!['GET', 'HEAD'].includes(request.method ?? '') || !route || (sni && sni !== route.host)) {
-      reject(response);
+      reject(request, response);
       return;
     }
     if (httpFailure?.key === `${route.host}${request.url ?? ''}`) {
@@ -260,13 +318,13 @@ export function createExtensionNativeFixtureHandler() {
         !Number.isSafeInteger(Number(match[1])) ||
         (match[2] && !Number.isSafeInteger(Number(match[2])))
       ) {
-        reject(response, 416);
+        reject(request, response, 416);
         return;
       }
       start = Number(match[1]);
       end = match[2] ? Number(match[2]) : end;
       if (start >= bytes.length || end < start) {
-        reject(response, 416);
+        reject(request, response, 416);
         return;
       }
       end = Math.min(end, bytes.length - 1);

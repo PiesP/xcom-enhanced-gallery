@@ -29,6 +29,14 @@ document, before the native save adapter. Native completion and exact saved ZIP
 member bytes, CRCs, headers, flags, names and commit order are checked later.
 The resulting ZIP is under the existing 4 MiB saved-file verification bound.
 The 300 ms UI indicator floor is not the primary interval.
+The confirmatory large-profile diagnostic records exact rejected native fixture
+paths, HTTP failures, failed-request method/type/range/timing, console location,
+and observed video source and lifecycle transitions. Only the exact owned
+`x.com/favicon.ico` GET/HEAD endpoint returns 204. A media `ERR_ABORTED` is
+classified as expected only when its exact owned MP4 URL was observed on a
+gallery video and a matching pre-action 206 response completed; other media,
+connection, fetch and HTTP failures remain errors. The original failed run is
+retained separately.
 Each page also records the installed main-frame extension content-script realm
 before the gallery action and detaches the diagnostic CDP session before timing.
 The source and packaged manifests bind the normal `content.js` declaration and
