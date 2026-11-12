@@ -25,10 +25,10 @@ test('experience originals use the exact owned bytes and reject other qualities'
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
   assert(address && typeof address !== 'string');
-  const read = (path: string, host = 'pbs.twimg.com', method = 'GET') =>
+  const read = (path: string) =>
     new Promise<{ status: number | undefined; bytes: Buffer }>((resolve, reject) => {
       const outgoing = request(
-        { hostname: '127.0.0.1', port: address.port, path, method, headers: { Host: host } },
+        { hostname: '127.0.0.1', port: address.port, path, headers: { Host: 'pbs.twimg.com' } },
         (incoming) => {
           const parts: Buffer[] = [];
           incoming.on('data', (part: Buffer) => parts.push(part));
@@ -56,38 +56,7 @@ test('experience originals use the exact owned bytes and reject other qualities'
       status: 404,
       bytes: Buffer.alloc(0),
     });
-    assert.deepEqual(await read('/favicon.ico', 'x.com'), {
-      status: 204,
-      bytes: Buffer.alloc(0),
-    });
-    assert.deepEqual(await read('/favicon.ico', 'x.com', 'HEAD'), {
-      status: 204,
-      bytes: Buffer.alloc(0),
-    });
-    assert.deepEqual(await read('/not-owned.ico', 'x.com'), {
-      status: 404,
-      bytes: Buffer.alloc(0),
-    });
-    const snapshot = fixture.snapshot();
-    assert.equal(snapshot.unexpectedCount, 2);
-    assert.deepEqual(
-      snapshot.events
-        .filter(({ purpose }) => purpose === 'favicon')
-        .map(({ status, method }) => ({
-          status,
-          method,
-        })),
-      [
-        { status: 204, method: 'GET' },
-        { status: 204, method: 'HEAD' },
-      ]
-    );
-    assert.deepEqual(
-      snapshot.events
-        .filter(({ purpose }) => purpose === 'rejected')
-        .map(({ requestTarget }) => requestTarget),
-      ['/media/XegExperienceTall.jpg?format=jpg&name=large', '/not-owned.ico']
-    );
+    assert.equal(fixture.snapshot().unexpectedCount, 1);
   } finally {
     fixture.destroyActive();
     await new Promise<void>((resolve, reject) =>
@@ -157,7 +126,6 @@ test('original availability faults retain the allowlist and restore the exact he
     assert(snapshot.events.every((event) => typeof event.finishedAtMs === 'number'));
     assert(
       snapshot.events
-        .filter(({ purpose }) => purpose === 'transfer')
         .filter(({ status }) => status === 403 || status === 404)
         .every(({ result }) => result === 'http-failure')
     );
@@ -166,9 +134,8 @@ test('original availability faults retain the allowlist and restore the exact he
     assert.equal(snapshot.activeCount, 0);
     assert.deepEqual(
       snapshot.events.map(({ status }) => status),
-      [200, 403, 200, 404, 200, 404]
+      [200, 403, 200, 404, 200]
     );
-    assert.equal(snapshot.events.at(-1)?.requestTarget, '/media/Undeclared?format=jpg&name=orig');
   } finally {
     fixture.clearHttpFailure();
     fixture.destroyActive();
@@ -444,7 +411,7 @@ for (const adjacentFirst of [false, true]) {
       const events = fixture.snapshot().events;
       const firstEvent = events.find((event) => event.path === firstPath);
       const adjacentEvent = events.find(
-        (event) => event.path === secondPath && event.method === 'GET' && event.status === 206
+        (event) => event.path === secondPath && event.method === 'GET'
       );
       assert(firstEvent && adjacentEvent);
       assert.equal(firstEvent.result, 'aborted');

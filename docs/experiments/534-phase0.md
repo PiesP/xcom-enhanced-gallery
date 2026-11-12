@@ -1,7 +1,9 @@
 # CRC32 Phase 0 — 2026-11-12
 
-Disposition for [#534](https://github.com/PiesP/xcom-enhanced-gallery/issues/534):
-**BLOCKED**. No Rust candidate or TypeScript CRC alternative was introduced.
+Historical disposition for [#534](https://github.com/PiesP/xcom-enhanced-gallery/issues/534)
+at the reviewed `8806e150` snapshot: **BLOCKED**. The completed
+[follow-up](534-transport-followup.md) supersedes that disposition with
+**RETAIN_CURRENT**. No Rust candidate or TypeScript CRC alternative was introduced.
 The useful larger workload does not have the required five first-use and ten
 warm observations. An actual browser fetch failure produced a partial ZIP in
 the next invocation after a successful three-action run. The successful samples
@@ -217,9 +219,9 @@ qualify all five maintained normal execution contexts and actual byte delivery
 before a Rust pipeline, including the reviewed manager package prerequisite.
 Then freeze candidate budgets and validate the final optimized module/glue.
 
-This branch preserves reproducible, opt-in experimental instrumentation and the
-consumer-owned harness as **unqualified draft work**. It is not an acceleration
-backend ready for admission. At the reviewed `8806e150` snapshot, its task profile listed all four owned
+The reviewed snapshot preserved reproducible, opt-in experimental instrumentation
+and the consumer-owned harness as **unqualified draft work**. It was not an
+acceleration backend ready for admission. At the reviewed `8806e150` snapshot, its task profile listed all four owned
 MP4 inputs as bundle assets, including when another installed scenario is
 selected. That historical checkout without those measurement-owned inputs could not prepare
 the Windows bundle. Follow-up `931165b8` removes the redundant global assets and

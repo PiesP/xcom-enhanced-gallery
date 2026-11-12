@@ -23,7 +23,6 @@ import type {
   SingleDownloadResult,
 } from '@shared/services/download/types';
 import { downloadAsZip } from '@shared/services/download/zip-download';
-import { finishZipExperiment } from '@shared/services/download/zip-experiment-profiler';
 import { createSingleton } from '@shared/services/singleton-base';
 import type { MediaInfo } from '@shared/types/media.types';
 import { ErrorCode } from '@shared/types/media.types';
@@ -200,7 +199,6 @@ export class DownloadOrchestrator {
           }
 
           const zipBlob = result.createBlob();
-          finishZipExperiment(zipBlob.value.size);
           const filename = plan.zipFilename;
 
           // Save ZIP using the download adapter

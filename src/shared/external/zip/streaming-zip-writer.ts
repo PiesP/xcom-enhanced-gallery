@@ -7,7 +7,6 @@
  */
 
 import { schedulerYield } from '@piesp/browser-core/util';
-import { endZipSpan, startZipSpan } from '@shared/services/download/zip-experiment-profiler';
 
 const textEncoder = new TextEncoder();
 const CRC32_CHUNK_SIZE = 1024 * 1024;
@@ -59,25 +58,19 @@ function encodeUtf8(value: string): Uint8Array {
  * @returns 32-bit unsigned CRC32 value
  */
 async function calculateCRC32(data: Uint8Array, signal?: AbortSignal): Promise<number> {
-  const tableStartedMs = startZipSpan();
   const table = ensureCRC32Table();
-  endZipSpan('crc-table', tableStartedMs);
   let crc = 0xffffffff;
 
   for (let chunkStart = 0; chunkStart < data.length; chunkStart += CRC32_CHUNK_SIZE) {
     signal?.throwIfAborted();
     const chunkEnd = Math.min(chunkStart + CRC32_CHUNK_SIZE, data.length);
-    const crcStartedMs = startZipSpan();
     for (let i = chunkStart; i < chunkEnd; i++) {
       // oxlint-disable-next-line typescript/no-non-null-assertion -- The loop bounds keep this byte index in range.
       crc = (crc >>> 8) ^ (table[(crc ^ data[i]!) & 0xff] as number);
     }
-    endZipSpan('crc-active', crcStartedMs, chunkEnd - chunkStart);
 
     if (chunkEnd < data.length) {
-      const yieldStartedMs = startZipSpan();
       await schedulerYield();
-      endZipSpan('crc-yield', yieldStartedMs);
       signal?.throwIfAborted();
     }
   }
@@ -280,11 +273,9 @@ export class StreamingZipWriter {
           );
         }
 
-        const queuedMs = startZipSpan();
-        const operation = this.pendingAdd.then(() => {
-          endZipSpan('commit-queue-wait', queuedMs);
-          return this.addFileInOrder(filename, data, options.signal);
-        });
+        const operation = this.pendingAdd.then(() =>
+          this.addFileInOrder(filename, data, options.signal)
+        );
         this.pendingAdd = operation.catch(() => undefined);
         return operation.finally(release);
       },
@@ -329,7 +320,6 @@ export class StreamingZipWriter {
     signal?.throwIfAborted();
 
     // Local File Header (30 bytes + filename length)
-    const headerStartedMs = startZipSpan();
     const localHeader = concat([
       ZIP_CONST.SIG_LOCAL_HEADER,
       writeUint16LE(ZIP_CONST.VERSION),
@@ -354,7 +344,6 @@ export class StreamingZipWriter {
     this.entries.push({ filename, size: data.length, offset: this.currentOffset, crc32 });
     this.currentOffset += localHeader.length + data.length;
     this.centralDirectorySize += centralDirectoryEntrySize;
-    endZipSpan('local-header', headerStartedMs, localHeader.length);
   }
 
   /**
@@ -368,7 +357,6 @@ export class StreamingZipWriter {
    * @throws Error if archive exceeds Zip32 limits
    */
   finalize(): BlobPart[] {
-    const finalizeStartedMs = startZipSpan();
     // Zip32-only: entry count must fit in 16-bit EOCD fields
     assertZip32(
       this.entries.length < ZIP_CONST.MAX_UINT16,
@@ -463,8 +451,6 @@ export class StreamingZipWriter {
     // The caller accounts for both these parts and the Blob snapshot.
     // Cast required: Uint8Array<ArrayBufferLike> is not assignable to BlobPart
     // because SharedArrayBuffer lacks resizable/resize/transfer/etc.
-    const parts = [...this.chunks, centralDir, eocd] as unknown as BlobPart[];
-    endZipSpan('finalize', finalizeStartedMs, centralDir.length + eocd.length);
-    return parts;
+    return [...this.chunks, centralDir, eocd] as unknown as BlobPart[];
   }
 }

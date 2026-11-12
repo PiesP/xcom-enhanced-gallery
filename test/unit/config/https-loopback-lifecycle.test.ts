@@ -22,7 +22,7 @@ describe('owned loopback listener lifecycle', () => {
     expect(server.address()).toBeNull();
   });
 
-  it('closes a held response before connections and the listener', async () => {
+  it.each([false, true])('closes a held response with observation=%s', async (observeTransport) => {
     const active = new Set<ServerResponse>();
     let responseStarted!: (response: ServerResponse) => void;
     const started = new Promise<ServerResponse>((resolveResponse) => {
@@ -36,7 +36,11 @@ describe('owned loopback listener lifecycle', () => {
       responseStarted(response);
     });
     const defaultClientErrorListeners = server.listenerCount('clientError');
-    const listener = await startHttpsLoopback(server, 'caller-loopback-unavailable', true);
+    const listener = await startHttpsLoopback(
+      server,
+      'caller-loopback-unavailable',
+      observeTransport
+    );
     expect(server.address()).toMatchObject({ address: '127.0.0.1', port: listener.port });
     expect(server.maxConnections).toBe(8);
     expect(server.headersTimeout).toBe(5_000);
@@ -44,7 +48,7 @@ describe('owned loopback listener lifecycle', () => {
     expect(server.keepAliveTimeout).toBe(1_000);
     expect(server.timeout).toBe(20_000);
     expect(server.listenerCount('clientError')).toBe(defaultClientErrorListeners);
-    expect(listener.transportSnapshot()?.settings.keepAliveTimeoutBuffer).toBe(1_000);
+    expect(server.keepAliveTimeoutBuffer).toBe(1_000);
     const request = get(`http://127.0.0.1:${listener.port}/held`);
     request.on('error', () => {});
     const heldResponse = await started;
@@ -60,16 +64,20 @@ describe('owned loopback listener lifecycle', () => {
     expect(server.listening).toBe(false);
     expect(server.address()).toBeNull();
     await setImmediate();
-    expect(listener.transportSnapshot()?.counts).toMatchObject({
-      accepted: 1,
-      active: 0,
-      peakActive: 1,
-      httpRequests: 1,
-      closed: 1,
-    });
-    expect(listener.transportSnapshot()?.events.map(({ kind }) => kind)).toEqual(
-      expect.arrayContaining(['tcp-accepted', 'first-http-request', 'cleanup-complete'])
-    );
+    if (observeTransport) {
+      expect(listener.transportSnapshot()?.counts).toMatchObject({
+        accepted: 1,
+        active: 0,
+        peakActive: 1,
+        httpRequests: 1,
+        closed: 1,
+      });
+      expect(listener.transportSnapshot()?.events.map(({ kind }) => kind)).toEqual(
+        expect.arrayContaining(['tcp-accepted', 'first-http-request', 'cleanup-complete'])
+      );
+    } else {
+      expect(listener.transportSnapshot()).toBeNull();
+    }
   });
 
   it('observes pre-HTTP connection admission drops without relaxing the cap', async () => {

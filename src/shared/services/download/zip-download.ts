@@ -28,7 +28,6 @@ import {
 } from '@shared/external/zip/streaming-zip-writer';
 import { fetchOwnedArrayBufferWithRetry, HttpStatusError } from '@shared/network/retry-fetch';
 import { HttpRequestError } from '@shared/services/http-request-service';
-import { endZipSpan, startZipSpan } from '@shared/services/download/zip-experiment-profiler';
 import type {
   DownloadOptions,
   OrchestratorItem,
@@ -253,13 +252,10 @@ export async function downloadAsZip(
             `Bulk ZIP limit exceeded: ${filename} is ${knownSize} bytes (limit ${maxEntryBytes})`
           );
         }
-        const workerWaitStartedMs = startZipSpan();
         releaseWorker = await workerBudget.reserve(
           supplied ? Math.max(1, supplied.value.size) : maxBufferedBytes,
           abortSignal
         );
-        endZipSpan('worker-admission-wait', workerWaitStartedMs);
-        const entryAdmissionStartedMs = startZipSpan();
         // Conservative UTF-8/header/directory scratch and the corresponding Blob copy.
         // Admit before encodeUtf8/reserveEntry; string lengths are already bounded by the planner.
         overhead = liveBudget.reserve(256 + filename.length * 8);
@@ -298,14 +294,11 @@ export async function downloadAsZip(
           ...(knownSize !== undefined ? { knownSize } : {}),
         });
         futureBlob = liveBudget.reserve(remainingEntryBytes);
-        endZipSpan('entry-admission', entryAdmissionStartedMs, remainingEntryBytes);
         let data: Uint8Array;
         if (usesBlob) {
           // Reserve arrayBuffer's distinct storage before invoking a provider or copying a Blob.
           body = liveBudget.reserve(remainingEntryBytes);
           let blob: Blob | undefined;
-          const providerStartedMs = startZipSpan();
-          const providerPhase = item.blob ? 'owned-blob-wait' : 'provider-wait';
           try {
             if (item.blob) {
               const owner = item.blob instanceof Promise ? await item.blob : item.blob;
@@ -315,9 +308,7 @@ export async function downloadAsZip(
               borrowed = (await item.getBlob?.(abortSignal, remainingEntryBytes)) ?? undefined;
               blob = borrowed?.value;
             }
-            endZipSpan(providerPhase, providerStartedMs, blob?.size ?? 0);
           } catch (error) {
-            endZipSpan(providerPhase, providerStartedMs);
             throwIfAborted(abortSignal);
             // Only a resolved cache/provider miss permits URL fallback. A
             // rejected request may already be denied, rate-limited or active.
@@ -330,14 +321,11 @@ export async function downloadAsZip(
                 `Bulk ZIP limit exceeded: ${filename} is ${blob.size} bytes (remaining ${remainingEntryBytes})`
               );
             }
-            const materializeStartedMs = startZipSpan();
             data = new Uint8Array(await blob.arrayBuffer());
-            endZipSpan('blob-array-buffer', materializeStartedMs, data.byteLength);
             body.shrink(data.byteLength);
           } else {
             body.release();
             body = undefined;
-            const fetchStartedMs = startZipSpan();
             const fetched = await fetchOwnedArrayBufferWithRetry(
               item.url,
               retries,
@@ -347,11 +335,9 @@ export async function downloadAsZip(
               liveBudget
             );
             data = fetched.value;
-            endZipSpan('network-fetch', fetchStartedMs, data.byteLength);
             body = fetched.lease;
           }
         } else {
-          const fetchStartedMs = startZipSpan();
           const fetched = await fetchOwnedArrayBufferWithRetry(
             item.url,
             retries,
@@ -361,7 +347,6 @@ export async function downloadAsZip(
             liveBudget
           );
           data = fetched.value;
-          endZipSpan('network-fetch', fetchStartedMs, data.byteLength);
           body = fetched.lease;
         }
         throwIfAborted(abortSignal);
@@ -372,13 +357,9 @@ export async function downloadAsZip(
         }
         futureBlob.shrink(data.byteLength);
         if (index > 0) {
-          const yieldStartedMs = startZipSpan();
           await schedulerYield();
-          endZipSpan('precommit-yield', yieldStartedMs);
         }
-        const commitStartedMs = startZipSpan();
         await archiveReservation.commit(data, abortSignal ? { signal: abortSignal } : {});
-        endZipSpan('commit-total', commitStartedMs, data.byteLength);
         partLeases.push(body, overhead);
         blobLeases.push(futureBlob, blobOverhead);
         body = undefined;
@@ -467,13 +448,11 @@ export async function downloadAsZip(
         throw new Error('ZIP ownership is no longer available');
       }
       // Future Blob capacity was reserved before reading every accepted entry.
-      const blobStartedMs = startZipSpan();
       const value = new Blob(parts, { type: 'application/zip' });
       transferred = true;
       dropParts();
       partOwner.release();
       blobOwner.shrink(value.size);
-      endZipSpan('blob-create', blobStartedMs, value.size);
       return { value, lease: blobOwner };
     },
     dispose: () => {

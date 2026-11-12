@@ -1,114 +1,25 @@
 # Windows stable-browser gallery validation
 
-## ZIP CRC Phase 0 fixture (#534)
+The bounded [CRC Phase 0 experiment](../../docs/experiments/534-transport-followup.md)
+concluded RETAIN_CURRENT. Product instrumentation, the CRC selector and its
+executable profile were removed. Its exact tested source can be reconstructed
+from the inert evidence patch described in that record; ordinary installed
+preparation has no CRC MP4 prerequisite.
 
-For the one bounded transport diagnostic, add `"diagnostic":true` to the large
-selector. This keeps the historical product content.js hash and all listener,
-trust, origin, request and byte limits. It records bounded TCP admission/drop,
-TLS, first HTTP, close and owned-timeout events using the guest Node clock.
-Browser request start and failure phases are separate. A fresh owned browser
-also captures default-privacy NetLog (5 MiB target, at most 120 seconds) so a
-pre-HTTP dropped connection can be correlated without inventing its URL. Raw
-NetLog stays private. All diagnostic actions are excluded from performance
-cohorts, even if their saved ZIPs pass. Response `finish` describes server writes
-to the OS; actual browser completion and saved-member verification are separate.
-No HTTP `clientError` or server/request/response `timeout` listener is installed;
-Node's default error response/termination and the existing socket timeout owner
-remain in control. Cleanup records accepted sockets after listener shutdown.
-
-The primary large-workload baseline is **BLOCKED** by an observed source fetch
-failure. This opt-in task branch is unqualified draft work. See the dated
-[evidence and resume conditions](../../docs/experiments/534-phase0.md).
-The original task profile required all four owned MP4 inputs for every Windows
-installation bundle. That preparation defect is corrected on this branch:
-the existing profile-owned `validation/windows/inputs` directory remains the
-bundle source, while only the large CRC runner requires and verifies the four
-MP4 files. Small JPEG and ordinary installed scenarios can prepare without them.
-
-Supply the existing owned WMC fixture outputs before preparing a bundle. Their
-producer is `scripts/test/generate-e2e-video.ts` (`prepare:e2e:fixture`) in
-`PiesP/wasm-motion-converter` at `8fbef7391eb7fbc2f2cc6aeb960e032e02871b5c`;
-this experiment reused the resulting files. The Windows measurement owner holds
-the originals. From this XCOM checkout, set `wmc_fixture_root` to that WMC checkout
-containing the verified outputs, then copy only these inputs:
-
-```sh
-wmc_fixture_root=/path/to/owned/wasm-motion-converter
-mkdir -p validation/windows/inputs
-cp "$wmc_fixture_root/validation/windows/inputs/trim-submission.mp4" validation/windows/inputs/crc-owned-clip.mp4
-cp "$wmc_fixture_root/public/test-video-ci-high-motion-120fps.mp4" validation/windows/inputs/crc-owned-motion.mp4
-cp "$wmc_fixture_root/public/test-video-ci-h264.mp4" validation/windows/inputs/crc-owned-small.mp4
-cp "$wmc_fixture_root/public/test-video-contract-motion-120fps.mp4" validation/windows/inputs/crc-owned-markers.mp4
-```
-
-Compare sizes and SHA-256 with the dated evidence table and `CLIPS` before use;
-the runner rejects any mismatch. Generating replacements with another encoder
-version does not establish identity. If originals are unavailable, request them
-from that measurement owner and keep preparation blocked. Do not commit inputs
-or substitute larger synthetic media.
-
-The ignored, exclusive `validation/windows/inputs/zip-crc.json` selector has
-`{"scenario":"zip-crc","workload":"large"}` or the same object with
-`"workload":"small"`. Run the existing installed Chrome/Edge extension route
-with that selector, no public URL, and the ordinary three production builds.
-Set `VITE_ZIP_CRC_PROFILE=1` in the inherited environment for all three builds;
-without it the normal product realm does not publish the bounded timing report.
-The large workload uses four distinct existing owned MP4 sources: a 10-second
-640×360 clip (2,857,140 bytes), a 3-second 320×180 high-motion clip (98,399
-bytes), a 1-second 160×90 clip (5,184 bytes), and a 1.2-second 320×180 marker
-clip (31,813 bytes). Their SHA-256 hashes and exact URL/name/byte pairs are
-frozen in `zip-crc-profile.ts` and verified before serving.
-The ordinary small workload uses three browser-generated 480×320, 560×360 and
-640×400 JPEGs. Neither workload increases the product's ZIP admission limits.
-
-The focused runner uses the normal installed extension, its production gallery
-and bulk action, and the existing owned HTTPS host mapping. Its additional
-fixture routes are exact page, GraphQL tweet, image and clip paths. Only the
-known 10-second MP4 may exceed the existing 256 KiB fixture-source bound, and the server's
-16 MiB total response bound remains unchanged. Media responses declare
-`Cache-Control: public, max-age=3600`; receipts record actual server requests,
-response policy and browser Resource Timing, so a warm cache is qualified from
-observations rather than assumed from a prior visit. The final OwnedBlob
-timestamp comes from opt-in source instrumentation in the normal product
-document, before the native save adapter. Native completion and exact saved ZIP
-member bytes, CRCs, headers, flags, names and commit order are checked later.
-The resulting ZIP is under the existing 4 MiB saved-file verification bound.
-The 300 ms UI indicator floor is not the primary interval.
-Each sample records functional status separately from performance eligibility.
-First use is eligible after functional success; a warm sample additionally
-requires observed `cacheConditionQualified === true`. An unqualified warm
-sample remains in the raw receipt and is excluded from the performance cohort.
-The conservative ideal CRC-removal bound unions `crc-table` and `crc-active`
-intervals without counting overlap twice; `crcActiveUnionMs` remains separately
-reported for comparison with the earlier dated receipts.
-The confirmatory large-profile diagnostic records exact rejected native fixture
-paths, HTTP failures, failed-request method/type/range/timing, console location,
-and observed video source and lifecycle transitions. Only the exact owned
-`x.com/favicon.ico` GET/HEAD endpoint returns 204. A media `ERR_ABORTED` is
-classified as expected only when its exact owned MP4 URL was observed on a
-gallery video, metadata was already ready or its load event was observed, and a
-matching full-range 206 response completed
-either on the current page or earlier in the same fixture run. The prior-response
-case also requires observed warm-cache qualification and no new source GET on
-the current page. Receipts label the classification basis; other media,
-connection, fetch and HTTP failures remain errors. Earlier failed runs are
-retained separately.
-Each page also records the installed main-frame extension content-script realm
-before the gallery action and detaches the diagnostic CDP session before timing.
-The source and packaged manifests bind the normal `content.js` declaration and
-extension-page CSP; the fixture document's response CSP is recorded separately.
-This realm identity does not establish WASM compilation permission. Live X.com
-response CSP remains unknown in this fixture run.
-
-Each invocation makes one first-use attempt and two fresh-page warm-cache
-attempts for the selected workload, closing every page after its saved archive
-has been independently verified. Five separate fresh-profile invocations per
-workload supply five cold and ten warm observations. The receipt preserves raw
-samples and failed attempts. This route currently covers Chrome and Edge
-extensions only; Firefox extension, both Tampermonkey contexts and other
-advertised managers/browsers require their own normal-realm evidence before any
-new runtime is adopted. It does not establish a store approval or a live X.com
-target-page CSP.
+For a source-bound transport diagnostic, the existing native fixture factory
+accepts an optional `observeTransport` argument. Its `snapshot().transport`
+records bounded TCP admission/drop, TLS, first HTTP, owner timeout and close
+events with explicit clocks and effective settings. Normal installed runs keep
+this observation opt-in off. `releaseIdleConnections()` delegates to Node's idle
+HTTP connection close API without changing the eight-connection cap or active
+response ownership. It is not automatically applied to other scenarios. Use
+observations only within the selected source/fixture contract; server write
+completion does not prove browser receipt/cache completion. The installation
+receipt retains a separate post-close cleanup snapshot. No HTTP `clientError` or
+server/request/response timeout listener replaces Node's default handling.
+Connection labels correlate currently live endpoint tuples; they do not assert
+TLS/raw socket object identity. An unavailable match remains null. Pre-HTTP
+drops require browser-side evidence before assigning an exact request URL.
 
 This optional validation has four separate evidence tiers. None substitutes
 for another, and none is a required CI lane.

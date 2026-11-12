@@ -88,7 +88,6 @@ import {
 } from './release-upgrade/source.ts';
 import { runVideoLoadingProfile } from './video-loading-profile.ts';
 import { runInstalledVideoSaveFormatProbe } from './video-save-format-profile.ts';
-import { runZipCrcProfile } from './zip-crc-profile.ts';
 import {
   COMPACT_DISPLAY_URL,
   COMPACT_FIXTURE_URL,
@@ -1134,7 +1133,6 @@ type InstallResult = {
   nativeBrowserUi?: unknown;
   mediaApiReuse?: Awaited<ReturnType<typeof runInstalledMediaApiReuseProfile>>;
   sourceImageFailures?: SourceImageFailureEvidence;
-  zipCrc?: unknown;
   uxDetails?: unknown;
   settingsPersistence?: unknown;
   attachmentFilenames?: unknown;
@@ -21505,49 +21503,6 @@ export async function run({
   liveUrls: string[];
   liveObservation?: null;
 }) {
-  const zipCrcSelectorText = await readFile(
-    join(root, 'validation/windows/inputs/zip-crc.json'),
-    'utf8'
-  ).catch((error: unknown) => {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return null;
-    }
-    throw error;
-  });
-  const zipCrcSelector =
-    zipCrcSelectorText === null
-      ? null
-      : (JSON.parse(zipCrcSelectorText) as {
-          scenario?: unknown;
-          workload?: unknown;
-          diagnostic?: unknown;
-        });
-  if (zipCrcSelector !== null) {
-    assert.deepEqual(zipCrcSelector, {
-      scenario: 'zip-crc',
-      workload: zipCrcSelector.workload,
-      ...(zipCrcSelector.diagnostic === undefined ? {} : { diagnostic: true }),
-    });
-    assert(
-      ['large', 'small'].includes(String(zipCrcSelector.workload)),
-      'Unsupported ZIP CRC workload'
-    );
-    assert(
-      zipCrcSelector.diagnostic !== true || zipCrcSelector.workload === 'large',
-      'Transport diagnostic requires the frozen larger workload'
-    );
-    assert(
-      ['chrome', 'msedge'].includes(browserName),
-      'ZIP CRC installed extension route requires Chrome or Edge'
-    );
-    assert.equal(installation, 'extension', 'ZIP CRC profile requires the installed extension');
-    assert.deepEqual(liveUrls, [], 'ZIP CRC profile uses owned fixtures only');
-    assert.equal(liveObservation, null);
-    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
-      .filter((name) => name.endsWith('.json'))
-      .sort();
-    assert.deepEqual(selectors, ['zip-crc.json'], 'ZIP CRC profile requires an exclusive selector');
-  }
   if (browserName === 'firefox') {
     assert.equal(installation, 'extension', 'Firefox validation requires extension installation');
     assert.equal(liveObservation, null, 'Firefox duration observation is not configured');
@@ -21751,7 +21706,6 @@ export async function run({
     assert.equal(liveObservation, null, 'Source image qualification cannot share live observation');
   }
   if (installation === 'userscript') {
-    assert.equal(zipCrcSelector, null, 'ZIP CRC profile requires the installed extension');
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert(
       liveUrls.length === 0 ||
@@ -21835,12 +21789,6 @@ export async function run({
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
-  if (zipCrcSelector !== null) {
-    assert(
-      !upgradeInput && !sameVersionInput,
-      'ZIP CRC profile cannot share release-upgrade inputs'
-    );
-  }
   if (mediaApiProbe) {
     assert(!upgradeInput && !sameVersionInput, 'API reuse cannot run during upgrade checks');
     const selectors = (await readdir(join(root, 'validation/windows/inputs')))
@@ -22110,37 +22058,35 @@ export async function run({
     liveUrls: validatedLiveUrls,
     liveObservation,
     scope:
-      zipCrcSelector !== null
-        ? 'issue 534 installed extension production ZIP action through final OwnedBlob; owned fixture and saved-file evidence only'
-        : reportedFilenameText !== null
-          ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
-          : liveSettingsProbe
-            ? 'focused installed language/theme settings acceptance; no full prior live campaign'
-            : videoFormatProbe
-              ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
-              : sourceImageProbe
-                ? 'focused installed-Edge source image 404, empty and corrupt recovery; owned X fixture only'
-                : mediaApiProbe
-                  ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
-                  : uxDetailsProbe
-                    ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-                    : settingsProbe
-                      ? 'installed-extension settings persistence fixture; no live X observation'
-                      : failedEntryProbe
-                        ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-                        : experienceProbe
-                          ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
-                          : recoveryProbe
-                            ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-                            : openingProbe
-                              ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                              : validatedLiveUrls.length
-                                ? actualSiteAcceptance
-                                  ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                                  : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                                : sameVersionInput
-                                  ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                                  : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+      reportedFilenameText !== null
+        ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
+        : liveSettingsProbe
+          ? 'focused installed language/theme settings acceptance; no full prior live campaign'
+          : videoFormatProbe
+            ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
+            : sourceImageProbe
+              ? 'focused installed-Edge source image 404, empty and corrupt recovery; owned X fixture only'
+              : mediaApiProbe
+                ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
+                : uxDetailsProbe
+                  ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+                  : settingsProbe
+                    ? 'installed-extension settings persistence fixture; no live X observation'
+                    : failedEntryProbe
+                      ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+                      : experienceProbe
+                        ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
+                        : recoveryProbe
+                          ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                          : openingProbe
+                            ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                            : validatedLiveUrls.length
+                              ? actualSiteAcceptance
+                                ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                                : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                              : sameVersionInput
+                                ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                                : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -22172,8 +22118,7 @@ export async function run({
       })
     );
     nativeLoopback = await startExtensionNativeFixtureLoopback(
-      join(root, 'validation/windows/userscript-fixture-certificate.ps1'),
-      zipCrcSelector !== null
+      join(root, 'validation/windows/userscript-fixture-certificate.ps1')
     );
     result.fixtureTransport = {
       kind: 'task-owned-https-loopback',
@@ -22192,13 +22137,6 @@ export async function run({
       ignoreDefaultArgs: ['--disable-extensions'],
       args: [
         '--enable-unsafe-extension-debugging',
-        ...(zipCrcSelector?.diagnostic === true
-          ? [
-              `--log-net-log=${join(output, 'zip-crc-netlog.json')}`,
-              '--net-log-max-size-mb=5',
-              '--net-log-duration=120',
-            ]
-          : []),
         ...(nativeScrollbarTakeover && browserName === 'chrome'
           ? ['--enable-smooth-scrolling']
           : []),
@@ -22251,34 +22189,7 @@ export async function run({
     if (!sameVersionInput) {
       const images = await createImageFixtures(context);
       const displayImages = await createImageFixtures(context, 0.25);
-      if (zipCrcSelector !== null) {
-        const installedContext = context;
-        const installedExtensionId = extensionId;
-        result.zipCrc = await runZipCrcProfile({
-          context: installedContext,
-          extensionId: installedExtensionId,
-          root,
-          output,
-          downloads,
-          images,
-          displayImages,
-          nativeLoopback,
-          workload: zipCrcSelector.workload as 'large' | 'small',
-          diagnostic: zipCrcSelector.diagnostic === true,
-          readContentRealm: async (page) => {
-            const { cdp, realm } = await installedContentRealm(
-              installedContext,
-              page,
-              installedExtensionId
-            );
-            try {
-              return realm;
-            } finally {
-              await cdp.detach();
-            }
-          },
-        });
-      } else if (reportedFilenameProbe) {
+      if (reportedFilenameProbe) {
         // Focused live runs reuse the installed artifact without repeating completed fixtures.
         result.evidenceStatus = 'diagnostic-only';
       } else if (attachmentFilenameProbe) {

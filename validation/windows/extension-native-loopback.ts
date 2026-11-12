@@ -17,47 +17,12 @@ import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 const MAX_REQUESTS = 128;
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_SERVED_BYTES = 16 * 1024 * 1024;
-const CRC_CLIPS = [
-  {
-    bytes: 2_857_140,
-    sha256: '352daf37b350f50a069c3911b32248c5adb7684ade30b525f6c25685c3b80f5e',
-    width: 640,
-    height: 360,
-  },
-  {
-    bytes: 98_399,
-    sha256: '36dd064afeefde15ecceea49109fffee6b17cdf0962de6eb21e0255fdd0cb8f8',
-    width: 320,
-    height: 180,
-  },
-  {
-    bytes: 5_184,
-    sha256: 'de4c15ff513d41c964eadb5d45ce08030b2a94eea501e9f86edfd8a301e1411e',
-    width: 160,
-    height: 90,
-  },
-  {
-    bytes: 31_813,
-    sha256: 'c93c7e6c6102e36089ee5aa79d9fa9758be8b7f62ac1043247ebb22399770004',
-    width: 320,
-    height: 180,
-  },
-] as const;
-const CRC_TWEET_IDS = ['1234567890123456789', '4666000000000000534'] as const;
-const CRC_GRAPHQL_PATH = '/i/api/graphql/zAz9764BcLZOJ0JU2wrd1A/TweetResultByRestId';
 const IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
 
-type NativeRoute = {
-  bytes: Buffer;
-  host: string;
-  path: string;
-  contentType?: string;
-  cacheControl?: string;
-};
+type NativeRoute = { bytes: Buffer; host: string; path: string; contentType?: string };
 type NativeEvent = {
   host: string;
   path: string;
-  requestTarget?: string;
   method: string;
   purpose: string;
   status: number;
@@ -65,8 +30,6 @@ type NativeEvent = {
   bytes: number;
   sha256: string | null;
   result: string;
-  cacheControl?: string;
-  requestCacheControl?: string | null;
   atMs: number;
   closedAtMs?: number;
   finishedAtMs?: number;
@@ -119,7 +82,6 @@ export function createExtensionNativeFixtureHandler() {
   let overflow = false;
   const events: NativeEvent[] = [];
   const active = new Set<ServerResponse>();
-  const crcApi = new Map<string, NativeRoute>();
   let holdPath: string | null = null;
   let heldResponse: ServerResponse | null = null;
   let heldTail: Buffer | null = null;
@@ -136,35 +98,8 @@ export function createExtensionNativeFixtureHandler() {
     prefix.event.prefixBytesQueued = prefix.bytes.length;
     prefix.event.firstByteQueuedAtMs = prefix.bytes.length > 0 ? performance.now() : null;
   };
-  const reject = (request: IncomingMessage, response: ServerResponse, status = 404) => {
+  const reject = (response: ServerResponse, status = 404) => {
     unexpectedCount += 1;
-    const target = (request.url ?? '').slice(0, 300);
-    const event: NativeEvent = {
-      host: (request.headers.host ?? '').replace(/:443$/u, '').slice(0, 100),
-      path: target.split('?')[0] ?? '',
-      requestTarget: target,
-      method: request.method ?? '',
-      purpose: 'rejected',
-      status,
-      range: null,
-      bytes: 0,
-      sha256: null,
-      result: 'started',
-      atMs: performance.now(),
-    };
-    events.push(event);
-    active.add(response);
-    response.once('close', () => {
-      if (!response.writableFinished) {
-        event.result = 'aborted';
-        event.closedAtMs = performance.now();
-      }
-      active.delete(response);
-    });
-    response.once('finish', () => {
-      event.result = 'rejected';
-      event.finishedAtMs = performance.now();
-    });
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
     response.end();
   };
@@ -177,62 +112,9 @@ export function createExtensionNativeFixtureHandler() {
     }
     const host = request.headers.host;
     const sni = request.socket instanceof TLSSocket ? request.socket.servername : undefined;
-    const normalizedHost = host?.replace(/:443$/u, '');
-    if (
-      allowed.size > 0 &&
-      normalizedHost === 'x.com' &&
-      request.url === '/favicon.ico' &&
-      ['GET', 'HEAD'].includes(request.method ?? '') &&
-      (!sni || sni === 'x.com')
-    ) {
-      const event: NativeEvent = {
-        host: 'x.com',
-        path: '/favicon.ico',
-        method: request.method ?? '',
-        purpose: 'favicon',
-        status: 204,
-        range: null,
-        bytes: 0,
-        sha256: null,
-        result: 'started',
-        atMs: performance.now(),
-      };
-      events.push(event);
-      active.add(response);
-      response.once('close', () => active.delete(response));
-      response.once('finish', () => {
-        event.result = 'served';
-        event.finishedAtMs = performance.now();
-      });
-      response.writeHead(204, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
-      response.end();
-      return;
-    }
-    let route = allowed.get(`${normalizedHost}${request.url ?? ''}`);
-    if (!route && normalizedHost === 'x.com' && crcApi.size > 0) {
-      const url = new URL(request.url ?? '/', 'https://x.com');
-      if (url.pathname === CRC_GRAPHQL_PATH) {
-        let tweetId: string | undefined;
-        try {
-          const variables: unknown = JSON.parse(url.searchParams.get('variables') ?? 'null');
-          if (
-            variables &&
-            typeof variables === 'object' &&
-            'tweetId' in variables &&
-            typeof variables.tweetId === 'string'
-          ) {
-            tweetId = variables.tweetId;
-          }
-        } catch {
-          // A malformed or unrelated query remains outside the owned route set.
-        }
-        if (tweetId) {
-          route = crcApi.get(tweetId);
-        }
-      }
-    }
+    const route = allowed.get(`${host?.replace(/:443$/u, '')}${request.url ?? ''}`);
     if (!['GET', 'HEAD'].includes(request.method ?? '') || !route || (sni && sni !== route.host)) {
-      reject(request, response);
+      reject(response);
       return;
     }
     if (httpFailure?.key === `${route.host}${request.url ?? ''}`) {
@@ -318,13 +200,13 @@ export function createExtensionNativeFixtureHandler() {
         !Number.isSafeInteger(Number(match[1])) ||
         (match[2] && !Number.isSafeInteger(Number(match[2])))
       ) {
-        reject(request, response, 416);
+        reject(response, 416);
         return;
       }
       start = Number(match[1]);
       end = match[2] ? Number(match[2]) : end;
       if (start >= bytes.length || end < start) {
-        reject(request, response, 416);
+        reject(response, 416);
         return;
       }
       end = Math.min(end, bytes.length - 1);
@@ -352,11 +234,6 @@ export function createExtensionNativeFixtureHandler() {
       bytes: 0,
       sha256: null,
       result: 'started',
-      cacheControl: route.cacheControl ?? 'no-store',
-      requestCacheControl:
-        typeof request.headers['cache-control'] === 'string'
-          ? request.headers['cache-control']
-          : null,
       atMs: performance.now(),
     };
     events.push(event);
@@ -387,7 +264,7 @@ export function createExtensionNativeFixtureHandler() {
         route.contentType ?? (route.host === 'video.twimg.com' ? 'video/mp4' : 'image/jpeg'),
       'Content-Length': String(request.method === 'HEAD' ? end - start + 1 : body.length),
       'Accept-Ranges': 'bytes',
-      'Cache-Control': route.cacheControl ?? 'no-store',
+      'Cache-Control': 'no-store',
       'Access-Control-Allow-Origin': 'https://x.com',
       'Access-Control-Allow-Credentials': 'true',
       ...(range === undefined ? {} : { 'Content-Range': `bytes ${start}-${end}/${bytes.length}` }),
@@ -463,139 +340,6 @@ export function createExtensionNativeFixtureHandler() {
   };
   return {
     handle,
-    setZipCrcProfile({
-      smallHtml,
-      smallApi,
-      largeHtml,
-      largeApi,
-      images,
-      displayImages,
-      clips,
-    }: {
-      smallHtml: string;
-      smallApi: unknown;
-      largeHtml: string;
-      largeApi: unknown;
-      images: readonly Buffer[];
-      displayImages: readonly Buffer[];
-      clips: readonly Buffer[];
-    }) {
-      assert.equal(allowed.size, 0, 'Native fixture payloads already installed');
-      assert.equal(crcApi.size, 0, 'CRC API fixture already installed');
-      assert(
-        clips.length === 0 || clips.length === CRC_CLIPS.length,
-        'CRC fixture requires zero or all four exact clips'
-      );
-      if (clips.length > 0) {
-        for (const [index, expected] of CRC_CLIPS.entries()) {
-          const clip = clips[index];
-          assert(Buffer.isBuffer(clip), `CRC clip ${index} is absent`);
-          assert.equal(clip.length, expected.bytes);
-          assert.equal(createHash('sha256').update(clip).digest('hex'), expected.sha256);
-          if (index > 0) {
-            assert(clip.length <= MAX_BODY_BYTES);
-          }
-        }
-      }
-      assert.equal(images.length, 3);
-      assert.equal(displayImages.length, 3);
-      const bounded = (bytes: Buffer) => {
-        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
-        return bytes;
-      };
-      const add = (
-        host: string,
-        url: string,
-        bytes: Buffer,
-        contentType: string,
-        cacheControl?: string
-      ) => {
-        assert(!allowed.has(`${host}${url}`), 'Duplicate CRC fixture route');
-        allowed.set(`${host}${url}`, {
-          host,
-          path: new URL(url, `https://${host}`).pathname,
-          bytes,
-          contentType,
-          ...(cacheControl ? { cacheControl } : {}),
-        });
-      };
-      const smallId = CRC_TWEET_IDS[0];
-      const largeId = CRC_TWEET_IDS[1];
-      add(
-        'x.com',
-        `/testuser/status/${smallId}`,
-        bounded(Buffer.from(smallHtml)),
-        'text/html; charset=utf-8'
-      );
-      if (clips.length > 0) {
-        add(
-          'x.com',
-          `/crc_fixture/status/${largeId}`,
-          bounded(Buffer.from(largeHtml)),
-          'text/html; charset=utf-8'
-        );
-      }
-      crcApi.set(smallId, {
-        host: 'x.com',
-        path: CRC_GRAPHQL_PATH,
-        bytes: bounded(Buffer.from(JSON.stringify(smallApi))),
-        contentType: 'application/json',
-      });
-      if (clips.length > 0) {
-        crcApi.set(largeId, {
-          host: 'x.com',
-          path: CRC_GRAPHQL_PATH,
-          bytes: bounded(Buffer.from(JSON.stringify(largeApi))),
-          contentType: 'application/json',
-        });
-      }
-      const markers = ['GkE1234ABCDEF.jpg', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
-      for (const [index, marker] of markers.entries()) {
-        const original = bounded(images[index]!);
-        const display = bounded(displayImages[index]!);
-        for (const name of ['large', 'small']) {
-          add(
-            'pbs.twimg.com',
-            `/media/${marker}?format=jpg&name=${name}`,
-            display,
-            'image/jpeg',
-            'public, max-age=3600'
-          );
-        }
-        add(
-          'pbs.twimg.com',
-          `/media/${marker}?format=jpg&name=orig`,
-          original,
-          'image/jpeg',
-          'public, max-age=3600'
-        );
-        add(
-          'pbs.twimg.com',
-          `/media/${marker.replace(/\.jpg$/u, '')}?format=jpg&name=orig`,
-          original,
-          'image/jpeg',
-          'public, max-age=3600'
-        );
-      }
-      if (clips.length > 0) {
-        for (const [index, expected] of CRC_CLIPS.entries()) {
-          add(
-            'pbs.twimg.com',
-            `/ext_tw_video_thumb/${largeId}/pu/img/crc-${index}.jpg`,
-            bounded(displayImages[0]!),
-            'image/jpeg',
-            'public, max-age=3600'
-          );
-          add(
-            'video.twimg.com',
-            `/ext_tw_video/${largeId}/pu/vid/${expected.width}x${expected.height}/crc-${index}.mp4`,
-            clips[index]!,
-            'video/mp4',
-            'public, max-age=3600'
-          );
-        }
-      }
-    },
     setPayloads(images: Buffer[], videoPayloads: Record<string, Buffer>) {
       assert.equal(allowed.size, 0, 'Native fixture payloads already installed');
       assert(Array.isArray(images) && images.length === IMAGE_PATHS.length);
