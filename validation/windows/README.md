@@ -1,5 +1,51 @@
 # Windows stable-browser gallery validation
 
+## ZIP CRC Phase 0 fixture (#534)
+
+The ignored, exclusive `validation/windows/inputs/zip-crc.json` selector has
+`{"scenario":"zip-crc","workload":"large"}` or the same object with
+`"workload":"small"`. Run the existing installed Chrome/Edge extension route
+with that selector, no public URL, and the ordinary three production builds.
+Set `VITE_ZIP_CRC_PROFILE=1` in the inherited environment for all three builds;
+without it the normal product realm does not publish the bounded timing report.
+The large workload uses four distinct existing owned MP4 sources: a 10-second
+640×360 clip (2,857,140 bytes), a 3-second 320×180 high-motion clip (98,399
+bytes), a 1-second 160×90 clip (5,184 bytes), and a 1.2-second 320×180 marker
+clip (31,813 bytes). Their SHA-256 hashes and exact URL/name/byte pairs are
+frozen in `zip-crc-profile.ts` and verified before serving.
+The ordinary small workload uses three browser-generated 480×320, 560×360 and
+640×400 JPEGs. Neither workload increases the product's ZIP admission limits.
+
+The focused runner uses the normal installed extension, its production gallery
+and bulk action, and the existing owned HTTPS host mapping. Its additional
+fixture routes are exact page, GraphQL tweet, image and clip paths. Only the
+known 10-second MP4 may exceed the existing 256 KiB fixture-source bound, and the server's
+16 MiB total response bound remains unchanged. Media responses declare
+`Cache-Control: public, max-age=3600`; receipts record actual server requests,
+response policy and browser Resource Timing, so a warm cache is qualified from
+observations rather than assumed from a prior visit. The final OwnedBlob
+timestamp comes from opt-in source instrumentation in the normal product
+document, before the native save adapter. Native completion and exact saved ZIP
+member bytes, CRCs, headers, flags, names and commit order are checked later.
+The resulting ZIP is under the existing 4 MiB saved-file verification bound.
+The 300 ms UI indicator floor is not the primary interval.
+Each page also records the installed main-frame extension content-script realm
+before the gallery action and detaches the diagnostic CDP session before timing.
+The source and packaged manifests bind the normal `content.js` declaration and
+extension-page CSP; the fixture document's response CSP is recorded separately.
+This realm identity does not establish WASM compilation permission. Live X.com
+response CSP remains unknown in this fixture run.
+
+Each invocation makes one first-use attempt and two fresh-page warm-cache
+attempts for the selected workload, closing every page after its saved archive
+has been independently verified. Five separate fresh-profile invocations per
+workload supply five cold and ten warm observations. The receipt preserves raw
+samples and failed attempts. This route currently covers Chrome and Edge
+extensions only; Firefox extension, both Tampermonkey contexts and other
+advertised managers/browsers require their own normal-realm evidence before any
+new runtime is adopted. It does not establish a store approval or a live X.com
+target-page CSP.
+
 This optional validation has four separate evidence tiers. None substitutes
 for another, and none is a required CI lane.
 

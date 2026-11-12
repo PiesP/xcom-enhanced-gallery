@@ -14,6 +14,10 @@ import {
   getDownloadOrchestrator,
   type FailedEntryRecovery,
 } from '@shared/services/download/download-orchestrator';
+import {
+  finishZipExperimentWithoutArchive,
+  startZipExperiment,
+} from '@shared/services/download/zip-experiment-profiler';
 import type { BulkDownloadResult } from '@shared/services/download/types';
 import { getLanguageService } from '@shared/services/language-service';
 import { getGalleryMediaActions } from '@shared/services/media-service';
@@ -182,6 +186,9 @@ export function createDownloadHandler() {
 
     if (signal.aborted) {
       return;
+    }
+    if (type === 'all') {
+      startZipExperiment(bulkTotal);
     }
     recoveryJob = null;
     // A zero count marks only an in-flight recovery. A later ordinary ZIP
@@ -400,6 +407,10 @@ export function createDownloadHandler() {
       const { title, body } = getDownloadErrorNotification(error);
       setError(body, type === 'all' ? 'bulkDownload' : null);
       notifyError(title, body);
+    } finally {
+      if (type === 'all') {
+        finishZipExperimentWithoutArchive();
+      }
     }
   };
 

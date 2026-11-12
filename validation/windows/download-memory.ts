@@ -160,7 +160,11 @@ function within(bytes: Buffer, offset: number, size: number, boundary: number, l
 }
 
 /** Verify the stored-entry ZIP emitted by the production writer, without expanding data. */
-export function verifyStoredZip(bytes: Buffer, expectedEntries: readonly StoredZipEntry[]) {
+export function verifyStoredZip(
+  bytes: Buffer,
+  expectedEntries: readonly StoredZipEntry[],
+  { physicalOrder = 'assigned' }: { physicalOrder?: 'assigned' | 'commit' } = {}
+) {
   assert(Buffer.isBuffer(bytes), 'ZIP input must be a Buffer');
   assert.equal(
     bytes.length,
@@ -270,11 +274,13 @@ export function verifyStoredZip(bytes: Buffer, expectedEntries: readonly StoredZ
     centralCursor = nameOffset + nameBytes;
   }
   assert.equal(centralCursor, eocd, 'Central records do not end at EOCD');
-  assert.deepEqual(
-    actual.map((entry) => entry.filename),
-    expectedEntries.map((entry) => entry.filename),
-    'ZIP entry order differs from fixture order'
-  );
+  if (physicalOrder === 'assigned') {
+    assert.deepEqual(
+      actual.map((entry) => entry.filename),
+      expectedEntries.map((entry) => entry.filename),
+      'ZIP entry order differs from fixture order'
+    );
+  }
   return {
     bytes: bytes.length,
     entryOrder: actual.map((entry) => entry.filename),
