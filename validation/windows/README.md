@@ -2,6 +2,35 @@
 
 ## ZIP CRC Phase 0 fixture (#534)
 
+The primary large-workload baseline is **BLOCKED** by an observed source fetch
+failure. This opt-in task branch is unqualified draft work. See the dated
+[evidence and resume conditions](../../docs/experiments/534-phase0.md).
+The task profile currently requires all four owned MP4 inputs for Windows bundle
+preparation, including other installed scenarios; isolate that prerequisite
+before admitting the harness into the ordinary workflow.
+
+Supply the existing owned WMC fixture outputs before preparing a bundle. Their
+producer is `scripts/test/generate-e2e-video.ts` (`prepare:e2e:fixture`) in
+`PiesP/wasm-motion-converter` at `8fbef7391eb7fbc2f2cc6aeb960e032e02871b5c`;
+this experiment reused the resulting files. The Windows measurement owner holds
+the originals. From this XCOM checkout, set `wmc_fixture_root` to that WMC checkout
+containing the verified outputs, then copy only these inputs:
+
+```sh
+wmc_fixture_root=/path/to/owned/wasm-motion-converter
+mkdir -p validation/windows/inputs
+cp "$wmc_fixture_root/validation/windows/inputs/trim-submission.mp4" validation/windows/inputs/crc-owned-clip.mp4
+cp "$wmc_fixture_root/public/test-video-ci-high-motion-120fps.mp4" validation/windows/inputs/crc-owned-motion.mp4
+cp "$wmc_fixture_root/public/test-video-ci-h264.mp4" validation/windows/inputs/crc-owned-small.mp4
+cp "$wmc_fixture_root/public/test-video-contract-motion-120fps.mp4" validation/windows/inputs/crc-owned-markers.mp4
+```
+
+Compare sizes and SHA-256 with the dated evidence table and `CLIPS` before use;
+the runner rejects any mismatch. Generating replacements with another encoder
+version does not establish identity. If originals are unavailable, request them
+from that measurement owner and keep preparation blocked. Do not commit inputs
+or substitute larger synthetic media.
+
 The ignored, exclusive `validation/windows/inputs/zip-crc.json` selector has
 `{"scenario":"zip-crc","workload":"large"}` or the same object with
 `"workload":"small"`. Run the existing installed Chrome/Edge extension route
