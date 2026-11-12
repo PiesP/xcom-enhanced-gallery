@@ -305,6 +305,91 @@ async function readVideoObservation(page: Page) {
   });
 }
 
+type OwnedMediaEvent = {
+  host: string;
+  path: string;
+  method: string;
+  status: number;
+  range: { start: number; end: number } | null;
+  bytes: number;
+  sha256: string | null;
+  result: string;
+};
+type VideoObservation = {
+  initial: Array<{ src: string; currentSrc: string; readyState: number }>;
+  transitions: Array<{
+    event: string;
+    src: string;
+    currentSrc: string;
+    readyState: number;
+  }>;
+  final: Array<{ src: string; currentSrc: string; readyState: number }>;
+};
+
+export function classifyOwnedMediaAbort({
+  failure,
+  expected,
+  video,
+  currentBeforeAction,
+  currentAfterAction,
+  priorFromSameFixtureRun,
+  cacheQualified,
+}: {
+  failure: FailedRequest;
+  expected: { url: string; bytes: number; sha256: string } | null;
+  video: VideoObservation | null;
+  currentBeforeAction: readonly OwnedMediaEvent[];
+  currentAfterAction: readonly OwnedMediaEvent[];
+  priorFromSameFixtureRun: readonly OwnedMediaEvent[];
+  cacheQualified: boolean;
+}): 'fresh-206' | 'cached-prior-206' | null {
+  if (
+    !expected ||
+    !video ||
+    failure.url !== expected.url ||
+    failure.method !== 'GET' ||
+    failure.resourceType !== 'media' ||
+    failure.range !== 'bytes=0-' ||
+    failure.phase !== 'before-action' ||
+    failure.error !== 'net::ERR_ABORTED' ||
+    !video.initial.some(({ src, currentSrc }) => [src, currentSrc].includes(expected.url)) ||
+    !video.transitions.some(
+      ({ event, currentSrc, readyState }) =>
+        event === 'loadedmetadata' && currentSrc === expected.url && readyState >= 1
+    ) ||
+    !video.final.some(
+      ({ currentSrc, readyState }) => currentSrc === expected.url && readyState >= 1
+    )
+  ) {
+    return null;
+  }
+  const path = new URL(expected.url).pathname;
+  const matchedFullRange = (event: OwnedMediaEvent) =>
+    event.host === 'video.twimg.com' &&
+    event.path === path &&
+    event.method === 'GET' &&
+    event.status === 206 &&
+    event.range?.start === 0 &&
+    event.range.end === expected.bytes - 1 &&
+    event.bytes === expected.bytes &&
+    event.sha256 === expected.sha256 &&
+    event.result === 'served';
+  if (currentBeforeAction.some(matchedFullRange)) {
+    return 'fresh-206';
+  }
+  if (
+    cacheQualified &&
+    priorFromSameFixtureRun.some(matchedFullRange) &&
+    ![...currentBeforeAction, ...currentAfterAction].some(
+      ({ host, path: observedPath, method }) =>
+        host === 'video.twimg.com' && observedPath === path && method === 'GET'
+    )
+  ) {
+    return 'cached-prior-206';
+  }
+  return null;
+}
+
 export async function runZipCrcProfile({
   context,
   extensionId,
@@ -425,7 +510,7 @@ export async function runZipCrcProfile({
       const httpErrors: Array<{ url: string; status: number }> = [];
       const failedRequests: FailedRequest[] = [];
       const expectedBlobAborts: string[] = [];
-      const classifiedMediaAborts: FailedRequest[] = [];
+      const classifiedMediaAborts: Array<FailedRequest & { basis: string }> = [];
       const diagnosticOverflow = {
         pageErrors: false,
         consoleErrors: false,
@@ -686,46 +771,34 @@ export async function runZipCrcProfile({
           'Owned native fixture received an undeclared request'
         );
         sample.heapAfterSavedVerification = await rendererHeap(page);
-        const servedRanges = (
-          sample.nativeRequestsBeforeAction as ReturnType<typeof nativeLoopback.since>
-        ).filter(
-          ({ host, status, range, result }) =>
-            host === 'video.twimg.com' &&
-            status === 206 &&
-            range?.start === 0 &&
-            result === 'served'
-        );
-        const videoSources =
-          (
-            sample.videoObservation as {
-              initial: Array<{ src: string; currentSrc: string }>;
-            } | null
-          )?.initial.flatMap(({ src, currentSrc }) => [src, currentSrc]) ?? [];
+        const currentBeforeAction = sample.nativeRequestsBeforeAction as ReturnType<
+          typeof nativeLoopback.since
+        >;
+        const currentAfterAction = sample.nativeRequestsAfterAction as ReturnType<
+          typeof nativeLoopback.since
+        >;
+        const priorFromSameFixtureRun = nativeLoopback.since(0).slice(0, pageNativeMark);
         const unexplainedFailedRequests = failedRequests.filter((failure) => {
-          const url = new URL(failure.url);
-          const ownedClip = CLIPS.find(
+          const ownedClipIndex = CLIPS.findIndex(
             (clip, clipIndex) =>
               failure.url ===
               `https://video.twimg.com/ext_tw_video/${LARGE_TWEET_ID}/pu/vid/${clip.width}x${clip.height}/crc-${clipIndex}.mp4`
           );
-          if (
-            workload === 'large' &&
-            failure.method === 'GET' &&
-            failure.resourceType === 'media' &&
-            failure.error === 'net::ERR_ABORTED' &&
-            url.protocol === 'https:' &&
-            url.hostname === 'video.twimg.com' &&
-            ownedClip !== undefined &&
-            servedRanges.some(
-              ({ path, range, bytes, sha256: servedSha256 }) =>
-                path === url.pathname &&
-                range?.end === ownedClip.bytes - 1 &&
-                bytes === ownedClip.bytes &&
-                servedSha256 === ownedClip.sha256
-            ) &&
-            videoSources.includes(failure.url)
-          ) {
-            classifiedMediaAborts.push(failure);
+          const ownedClip = CLIPS[ownedClipIndex];
+          const basis = classifyOwnedMediaAbort({
+            failure,
+            expected:
+              workload === 'large' && ownedClip
+                ? { url: failure.url, bytes: ownedClip.bytes, sha256: ownedClip.sha256 }
+                : null,
+            video: sample.videoObservation as VideoObservation | null,
+            currentBeforeAction,
+            currentAfterAction,
+            priorFromSameFixtureRun,
+            cacheQualified: sample.cacheConditionQualified === true,
+          });
+          if (basis) {
+            classifiedMediaAborts.push({ ...failure, basis });
             return false;
           }
           return true;

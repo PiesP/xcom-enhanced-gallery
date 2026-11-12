@@ -34,8 +34,11 @@ paths, HTTP failures, failed-request method/type/range/timing, console location,
 and observed video source and lifecycle transitions. Only the exact owned
 `x.com/favicon.ico` GET/HEAD endpoint returns 204. A media `ERR_ABORTED` is
 classified as expected only when its exact owned MP4 URL was observed on a
-gallery video and a matching pre-action 206 response completed; other media,
-connection, fetch and HTTP failures remain errors. The original failed run is
+gallery video, metadata loaded, and a matching full-range 206 response completed
+either on the current page or earlier in the same fixture run. The prior-response
+case also requires observed warm-cache qualification and no new source GET on
+the current page. Receipts label the classification basis; other media,
+connection, fetch and HTTP failures remain errors. Earlier failed runs are
 retained separately.
 Each page also records the installed main-frame extension content-script realm
 before the gallery action and detaches the diagnostic CDP session before timing.
