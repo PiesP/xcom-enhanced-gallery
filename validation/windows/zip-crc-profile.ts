@@ -440,7 +440,14 @@ export async function runZipCrcProfile({
   const receipt: Record<string, unknown> = {
     status: 'running',
     workload,
-    fixture: CLIPS,
+    fixture:
+      workload === 'large'
+        ? CLIPS
+        : images.map((bytes, index) => ({
+            file: `testuser_${TWEET_ID}_${index}.jpg`,
+            bytes: bytes.length,
+            sha256: sha256(bytes),
+          })),
     route: 'normal-installed-extension-content-script-over-owned-native-https',
     inputCache:
       'native HTTPS media cacheable for one hour; actual requests and Resource Timing recorded per attempt',
