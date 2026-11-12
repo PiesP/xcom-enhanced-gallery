@@ -350,12 +350,17 @@ export function classifyOwnedMediaAbort({
     failure.method !== 'GET' ||
     failure.resourceType !== 'media' ||
     failure.range !== 'bytes=0-' ||
-    failure.phase !== 'before-action' ||
+    !['gallery-opening', 'before-action'].includes(failure.phase) ||
     failure.error !== 'net::ERR_ABORTED' ||
     !video.initial.some(({ src, currentSrc }) => [src, currentSrc].includes(expected.url)) ||
-    !video.transitions.some(
-      ({ event, currentSrc, readyState }) =>
-        event === 'loadedmetadata' && currentSrc === expected.url && readyState >= 1
+    !(
+      video.initial.some(
+        ({ currentSrc, readyState }) => currentSrc === expected.url && readyState >= 1
+      ) ||
+      video.transitions.some(
+        ({ event, currentSrc, readyState }) =>
+          event === 'loadedmetadata' && currentSrc === expected.url && readyState >= 1
+      )
     ) ||
     !video.final.some(
       ({ currentSrc, readyState }) => currentSrc === expected.url && readyState >= 1

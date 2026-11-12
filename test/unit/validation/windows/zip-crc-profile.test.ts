@@ -96,6 +96,18 @@ describe('ZIP CRC media abort attribution', () => {
     assert.equal(
       classifyOwnedMediaAbort({
         ...input,
+        failure: { ...failure, phase: 'gallery-opening' },
+        video: {
+          initial: [{ src: url, currentSrc: url, readyState: 4 }],
+          transitions: [],
+          final: [{ src: url, currentSrc: url, readyState: 4 }],
+        },
+      }),
+      'fresh-206'
+    );
+    assert.equal(
+      classifyOwnedMediaAbort({
+        ...input,
         currentBeforeAction: [],
         priorFromSameFixtureRun: [servedRange],
         cacheQualified: true,
@@ -129,6 +141,14 @@ describe('ZIP CRC media abort attribution', () => {
     );
     assert.equal(
       classifyOwnedMediaAbort({ ...cached, failure: { ...failure, phase: 'action' } }),
+      null
+    );
+    assert.equal(
+      classifyOwnedMediaAbort({ ...cached, failure: { ...failure, phase: 'verification' } }),
+      null
+    );
+    assert.equal(
+      classifyOwnedMediaAbort({ ...cached, failure: { ...failure, phase: 'navigation' } }),
       null
     );
     assert.equal(

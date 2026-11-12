@@ -34,7 +34,8 @@ paths, HTTP failures, failed-request method/type/range/timing, console location,
 and observed video source and lifecycle transitions. Only the exact owned
 `x.com/favicon.ico` GET/HEAD endpoint returns 204. A media `ERR_ABORTED` is
 classified as expected only when its exact owned MP4 URL was observed on a
-gallery video, metadata loaded, and a matching full-range 206 response completed
+gallery video, metadata was already ready or its load event was observed, and a
+matching full-range 206 response completed
 either on the current page or earlier in the same fixture run. The prior-response
 case also requires observed warm-cache qualification and no new source GET on
 the current page. Receipts label the classification basis; other media,
