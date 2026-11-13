@@ -19,6 +19,7 @@ import {
 } from '../../../validation/windows/installed-large-photo-fixture';
 import {
   observePhotoGallery,
+  verifyDomPhotoCollection,
   verifyPhotoCollection,
   verifyBoundaryPhotoSelections,
 } from '../../../validation/windows/live-photo-collection';
@@ -27,6 +28,7 @@ import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 import {
   LARGE_PHOTO_OWNERS,
+  installLargePhotoGmTransport,
   photoExpectations,
   setupLargePhotoFixture,
   type PhotoExpectation,
@@ -397,4 +399,73 @@ test('installed photo fixture API20 and API40 open through the strict selected-i
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
   }
+});
+
+test('source-known installed DOM20 fixture verifies late clicked JPEG and every selected boundary', async ({
+  page,
+}) => {
+  const fixture = createInstalledLargePhotoFixture(
+    readFileSync(resolve(import.meta.dirname, '../fixtures/large-photo-narrow.jpg'))
+  );
+  const owner = fixture.dom.contract.requested;
+  const url = `https://x.com/${owner.handle}/status/${owner.statusId}`;
+  const probes: Array<{ key: string; purpose: string; method: string }> = [];
+  await page.route('https://pbs.twimg.com/**', async (route) => {
+    const method = route.request().method();
+    const media = largePhotoFixtureMedia(
+      fixture.dom.photos,
+      route.request().url(),
+      route.request().resourceType(),
+      method
+    );
+    probes.push({ key: media.key, purpose: media.purpose, method });
+    await route.fulfill({
+      status: media.purpose === 'missing-original' ? 404 : 200,
+      contentType: media.purpose === 'missing-original' ? 'image/webp' : 'image/jpeg',
+      body: media.purpose === 'missing-original' || method === 'HEAD' ? '' : media.bytes,
+    });
+  });
+  await page.route('https://x.com/**', async (route) => {
+    const html = fixture.dom.pages.get(route.request().url());
+    expect(html).toBeDefined();
+    await route.fulfill({ status: 200, contentType: 'text/html', body: html! });
+  });
+  await page.goto(url);
+  await installGMMock(page, { downloadApi: false });
+  await installLargePhotoGmTransport(page, {}, true);
+  await injectDevUserscript(page);
+  await waitForGalleryApp(page);
+  await page.locator('html[data-xeg-gallery-ready="true"]').waitFor();
+  const tiles = await page
+    .locator('article[data-testid="tweet"] a[href*="/photo/"]:has(img)')
+    .evaluateAll((anchors) =>
+      anchors.map((anchor) => ({
+        href: (anchor as HTMLAnchorElement).href,
+        displayUrl: anchor.querySelector('img')?.getAttribute('src') ?? '',
+      }))
+    );
+  expect(tiles).toHaveLength(20);
+  const late = page.locator('article[data-testid="tweet"] a[href$="/photo/20"] img');
+  await late.scrollIntoViewIfNeeded();
+  await late.click();
+  await page.locator('[data-xeg-gallery-container]').waitFor();
+  const gallery = await observePhotoGallery(page, 20);
+  expect(gallery.initialIndex).toBe(19);
+  const verified = verifyDomPhotoCollection(fixture.dom.contract, tiles, gallery);
+  const selections = await verifyBoundaryPhotoSelections(page, verified);
+  expect(selections.visits.map((visit) => visit.currentIndex)).toEqual([0, 3, 4, 9, 11, 12, 19]);
+  const selected = fixture.dom.photos[19]!;
+  await saveSingle(page, {
+    ownerId: selected.reference.ownerId,
+    ordinal: selected.ordinal,
+    mediaId: selected.mediaId,
+    sourceKey: selected.reference.sourceKey,
+    url: selected.reference.originalUrl,
+    filename: selected.reference.filename,
+    bytes: selected.bytes,
+  });
+  expect(probes).toContainEqual({ key: 'XegDom19', purpose: 'missing-original', method: 'HEAD' });
+  expect(probes).toContainEqual({ key: 'XegDom19', purpose: 'original', method: 'HEAD' });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
 });

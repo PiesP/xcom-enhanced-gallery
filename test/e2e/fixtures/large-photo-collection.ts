@@ -95,73 +95,12 @@ function article(items: readonly PhotoExpectation[], quote = '', webp = false): 
   return `<article data-testid="tweet"><a id="status-${ownerId}" href="/${LARGE_PHOTO_HANDLE}/status/${ownerId}"><time>Owned status</time></a><div class="tiles">${items.map((item) => `<a href="/${LARGE_PHOTO_HANDLE}/status/${ownerId}/photo/${item.ordinal + 1}"><div data-testid="tweetPhoto"><img id="photo-${ownerId}-${item.ordinal}" src="https://pbs.twimg.com/media/${item.sourceKey}${webp ? '?format=webp' : '.jpg?format=jpg'}&amp;name=medium" alt="Owned photo ${item.ordinal + 1}"></div></a>`).join('')}</div>${quote ? `<div role="link" class="quote">${quote}</div>` : ''}</article>`;
 }
 
-/** Controlled provider/DOM transport, never a live X or installed-manager receipt. */
-export async function setupLargePhotoFixture(
+/** Controlled GM transport shared by source-known API and DOM fixtures. */
+export async function installLargePhotoGmTransport(
   page: Page,
-  options: {
-    count: number;
-    requestedOwner?: 0 | 1 | 2;
-    quote?: boolean;
-    nested?: boolean;
-    domFallback?: boolean;
-    visibleOrdinals?: readonly number[];
-  }
-): Promise<PhotoExpectation[]> {
-  const groups = [
-    photoExpectations(0, options.count),
-    photoExpectations(1, options.count),
-    photoExpectations(2, options.count),
-  ];
-  const requestedOwner = options.requestedOwner ?? 0;
-  const nestedTweet = options.nested ? tweet(groups[2]!) : undefined;
-  const middleTweet = tweet(groups[1]!, nestedTweet);
-  const outerTweet = tweet(groups[0]!, options.quote ? middleTweet : undefined);
-  const responses = Object.fromEntries(
-    [outerTweet, middleTweet, tweet(groups[2]!)].map((value) => [
-      String(value.rest_id),
-      { data: { tweetResult: { result: value } } },
-    ])
-  );
-  const nestedHtml = options.nested ? article(groups[2]!) : '';
-  const quoteHtml = options.quote ? article(groups[1]!, nestedHtml) : '';
-  // Source-known virtualized-carousel hypothesis: only mounted tiles are observable.
-  const mounted = groups[requestedOwner]!.filter((item) =>
-    options.visibleOrdinals ? options.visibleOrdinals.includes(item.ordinal) : true
-  );
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Large source-known photo fixture</title><style>body{margin:0;background:#222;color:white;font:16px sans-serif}article{padding:12px}.tiles{display:flex;flex-wrap:wrap;gap:8px}.tiles img{width:120px;height:90px;object-fit:cover}.quote{border:1px solid #888;padding:8px}</style></head><body>${article(mounted, requestedOwner === 0 ? quoteHtml : requestedOwner === 1 ? nestedHtml : '', options.domFallback)}</body></html>`;
-  const all = groups.flat();
-  const bySource = new Map(all.map((item) => [item.sourceKey, item.bytes]));
-  await page.route('https://pbs.twimg.com/**', async (route) => {
-    const url = new URL(route.request().url());
-    const key = url.pathname
-      .split('/')
-      .at(-1)!
-      .replace(/\.jpg$/u, '');
-    const original = bySource.get(key);
-    const body =
-      original && (url.searchParams.get('name') === 'orig' ? original : previewBytes(original));
-    const missingWebp =
-      options.domFallback &&
-      url.searchParams.get('name') === 'orig' &&
-      url.searchParams.get('format') === 'webp';
-    await route.fulfill({
-      status: body && !missingWebp ? 200 : 404,
-      contentType: 'image/jpeg',
-      headers: {
-        'access-control-allow-origin': '*',
-        'content-length': String(body && !missingWebp ? body.length : 0),
-      },
-      body: route.request().method() === 'HEAD' || missingWebp ? '' : (body ?? ''),
-    });
-  });
-  await page.route('https://x.com/**', (route) =>
-    route.fulfill({ status: 200, contentType: 'text/html', body: html })
-  );
-  await page.goto(
-    `https://x.com/${LARGE_PHOTO_HANDLE}/status/${LARGE_PHOTO_OWNERS[requestedOwner]}`,
-    { waitUntil: 'domcontentloaded' }
-  );
-  await installGMMock(page, { downloadApi: false });
+  responses: Record<string, unknown>,
+  apiFailure = false
+): Promise<void> {
   await page.evaluate(
     ({ responses, apiFailure }) => {
       document.cookie = 'ct0=source-known-fixture-token; path=/';
@@ -176,7 +115,7 @@ export async function setupLargePhotoFixture(
               tweetId?: string;
             };
             if (variables.tweetId) {
-              const value = responses[variables.tweetId] ?? {};
+              const value = apiFailure ? {} : (responses[variables.tweetId] ?? {});
               const text = JSON.stringify(value);
               if (!stopped) {
                 details.onload?.({
@@ -245,8 +184,78 @@ export async function setupLargePhotoFixture(
         },
       });
     },
-    { responses, apiFailure: options.domFallback ?? false }
+    { responses, apiFailure }
   );
+}
+
+/** Controlled provider/DOM transport, never a live X or installed-manager receipt. */
+export async function setupLargePhotoFixture(
+  page: Page,
+  options: {
+    count: number;
+    requestedOwner?: 0 | 1 | 2;
+    quote?: boolean;
+    nested?: boolean;
+    domFallback?: boolean;
+    visibleOrdinals?: readonly number[];
+  }
+): Promise<PhotoExpectation[]> {
+  const groups = [
+    photoExpectations(0, options.count),
+    photoExpectations(1, options.count),
+    photoExpectations(2, options.count),
+  ];
+  const requestedOwner = options.requestedOwner ?? 0;
+  const nestedTweet = options.nested ? tweet(groups[2]!) : undefined;
+  const middleTweet = tweet(groups[1]!, nestedTweet);
+  const outerTweet = tweet(groups[0]!, options.quote ? middleTweet : undefined);
+  const responses = Object.fromEntries(
+    [outerTweet, middleTweet, tweet(groups[2]!)].map((value) => [
+      String(value.rest_id),
+      { data: { tweetResult: { result: value } } },
+    ])
+  );
+  const nestedHtml = options.nested ? article(groups[2]!) : '';
+  const quoteHtml = options.quote ? article(groups[1]!, nestedHtml) : '';
+  // Source-known virtualized-carousel hypothesis: only mounted tiles are observable.
+  const mounted = groups[requestedOwner]!.filter((item) =>
+    options.visibleOrdinals ? options.visibleOrdinals.includes(item.ordinal) : true
+  );
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Large source-known photo fixture</title><style>body{margin:0;background:#222;color:white;font:16px sans-serif}article{padding:12px}.tiles{display:flex;flex-wrap:wrap;gap:8px}.tiles img{width:120px;height:90px;object-fit:cover}.quote{border:1px solid #888;padding:8px}</style></head><body>${article(mounted, requestedOwner === 0 ? quoteHtml : requestedOwner === 1 ? nestedHtml : '', options.domFallback)}</body></html>`;
+  const all = groups.flat();
+  const bySource = new Map(all.map((item) => [item.sourceKey, item.bytes]));
+  await page.route('https://pbs.twimg.com/**', async (route) => {
+    const url = new URL(route.request().url());
+    const key = url.pathname
+      .split('/')
+      .at(-1)!
+      .replace(/\.jpg$/u, '');
+    const original = bySource.get(key);
+    const body =
+      original && (url.searchParams.get('name') === 'orig' ? original : previewBytes(original));
+    const missingWebp =
+      options.domFallback &&
+      url.searchParams.get('name') === 'orig' &&
+      url.searchParams.get('format') === 'webp';
+    await route.fulfill({
+      status: body && !missingWebp ? 200 : 404,
+      contentType: 'image/jpeg',
+      headers: {
+        'access-control-allow-origin': '*',
+        'content-length': String(body && !missingWebp ? body.length : 0),
+      },
+      body: route.request().method() === 'HEAD' || missingWebp ? '' : (body ?? ''),
+    });
+  });
+  await page.route('https://x.com/**', (route) =>
+    route.fulfill({ status: 200, contentType: 'text/html', body: html })
+  );
+  await page.goto(
+    `https://x.com/${LARGE_PHOTO_HANDLE}/status/${LARGE_PHOTO_OWNERS[requestedOwner]}`,
+    { waitUntil: 'domcontentloaded' }
+  );
+  await installGMMock(page, { downloadApi: false });
+  await installLargePhotoGmTransport(page, responses, options.domFallback ?? false);
   await injectDevUserscript(page);
   await waitForGalleryApp(page);
   return requestedOwner === 0 && options.quote
