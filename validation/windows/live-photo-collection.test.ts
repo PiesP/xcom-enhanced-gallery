@@ -125,7 +125,7 @@ function fixture(withQuote: boolean) {
   };
   const entries: PhotoGalleryEntry[] = ordered.map((item, index) => ({
     index,
-    mediaId: item.id,
+    mediaId: `${withQuote && index < 20 ? directQuote.statusId : requested.statusId}_api_${index}`,
     displayUrl: `https://pbs.twimg.com${item.poster.path}?name=medium`,
   }));
   return { contract, trace, gallery: { total: ordered.length, entries, truncated: false } };
@@ -190,6 +190,9 @@ test('photo collection checks all B-then-A identities and each owner-local ordin
   );
   const verified = verifyPhotoCollection(contract, [trace], gallery);
   assert.equal(verified.length, 40);
+  assert.equal(verified[20]!.mediaId, `${requested.statusId}_api_20`);
+  assert.equal(verified[20]!.providerMediaId, trace.result!.media[0]!.id);
+  assert.notEqual(verified[20]!.mediaId, verified[20]!.providerMediaId);
   assert.deepEqual(
     requiredPhotoPositions(40).map((index) => ({
       index,
@@ -453,7 +456,7 @@ test('source-known 20/40 fixture has distinct marked JPEG references and pinned 
   });
   const entries = fixture.photos.map((photo, index) => ({
     index,
-    mediaId: photo.mediaId,
+    mediaId: `${photo.owner.statusId}_api_${index}`,
     displayUrl: photo.displayUrl,
   }));
   const verified = verifyPhotoCollection(fixture.contract, traces, {

@@ -17,6 +17,12 @@ import {
   createInstalledLargePhotoFixture,
   largePhotoFixtureMedia,
 } from '../../../validation/windows/installed-large-photo-fixture';
+import {
+  observePhotoGallery,
+  verifyPhotoCollection,
+  verifyBoundaryPhotoSelections,
+} from '../../../validation/windows/live-photo-collection';
+import { summarizeTweetResultResponse } from '../../../validation/windows/live-page';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 import {
@@ -351,6 +357,24 @@ test('installed photo fixture API20 and API40 open through the strict selected-i
     await openCurrentStatusImage(page, url, observation);
     await expect(page.locator('[data-gallery-element="source-details"]')).toHaveCount(0);
     await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-total', String(count));
+    const contract =
+      count === 40
+        ? fixture.contract
+        : { requested: owner, directQuote: null, expected: fixture.contract.expected.slice(0, 20) };
+    const body = fixture.apiResponses.get(owner.statusId)!;
+    const trace = summarizeTweetResultResponse(
+      `https://x.com/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: owner.statusId }))}`,
+      200,
+      JSON.parse(body.toString('utf8')),
+      40
+    )!;
+    const verified = verifyPhotoCollection(
+      contract,
+      [trace],
+      await observePhotoGallery(page, count)
+    );
+    const selections = await verifyBoundaryPhotoSelections(page, verified);
+    expect(selections.visits).toHaveLength(count === 40 ? 14 : 7);
     await test.info().attach(`source-known-click-${count}`, {
       body: JSON.stringify(observation),
       contentType: 'application/json',

@@ -136,7 +136,9 @@ export type PhotoGalleryEntry = {
 export type VerifiedPhoto = {
   index: number;
   owner: PhotoOwner;
+  /** Product gallery identity; distinct from the provider entity ID. */
   mediaId: string;
+  providerMediaId: string | null;
   attachmentOrdinal: number;
   displayStem: string;
   expected: PhotoExpectedReference;
@@ -296,7 +298,14 @@ export function verifyPhotoCollection(
       assert.equal(item.entityOrdinal, ordinal, 'Provider owner-local ordinal changed');
       assert(item.poster?.host === 'pbs.twimg.com', 'Provider photo poster is absent');
       const displayStem = stem(`https://pbs.twimg.com${item.poster.path}`);
-      return { index: -1, owner, mediaId: item.id, attachmentOrdinal: ordinal, displayStem };
+      return {
+        index: -1,
+        owner,
+        mediaId: item.id,
+        providerMediaId: item.id,
+        attachmentOrdinal: ordinal,
+        displayStem,
+      };
     });
   };
   const mappings = candidates.map((entry) => {
@@ -306,7 +315,7 @@ export function verifyPhotoCollection(
     ];
     assert.equal(ordered.length, expectedCount);
     assert.equal(
-      new Set(ordered.map((item) => `${item.owner.statusId}:${item.mediaId}`)).size,
+      new Set(ordered.map((item) => `${item.owner.statusId}:${item.providerMediaId}`)).size,
       expectedCount,
       'Provider media identities are duplicated'
     );
@@ -315,7 +324,7 @@ export function verifyPhotoCollection(
       assert.equal(pinned.ownerId, item.owner.statusId, `Pinned owner differs at ${index}`);
       assert.equal(pinned.ordinal, item.attachmentOrdinal, `Pinned ordinal differs at ${index}`);
       assert.equal(pinned.sourceKey, item.displayStem, `Pinned source differs at ${index}`);
-      return { ...item, index, expected: pinned };
+      return { ...item, index, mediaId: `${item.owner.statusId}_api_${index}`, expected: pinned };
     });
   });
   const expected = mappings[0]!;
@@ -364,6 +373,7 @@ export function verifyDomPhotoCollection(
       index,
       owner: contract.requested,
       mediaId,
+      providerMediaId: null,
       attachmentOrdinal: index,
       displayStem: pinned.sourceKey,
       expected: pinned,
@@ -634,7 +644,7 @@ export function verifyPhotoCollectionDownloads(
   };
 }
 
-async function observeGallery(page: Page, expectedCount: number) {
+export async function observePhotoGallery(page: Page, expectedCount: number) {
   const gallery = page.locator('[data-xeg-gallery-container]');
   const snapshot = () =>
     gallery.evaluate((element) => {
@@ -694,7 +704,10 @@ async function observeGallery(page: Page, expectedCount: number) {
   };
 }
 
-async function verifyBoundaryPhotoSelections(page: Page, expected: readonly VerifiedPhoto[]) {
+export async function verifyBoundaryPhotoSelections(
+  page: Page,
+  expected: readonly VerifiedPhoto[]
+) {
   assert(expected.length === 20 || expected.length === 40);
   const gallery = page.locator('[data-xeg-gallery-container]');
   const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
@@ -1029,7 +1042,7 @@ export async function runLivePhotoCollection({
           );
           visit.apiFailure = providerStatuses;
         }
-        const gallery = await observeGallery(
+        const gallery = await observePhotoGallery(
           page,
           target.requested.count + (target.directQuote?.count ?? 0)
         );
@@ -1063,6 +1076,7 @@ export async function runLivePhotoCollection({
           index: clickedIndex,
           ownerId: verified[clickedIndex]!.owner.statusId,
           mediaId: verified[clickedIndex]!.mediaId,
+          providerMediaId: verified[clickedIndex]!.providerMediaId,
           ordinal: verified[clickedIndex]!.attachmentOrdinal,
         };
         visit.collection = {
@@ -1072,6 +1086,7 @@ export async function runLivePhotoCollection({
             index: item.index,
             ownerId: item.owner.statusId,
             mediaId: item.mediaId,
+            providerMediaId: item.providerMediaId,
             ordinal: item.attachmentOrdinal,
             sourceStem: item.displayStem,
           })),
