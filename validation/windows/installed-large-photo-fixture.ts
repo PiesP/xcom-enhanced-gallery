@@ -60,7 +60,7 @@ function pageHtml(
 ): string {
   return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>Installed large photo fixture</title><style>
     body{margin:0;padding:20px;background:#000;color:#e7e9ea;font-family:Segoe UI,sans-serif}
-    main{max-width:600px;margin:auto}.photo{margin:8px 0}.photo img{display:block;max-width:54px;width:auto;height:auto}
+    main{max-width:600px;margin:auto}.photo{margin:8px 0}.photo a{display:block;width:max-content}.photo img{display:block;max-width:54px;width:auto;height:auto}
     [data-testid="quoteTweet"]{margin:12px;padding:12px;border:1px solid #555}
   </style></head><body><main><article data-testid="tweet">
     <a href="/${owner.handle}/status/${owner.statusId}"><time datetime="2026-11-13T00:00:00Z">Fixture post</time></a>

@@ -2,14 +2,15 @@
 // Copyright (c) 2026 PiesP
 
 import { createHash } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { mkdirSync, readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { expect, type Page, test } from '@playwright/test';
 import {
   readExactDownloadFile,
   expectedStoredZipBytes,
 } from '../../../validation/windows/download-memory';
 import { inspectLiveStoredZip } from '../../../validation/windows/live-acceptance';
+import { createInstalledLargePhotoFixture } from '../../../validation/windows/installed-large-photo-fixture';
 import {
   LARGE_PHOTO_OWNERS,
   photoExpectations,
@@ -238,4 +239,65 @@ test('source-known virtualized article reports only three observed tiles and pre
   );
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
+});
+
+test('installed narrow-photo fixture actions own a real hit-tested click surface', async ({
+  page,
+}) => {
+  const fixture = createInstalledLargePhotoFixture(
+    readFileSync(resolve(import.meta.dirname, '../fixtures/large-photo-narrow.jpg'))
+  );
+  const photos = [...fixture.photos, ...fixture.dom.photos];
+  await page.route('https://pbs.twimg.com/**', async (route) => {
+    const photo = photos.find((item) => item.displayUrl === route.request().url());
+    expect(photo).toBeDefined();
+    await route.fulfill({ status: 200, contentType: 'image/jpeg', body: photo!.previewBytes });
+  });
+  await page.route('https://x.com/**', async (route) => {
+    const html =
+      fixture.pages.get(route.request().url()) ?? fixture.dom.pages.get(route.request().url());
+    expect(html).toBeDefined();
+    await route.fulfill({ status: 200, contentType: 'text/html', body: html! });
+  });
+  for (const owner of [fixture.contract.directQuote!, fixture.dom.contract.requested]) {
+    await page.goto(`https://x.com/${owner.handle}/status/${owner.statusId}`);
+    for (const ordinal of [0, 19]) {
+      const image = page.locator('[data-testid="tweetPhoto"] img').nth(ordinal);
+      await image.scrollIntoViewIfNeeded();
+      await expect(image).toBeVisible();
+      const surface = await image.evaluate((element: HTMLImageElement) => {
+        const action = element.closest('a');
+        if (!action) {
+          throw new Error('Fixture image lost its action');
+        }
+        const previousDisplay = action.style.display;
+        action.style.display = 'inline';
+        const inlineClientWidth = action.clientWidth;
+        action.style.display = previousDisplay;
+        const bounds = element.getBoundingClientRect();
+        const x = Math.max(0, Math.min(innerWidth - 1, bounds.left + bounds.width / 2));
+        const y = Math.max(0, Math.min(innerHeight - 1, bounds.top + bounds.height / 2));
+        const actionBounds = action.getBoundingClientRect();
+        const offsetX = x - actionBounds.left - action.clientLeft;
+        const offsetY = y - actionBounds.top - action.clientTop;
+        return {
+          href: action.href,
+          inlineClientWidth,
+          loaded: element.complete && element.naturalWidth === 54 && element.naturalHeight === 1080,
+          admitted:
+            document.elementFromPoint(x, y)?.closest('a') === action &&
+            offsetX >= 0 &&
+            offsetY >= 0 &&
+            offsetX < action.clientWidth &&
+            offsetY < action.clientHeight,
+        };
+      });
+      expect(surface).toEqual({
+        href: `https://x.com/${owner.handle}/status/${owner.statusId}/photo/${ordinal + 1}`,
+        inlineClientWidth: 0,
+        loaded: true,
+        admitted: true,
+      });
+    }
+  }
 });
