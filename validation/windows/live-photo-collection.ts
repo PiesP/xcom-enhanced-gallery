@@ -224,7 +224,9 @@ export function verifySelectedPhoto(
 }
 
 export function requiredPhotoPositions(total: 20 | 40): readonly number[] {
-  return total === 20 ? [0, 3, 4, 9, 11, 12, 19] : [0, 3, 4, 9, 11, 12, 19, 20, 39];
+  return total === 20
+    ? [0, 3, 4, 9, 11, 12, 19]
+    : [0, 3, 4, 9, 11, 12, 19, 20, 23, 24, 29, 31, 32, 39];
 }
 
 const MEDIA_PATH = /^\/media\/([A-Za-z0-9_-]+)(?:\.(?:jpe?g|png|webp|gif))?$/iu;
