@@ -103,8 +103,22 @@ declared owner/status/body length and SHA. Its receipt is marked
 body remains fixture input, not a claim that the client received or used it.
 Conflicting client observations fail. Existing product owner IDs, sources,
 full collections, native files and ZIP bytes remain independently required.
-Public A/B observations never use fixture server evidence; missing client
-responses remain unverified.
+For the selected manager photo route, an additional owned CDP observer binds the
+exact installed product body in its executed manager wrapper and the sole GM
+JSON-response callback. Its conditional breakpoint admits only the declared
+post's exact GET metadata endpoint; binary downloads are excluded. At most 12
+callbacks and 2,000,000 encoded bytes per response are processed. The callback
+queue drains and the observer detaches before metadata is frozen and client/server
+summaries are reconciled; a completed server response alone cannot end that wait. Raw response
+text stays transient in the driver; receipts retain only a source binding,
+status, byte count/hash and minimized media summary. Headers and cookie values
+are not recorded. The fixture's known A/B 200 and C 403 responses qualify the
+same client observer before public visits. A missing callback, source mismatch,
+overflow or debugger-cleanup failure keeps the route unverified. This diagnostic
+can affect timing and supplies no performance result.
+Public A/B observations never use fixture server evidence. Only cookie-presence
+booleans are recorded for their owned fresh profile; authentication is not
+imported. Missing client responses remain unverified.
 The selected manager fixture adds three singles and three ZIPs to the existing
 fixture: browser event admission is bounded to 18 instead of the default 12, and
 failed native-file retention to 14 instead of 8. The 4 MiB per-file and 16 MiB

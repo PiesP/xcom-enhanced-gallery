@@ -322,6 +322,7 @@ export async function runInstalledLargePhotoFixture({
   installDomNative,
   nativeSnapshot,
   managerObserver = null,
+  managerApiObserver = null,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -332,6 +333,7 @@ export async function runInstalledLargePhotoFixture({
   installDomNative?: (fixture: NativeFixture) => void;
   nativeSnapshot: () => NativeSnapshot;
   managerObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerObserver'];
+  managerApiObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerApiObserver'];
 }) {
   const fixture = createInstalledLargePhotoFixture(
     await readFile(join(root, 'test/e2e/fixtures/large-photo-narrow.jpg'))
@@ -448,6 +450,7 @@ export async function runInstalledLargePhotoFixture({
       downloads,
       output,
       managerObserver,
+      managerApiObserver,
       fixture: {
         originals: fixture.originals,
         receiptFile: 'installed-large-photo-collection.json',
@@ -480,6 +483,7 @@ export async function runInstalledLargePhotoFixture({
       downloads,
       output,
       managerObserver,
+      managerApiObserver,
       fixture: {
         observation: 'dom',
         ...(managerObserver

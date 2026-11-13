@@ -814,7 +814,43 @@ export async function verifyBoundaryPhotoSelections(
   return { visits, moves };
 }
 
-/** A separate photo-only installed-extension route. It does not satisfy full actual-site acceptance. */
+export type PhotoManagerApiObserver = (
+  page: Page,
+  requestedId: string,
+  capture: (response: { url: string; finalUrl: string; status: number; bodyText: string }) => void
+) => Promise<{
+  snapshot(): Record<string, unknown> & { errors: readonly string[] };
+  stop(): Promise<void>;
+}>;
+
+/** Freeze metadata evidence only after the owned callback queue has drained. */
+export async function finishManagerPhotoApiCapture(
+  trace: Awaited<ReturnType<PhotoManagerApiObserver>>,
+  deadline: number,
+  reconcile: () => Promise<void>
+): Promise<ReturnType<typeof trace.snapshot>> {
+  while (Date.now() < deadline) {
+    const snapshot = trace.snapshot();
+    if (
+      snapshot.errors.length > 0 ||
+      (Array.isArray(snapshot.responses) && snapshot.responses.length > 0)
+    ) {
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  await trace.stop();
+  await reconcile();
+  const snapshot = trace.snapshot();
+  assert.equal(snapshot.errors.length, 0, 'Installed GM API trace failed');
+  assert(
+    Array.isArray(snapshot.responses) && snapshot.responses.length > 0,
+    'No source-bound GM API callback was observed'
+  );
+  return snapshot;
+}
+
+/** A photo-only installed-distribution route; separate from full actual-site acceptance. */
 export async function runLivePhotoCollection({
   context,
   extensionId,
@@ -822,6 +858,7 @@ export async function runLivePhotoCollection({
   downloads,
   output,
   managerObserver = null,
+  managerApiObserver = null,
   fixture = null,
 }: {
   context: BrowserContext;
@@ -829,6 +866,7 @@ export async function runLivePhotoCollection({
   contract: PhotoCollectionContract;
   downloads: string;
   output: string;
+  managerApiObserver?: PhotoManagerApiObserver | null;
   managerObserver?: {
     snapshot(): number;
     beginsSince(since: number): Array<{ guid: string; url: string; suggestedFilename: string }>;
@@ -855,6 +893,10 @@ export async function runLivePhotoCollection({
   } | null;
 }) {
   assert(
+    !managerApiObserver || managerObserver,
+    'GM API observation requires an owned manager installation'
+  );
+  assert(
     !fixture?.providerEvidence || managerObserver,
     'Server API evidence is only admitted for owned manager fixtures'
   );
@@ -863,7 +905,9 @@ export async function runLivePhotoCollection({
     startedAt: new Date().toISOString(),
     scope:
       fixture?.scope ??
-      'installed extension public photo collection and native single/ZIP bytes only',
+      (managerObserver
+        ? 'installed manager userscript public photo collection and native single/ZIP bytes only'
+        : 'installed extension public photo collection and native single/ZIP bytes only'),
     requested: contract.requested.statusId,
     directQuote: contract.directQuote?.statusId ?? null,
     visits: [],
@@ -893,6 +937,7 @@ export async function runLivePhotoCollection({
       };
       visits.push(visit);
       const completedBrowserDownloads = new Set<string>();
+      let managerApiTrace: Awaited<ReturnType<PhotoManagerApiObserver>> | null = null;
       const productErrors: string[] = [];
       const pageErrors: string[] = [];
       const sourceRequestFailures: Array<Record<string, unknown>> = [];
@@ -963,6 +1008,7 @@ export async function runLivePhotoCollection({
       };
       const observations: PhotoProviderTrace[] = [];
       const providerStatuses: Array<{ requestedId: string | null; status: number }> = [];
+      let providerCaptureClosed = false;
       const pending = new Set<Promise<void>>();
       const captureErrors: unknown[] = [];
       let overflow = false;
@@ -984,7 +1030,10 @@ export async function runLivePhotoCollection({
             });
           }
         }
-        if (!photoProviderRequestMatches(source, target.requested.statusId)) {
+        if (
+          providerCaptureClosed ||
+          !photoProviderRequestMatches(source, target.requested.statusId)
+        ) {
           return;
         }
         const requestedId = target.requested.statusId;
@@ -1051,6 +1100,66 @@ export async function runLivePhotoCollection({
         await page
           .locator('html[data-xeg-gallery-ready="true"]')
           .waitFor({ state: 'attached', timeout: 20_000 });
+        if (!fixture) {
+          const cookies = await context.cookies('https://x.com');
+          visit.apiSessionPrerequisites = {
+            csrfCookiePresent: cookies.some(
+              (cookie) => cookie.name === 'ct0' && cookie.value.length > 0
+            ),
+            sessionCookiePresent: cookies.some(
+              (cookie) => cookie.name === 'auth_token' && cookie.value.length > 0
+            ),
+          };
+        }
+        if (managerApiObserver) {
+          managerApiTrace = await managerApiObserver(
+            page,
+            target.requested.statusId,
+            (captured) => {
+              assert(
+                photoProviderRequestMatches(new URL(captured.url), target.requested.statusId),
+                'GM API callback owner/source differs'
+              );
+              assert.equal(captured.finalUrl, captured.url, 'GM API callback redirected');
+              if (admittedProviderResponses >= 12) {
+                overflow = true;
+                return;
+              }
+              admittedProviderResponses += 1;
+              providerStatuses.push({
+                requestedId: target.requested.statusId,
+                status: captured.status,
+              });
+              providerChannels.push({
+                requestedId: target.requested.statusId,
+                observedAt: new Date().toISOString(),
+                status: captured.status,
+                kind: 'source-bound-installed-gm-onload',
+              });
+              visit.apiObservationChannel =
+                'source-bound installed GM onload callback (client response observed)';
+              try {
+                assert(
+                  Buffer.byteLength(captured.bodyText, 'utf8') <= 2_000_000,
+                  'GM provider body exceeded trace bound'
+                );
+                const observation = summarizeTweetResultResponse(
+                  captured.url,
+                  captured.status,
+                  JSON.parse(captured.bodyText.replace(/^\uFEFF/u, '')),
+                  40
+                );
+                if (observation) {
+                  observations.push(observation);
+                }
+              } catch {
+                captureErrors.push(
+                  new Error('Observed GM provider response could not be summarized as bounded JSON')
+                );
+              }
+            }
+          );
+        }
         const domObservation = fixture?.observation === 'dom';
         const domTiles = domObservation
           ? await page
@@ -1147,8 +1256,21 @@ export async function runLivePhotoCollection({
           await new Promise((done) => setTimeout(done, 100));
           refreshFixtureApi();
         }
-        await Promise.all([...pending]);
-        refreshFixtureApi();
+        const reconcile = async () => {
+          providerCaptureClosed = true;
+          await Promise.all([...pending]);
+          refreshFixtureApi();
+          visit.apiObservationClosedAt = new Date().toISOString();
+        };
+        if (managerApiTrace) {
+          visit.managerApiClientTrace = await finishManagerPhotoApiCapture(
+            managerApiTrace,
+            providerDeadline,
+            reconcile
+          );
+        } else {
+          await reconcile();
+        }
         assert.equal(captureErrors.length, 0, 'Provider trace capture failed');
         assert(!overflow, 'Provider trace exceeded observation budget');
         if (domObservation) {
@@ -1679,6 +1801,14 @@ export async function runLivePhotoCollection({
               focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
               counterCurrentIndex: counter?.getAttribute('data-current-index') ?? null,
               counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+              mediaId: item?.getAttribute('data-media-id') ?? null,
+              recoverySummary: [
+                ...(gallery?.querySelectorAll(
+                  '[data-gallery-element="source-details"] summary span'
+                ) ?? []),
+              ]
+                .slice(0, 3)
+                .map((part) => part.textContent?.trim().slice(0, 240) ?? ''),
               loaded: item?.getAttribute('data-media-loaded') ?? null,
               active: item?.getAttribute('data-media-active') ?? null,
               focused: item?.getAttribute('data-media-focused') ?? null,
@@ -1693,11 +1823,21 @@ export async function runLivePhotoCollection({
           throw error;
         }
       } finally {
-        context.off('requestfailed', onRequestFailed);
-        context.off('response', onResponse);
-        await page.close();
-        visit.pageClosed = true;
-        visit.finishedAt = new Date().toISOString();
+        try {
+          if (managerApiTrace) {
+            try {
+              await managerApiTrace.stop();
+            } finally {
+              visit.managerApiClientTrace = managerApiTrace.snapshot();
+            }
+          }
+        } finally {
+          context.off('requestfailed', onRequestFailed);
+          context.off('response', onResponse);
+          await page.close();
+          visit.pageClosed = true;
+          visit.finishedAt = new Date().toISOString();
+        }
       }
       if (fixture && visit.status !== 'observed') {
         if (managerObserver) {

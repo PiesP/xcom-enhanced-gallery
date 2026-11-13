@@ -28,6 +28,7 @@ import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
 import {
   verifyFixtureServerApiResponses,
+  finishManagerPhotoApiCapture,
   runLivePhotoCollection,
   photoProviderRequestMatches,
   assertExactPhotoNativeSource,
@@ -697,6 +698,7 @@ test('fixture visit failures retain both owners and cleanup while public observa
     [false, false, false],
     [true, true, false],
     [true, false, true],
+    [false, false, true],
   ] as const) {
     const output = await mkdtemp(join(tmpdir(), 'xeg-photo-visits-'));
     const navigated: string[] = [];
@@ -724,6 +726,7 @@ test('fixture visit failures retain both owners and cleanup while public observa
       },
       on: () => undefined,
       off: () => undefined,
+      cookies: async () => [],
     } as unknown as BrowserContext;
     try {
       const receipt = await runLivePhotoCollection({
@@ -758,6 +761,14 @@ test('fixture visit failures retain both owners and cleanup while public observa
           : null,
       });
       assert.equal(receipt.status, 'failed');
+      assert.equal(
+        receipt.scope,
+        sourceKnown
+          ? 'source-known injected failures'
+          : unverifiedBrowser
+            ? 'installed manager userscript public photo collection and native single/ZIP bytes only'
+            : 'installed extension public photo collection and native single/ZIP bytes only'
+      );
       assert(receipt.error);
       assert(Array.isArray(receipt.visits));
       assert.equal(
@@ -775,7 +786,7 @@ test('fixture visit failures retain both owners and cleanup while public observa
       );
       assert.equal(closed.length, navigated.length + 1);
       assert.equal(receipt.extensionPageClosed, true);
-      if (unverifiedBrowser) {
+      if (sourceKnown && unverifiedBrowser) {
         assert.match(String(receipt.error), /Browser-owned download terminal state is unverified/u);
       }
       if (pendingNative) {
@@ -905,5 +916,47 @@ test('fixture API server evidence requires an exact finished response and never 
       403
     ).length,
     1
+  );
+});
+
+test('metadata closure waits for delayed client capture and reconciles only after drain', async () => {
+  let captured = false;
+  let stopped = false;
+  let reconciled = false;
+  const delayed = new Promise<void>((resolve) =>
+    setTimeout(() => {
+      captured = true;
+      resolve();
+    }, 10)
+  );
+  const trace = {
+    snapshot: () => ({ errors: [], responses: captured ? [{ status: 200 }] : [] }),
+    stop: async () => {
+      await delayed;
+      stopped = true;
+    },
+  };
+  const snapshot = await finishManagerPhotoApiCapture(trace, Date.now() + 1000, async () => {
+    assert(stopped && captured);
+    reconciled = true;
+  });
+  assert(reconciled && Array.isArray(snapshot.responses) && snapshot.responses.length === 1);
+  let payload = 'fixture-input';
+  const lateConflict = {
+    snapshot: () => ({ errors: [], responses: [{ status: 200 }] }),
+    stop: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      payload = 'different-client-payload';
+    },
+  };
+  await assert.rejects(
+    finishManagerPhotoApiCapture(lateConflict, Date.now() + 1000, async () => {
+      assert.equal(
+        payload,
+        'fixture-input',
+        'Client and source-known payload conflict after drain'
+      );
+    }),
+    /payload conflict after drain/u
   );
 });

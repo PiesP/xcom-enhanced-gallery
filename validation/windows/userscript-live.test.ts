@@ -5,10 +5,11 @@ import { describe, expect, it } from 'vitest';
 import { mkdtemp, mkdir, writeFile, readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import type { CDPSession } from '@playwright/test';
+import type { CDPSession, BrowserContext, Page } from '@playwright/test';
 import {
   bindInstalledUserscriptSource,
   createBrowserDownloadObserver,
+  createManagerPhotoApiObserver,
   retainFailedLiveNativeFiles,
   resolveUserscriptGMCallLine,
   resolveUserscriptGMCallerLines,
@@ -151,5 +152,78 @@ describe('bounded selected-photo native evidence', () => {
     } finally {
       await rm(root, { recursive: true, force: true });
     }
+  });
+});
+
+describe('owned installed manager API source binding', () => {
+  const owner = '2121007970545017041';
+  const body =
+    'function downloadSingleFile() {}\nfunction request() {\n  gmDetails.onload = (response) => {\n    try {\n      if (resourceLimitExceeded) return;\n    } finally {}\n  };\n}';
+  const installed = `// ==UserScript==\n// @name Owned test\n// ==/UserScript==\n${body}\n`;
+  function host(changed = false) {
+    const listeners = new Map<string, Set<(value: unknown) => void>>();
+    const calls: string[] = [];
+    const executed = `managerPrefix;\n${changed ? body.replace('function request()', 'function changed()') : body}\nmanagerSuffix;`;
+    let detached = 0;
+    const session = {
+      on(name: string, handler: (value: unknown) => void) {
+        const list = listeners.get(name) ?? new Set();
+        list.add(handler);
+        listeners.set(name, list);
+      },
+      off(name: string, handler: (value: unknown) => void) {
+        listeners.get(name)?.delete(handler);
+      },
+      async send(method: string, params?: Record<string, unknown>) {
+        calls.push(method);
+        if (method === 'Debugger.enable') {
+          for (const callback of listeners.get('Debugger.scriptParsed') ?? []) {
+            callback({ scriptId: 'owned-script', url: 'userscript:owned', executionContextId: 7 });
+          }
+        }
+        if (method === 'Debugger.getScriptSource') {
+          return { scriptSource: executed };
+        }
+        if (method === 'Debugger.setBreakpoint') {
+          return { breakpointId: 'owned-api', actualLocation: params?.location };
+        }
+        return {};
+      },
+      async detach() {
+        detached++;
+      },
+    };
+    const context = { newCDPSession: async () => session } as unknown as BrowserContext;
+    const page = {
+      context: () => context,
+      url: () => `https://x.com/shinchilla_/status/${owner}`,
+    } as unknown as Page;
+    return { context, page, calls, listeners, detached: () => detached };
+  }
+  it('binds the sole executed product body before arming and detaches after cleanup', async () => {
+    const owned = host();
+    const observer = createManagerPhotoApiObserver(owned.context, 'a'.repeat(32), installed);
+    const trace = await observer(owned.page, owner, () => {});
+    expect(trace.snapshot().sourceBinding).toMatchObject({
+      executionContextId: 7,
+      scriptId: 'owned-script',
+    });
+    expect(owned.calls).toContain('Debugger.setBreakpoint');
+    await trace.stop();
+    await trace.stop();
+    expect(owned.detached()).toBe(1);
+    expect(owned.calls).toContain('Debugger.removeBreakpoint');
+    expect(owned.calls).toContain('Debugger.disable');
+    expect([...owned.listeners.values()].every((value) => value.size === 0)).toBe(true);
+  });
+  it('refuses changed executed source and closes its owned debugger session', async () => {
+    const owned = host(true);
+    const observer = createManagerPhotoApiObserver(owned.context, 'a'.repeat(32), installed);
+    await expect(observer(owned.page, owner, () => {})).rejects.toThrow(
+      'differs from installed product body'
+    );
+    expect(owned.detached()).toBe(1);
+    expect(owned.calls).not.toContain('Debugger.setBreakpoint');
+    expect([...owned.listeners.values()].every((value) => value.size === 0)).toBe(true);
   });
 });

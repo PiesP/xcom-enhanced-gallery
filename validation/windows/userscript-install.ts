@@ -29,7 +29,11 @@ import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
 import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import { isLiveFilenameOriginal, type LiveFilenameTarget } from './live-filename-target.ts';
-import { runLivePhotoCollection, type PhotoCollectionContract } from './live-photo-collection.ts';
+import {
+  runLivePhotoCollection,
+  type PhotoCollectionContract,
+  type PhotoManagerApiObserver,
+} from './live-photo-collection.ts';
 import { runInstalledLargePhotoFixture } from './installed-large-photo-fixture.ts';
 import {
   inspectHitTestedAction,
@@ -41,6 +45,9 @@ import {
 import { resolveFilenameCaptureLine } from './filename-correlation.ts';
 import {
   createPreArmPauseGuard,
+  createInstalledUserscriptApiTrace,
+  resolveUserscriptApiOnloadLine,
+  withTimeout as withUserscriptTraceTimeout,
   createInstalledUserscriptFrameTrace,
   type FrameGmCall,
   type FrameMedia,
@@ -5646,6 +5653,11 @@ export async function runUserscriptInstallation({
         output,
         root,
         managerObserver: observer,
+        managerApiObserver: createManagerPhotoApiObserver(
+          context,
+          managerId,
+          source.toString('utf8')
+        ),
         installNative: ({ originals, apiResponses }) =>
           loopback!.setLargePhotos(originals, apiResponses),
         installDomNative: ({ dom }) =>
@@ -5867,6 +5879,157 @@ export function bindInstalledUserscriptSource(installed: string, executed: strin
     bodySha256: sha256(body),
     bodyBytes: Buffer.byteLength(body, 'utf8'),
     bodyOffsetUtf16,
+  };
+}
+
+/** Observe only the selected owner's GM metadata callback in the exact installed product. */
+export function createManagerPhotoApiObserver(
+  context: BrowserContext,
+  managerId: string,
+  installed: string
+): PhotoManagerApiObserver {
+  assert(/^[a-p]{32}$/u.test(managerId), 'API observer manager identity is invalid');
+  resolveUserscriptApiOnloadLine(installed);
+  return async (page, requestedId, capture) => {
+    assert.equal(page.context(), context, 'API observer page left its owned context');
+    const target = new URL(page.url());
+    assert(
+      target.protocol === 'https:' &&
+        target.hostname === 'x.com' &&
+        !target.username &&
+        !target.password &&
+        !target.port &&
+        !target.search &&
+        !target.hash &&
+        new RegExp(`^/[A-Za-z0-9_]{1,15}/status/${requestedId}$`, 'u').test(target.pathname),
+      'API observer target is not the declared owner page'
+    );
+    const session = await context.newCDPSession(page);
+    const scripts: Array<{ scriptId: string; url: string; executionContextId: number }> = [];
+    let overflow = false;
+    let detached = false;
+    let stopped = false;
+    let trace: ReturnType<typeof createInstalledUserscriptApiTrace> | null = null;
+    let binding: Record<string, unknown> | null = null;
+    const guard = createPreArmPauseGuard(session);
+    const parsed = (item: { scriptId: string; url: string; executionContextId: number }) => {
+      if (scripts.length >= 256) {
+        overflow = true;
+        return;
+      }
+      scripts.push(item);
+    };
+    const detach = async () => {
+      if (!detached && !trace?.snapshot().debuggerDetached && !guard.snapshot().detached) {
+        await withUserscriptTraceTimeout(session.detach(), 4000, 'API source observer detach');
+      }
+      detached = true;
+    };
+    session.on('Debugger.scriptParsed', parsed);
+    guard.start();
+    try {
+      await withUserscriptTraceTimeout(
+        session.send('Runtime.enable'),
+        4000,
+        'API source runtime enable'
+      );
+      await withUserscriptTraceTimeout(
+        session.send('Debugger.enable'),
+        4000,
+        'API source debugger enable'
+      );
+      const candidates = scripts.filter(
+        (item) =>
+          item.url.includes(managerId) ||
+          /(?:user-script|userscript|\.user\.js)/iu.test(item.url) ||
+          item.url === ''
+      );
+      assert(
+        !overflow && candidates.length <= 64,
+        'Installed API script discovery exceeded its bound'
+      );
+      let selected: { scriptId: string; responseLine: number } | null = null;
+      const discoveryDeadline = Date.now() + 12_000;
+      for (const item of candidates) {
+        assert(Date.now() < discoveryDeadline, 'Installed API source discovery timed out');
+        const value = await withUserscriptTraceTimeout(
+          session.send('Debugger.getScriptSource', { scriptId: item.scriptId }),
+          4000,
+          'API source read'
+        ).catch(() => null);
+        const text = value?.scriptSource;
+        if (
+          !text ||
+          Buffer.byteLength(text, 'utf8') > 5 * 1024 * 1024 ||
+          !text.includes('function downloadSingleFile(')
+        ) {
+          continue;
+        }
+        const product = bindInstalledUserscriptSource(installed, text);
+        const location = resolveUserscriptApiOnloadLine(text);
+        assert(!selected, 'Installed API product source is ambiguous');
+        assert(
+          Number.isSafeInteger(item.executionContextId) && item.executionContextId > 0,
+          'Installed API source realm is unavailable'
+        );
+        selected = { scriptId: item.scriptId, responseLine: location.lineNumber };
+        binding = {
+          ...product,
+          scriptId: item.scriptId,
+          executionContextId: item.executionContextId,
+          responseLine: location.lineNumber,
+          parsedScripts: scripts.length,
+          candidates: candidates.length,
+        };
+      }
+      assert(selected && binding, 'Installed API product source was not uniquely identified');
+      guard.assertClean();
+      trace = createInstalledUserscriptApiTrace({
+        session,
+        scriptId: selected.scriptId,
+        responseLine: selected.responseLine,
+        requestedId,
+        onResponse: capture,
+      });
+      await trace.arm();
+      await guard.handoff();
+      session.off('Debugger.scriptParsed', parsed);
+      return {
+        snapshot: () => ({
+          ...trace!.snapshot(),
+          sourceBinding: binding,
+          sessionDetached: detached,
+        }),
+        async stop() {
+          if (stopped) {
+            return;
+          }
+          try {
+            await trace!.stop();
+          } finally {
+            session.off('Debugger.scriptParsed', parsed);
+            await guard.stop();
+            await detach();
+            stopped = true;
+          }
+        },
+      };
+    } catch (error) {
+      try {
+        if (trace) {
+          await trace.stop();
+        }
+      } catch {
+        /* The outer failed visit remains unverified. */
+      }
+      try {
+        await guard.stop();
+      } finally {
+        session.off('Debugger.scriptParsed', parsed);
+        await detach();
+      }
+      throw error;
+    }
   };
 }
 
@@ -6285,6 +6448,11 @@ export async function runUserscriptPhotoCollectionInstallation(options: {
       downloads,
       output,
       managerObserver: observer,
+      managerApiObserver: createManagerPhotoApiObserver(
+        context,
+        managerId,
+        source.toString('utf8')
+      ),
     });
     receipt.focused = focused;
     assert.equal(focused.status, 'observed', 'Manager photo collection proof is incomplete');

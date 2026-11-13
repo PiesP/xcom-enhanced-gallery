@@ -3,6 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { Buffer } from 'node:buffer';
+import { createHash } from 'node:crypto';
 import type { LiveFilenameTarget } from './live-filename-target.ts';
 import { isLiveFilenameOriginal } from './live-filename-target.ts';
 import { MEDIA_COHORTS } from './userscript-document.ts';
@@ -332,7 +333,7 @@ function validateGmCall(value: unknown, media: FrameMedia, target: FrameTraceTar
   return item as FrameGmCall;
 }
 
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   return Promise.race([
     promise.finally(() => clearTimeout(timer)),
@@ -340,6 +341,367 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
       timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
     }),
   ]);
+}
+
+/** Locate the first executable statement in the unminified installed GM onload callback. */
+export function resolveUserscriptApiOnloadLine(source: string): {
+  lineNumber: number;
+  columnNumber: 0;
+} {
+  const lines = source.split(/\r?\n/u);
+  const sites = lines.flatMap((line, index) =>
+    /\bgmDetails\.onload = \(response\) => \{$/u.test(line.trim()) ? [index] : []
+  );
+  assert.equal(sites.length, 1, 'Installed GM API onload callback is not unique');
+  const site = sites[0]!;
+  assert.equal(lines[site + 1]?.trim(), 'try {', 'Installed GM callback changed');
+  assert.equal(
+    lines[site + 2]?.trim(),
+    'if (resourceLimitExceeded) return;',
+    'Installed GM callback first statement changed'
+  );
+  return { lineNumber: site + 2, columnNumber: 0 };
+}
+
+export type UserscriptApiResponse = {
+  url: string;
+  finalUrl: string;
+  status: number;
+  bodyText: string;
+};
+
+type ApiTraceSnapshot = {
+  breakpoint: { breakpointId: string; scriptId: string; lineNumber: number } | null;
+  pauseCount: number;
+  captureJobs: number;
+  responses: Array<{ requestedId: string; status: number; bytes: number; sha256: string }>;
+  errors: string[];
+  debuggerDisabled: boolean;
+  debuggerDetached: boolean;
+};
+
+function exactApiUrl(value: unknown, requestedId: string): value is string {
+  if (typeof value !== 'string' || value.length > 4096) {
+    return false;
+  }
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== 'https:' ||
+      url.host !== 'x.com' ||
+      url.username !== '' ||
+      url.password !== '' ||
+      url.hash !== '' ||
+      !/^\/i\/api\/graphql\/[^/]+\/TweetResultByRestId$/u.test(url.pathname)
+    ) {
+      return false;
+    }
+    const variables: unknown = JSON.parse(url.searchParams.get('variables') ?? '{}');
+    return (
+      variables !== null &&
+      typeof variables === 'object' &&
+      !Array.isArray(variables) &&
+      'tweetId' in variables &&
+      variables.tweetId === requestedId
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** The condition excludes every binary GM callback before a CDP pause is dispatched. */
+function apiOnloadCondition(requestedId: string): string {
+  return `(() => {
+    try {
+      if (details.method !== 'GET' || details.responseType !== 'json' ||
+          typeof details.url !== 'string' || details.url.length > 4096) return false;
+      const url = new URL(details.url);
+      if (url.protocol !== 'https:' || url.host !== 'x.com' || url.username || url.password || url.hash ||
+          !/^\\/i\\/api\\/graphql\\/[^/]+\\/TweetResultByRestId$/.test(url.pathname)) return false;
+      const variables = JSON.parse(url.searchParams.get('variables') || '{}');
+      return variables && typeof variables === 'object' && !Array.isArray(variables) &&
+        variables.tweetId === '${requestedId}';
+    } catch { return false; }
+  })()`;
+}
+
+// Returned body text is ephemeral: callers must not copy it into a persisted receipt.
+const API_ONLOAD_FRAME_EXPRESSION = `(() => {
+  try {
+    if (details.method !== 'GET' || details.responseType !== 'json' ||
+        typeof details.url !== 'string' || details.url.length > 4096 ||
+        typeof response.finalUrl !== 'string' || response.finalUrl !== details.url ||
+        !Number.isInteger(response.status) || response.status < 100 || response.status > 599)
+      return { error: 'metadata' };
+    const value = response.response;
+    let bodyText;
+    let bodyBytes;
+    let arrayBufferBytes;
+    try {
+      const byteLength = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'byteLength')?.get;
+      if (typeof byteLength === 'function') arrayBufferBytes = Reflect.apply(byteLength, value, []);
+    } catch { /* A shape or proxy without ArrayBuffer's internal slot is not a buffer. */ }
+    if (arrayBufferBytes !== undefined) {
+      bodyBytes = arrayBufferBytes;
+      if (bodyBytes > 2000000) return { error: 'oversize' };
+      bodyText = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(value);
+    } else if (typeof value === 'string') {
+      if (value.length > 2000000) return { error: 'oversize' };
+      bodyBytes = new TextEncoder().encode(value).byteLength;
+      if (bodyBytes > 2000000) return { error: 'oversize' };
+      bodyText = value;
+    } else return { error: 'body-type' };
+    return { url: details.url, finalUrl: response.finalUrl, status: response.status,
+      bodyText, bodyBytes };
+  } catch { return { error: 'decode' }; }
+})()`;
+
+/** Observe only exact-owner installed GM API onload responses in one owned CDP session. */
+export function createInstalledUserscriptApiTrace(options: {
+  session: TraceSession;
+  scriptId: string;
+  responseLine: number;
+  requestedId: string;
+  onResponse: (response: UserscriptApiResponse) => void | Promise<void>;
+}) {
+  const { session, scriptId, responseLine, requestedId, onResponse } = options;
+  assert(/^\d{1,40}$/u.test(requestedId), 'Installed API trace owner is invalid');
+  assert(stringField(scriptId, 128) && Number.isSafeInteger(responseLine) && responseLine >= 0);
+  let breakpoint: ApiTraceSnapshot['breakpoint'] = null;
+  let pauseCount = 0;
+  let captureJobs = 0;
+  let pending: Promise<void> = Promise.resolve();
+  let emergency: Promise<void> | null = null;
+  let listening = false;
+  let stopping = false;
+  let stopped = false;
+  let debuggerDisabled = false;
+  let debuggerDetached = false;
+  const responses: ApiTraceSnapshot['responses'] = [];
+  const errors: string[] = [];
+  const fail = (code: string) => {
+    if (errors.length < 4) {
+      errors.push(code);
+    }
+  };
+  const send = (method: string, params?: Record<string, unknown>) =>
+    withTimeout(session.send(method, params), 4000, method);
+  const quiesce = (resume: boolean) => {
+    if (emergency || debuggerDisabled || debuggerDetached) {
+      return;
+    }
+    emergency = (async () => {
+      try {
+        await send('Debugger.setSkipAllPauses', { skip: true });
+      } catch {
+        fail('skip-failed');
+      }
+      if (resume) {
+        try {
+          await send('Debugger.resume');
+        } catch {
+          fail('resume-failed');
+        }
+      }
+      try {
+        await send('Debugger.disable');
+        debuggerDisabled = true;
+      } catch {
+        fail('disable-failed');
+        try {
+          await withTimeout(session.detach(), 4000, 'API trace emergency detach');
+          debuggerDetached = true;
+        } catch {
+          fail('detach-failed');
+        }
+      }
+    })();
+  };
+  const capture = async (raw: unknown) => {
+    try {
+      assert(errors.length === 0 && !stopped, 'API trace is no longer active');
+      const event = record(raw);
+      const frames = event.callFrames;
+      const frame = Array.isArray(frames) && frames.length ? record(frames[0]) : null;
+      const location = frame ? record(frame.location) : null;
+      assert(breakpoint && frame && location, 'API pause frame is missing');
+      assert(
+        Array.isArray(event.hitBreakpoints) &&
+          event.hitBreakpoints.length === 1 &&
+          event.hitBreakpoints[0] === breakpoint.breakpointId,
+        'Unexpected API breakpoint'
+      );
+      assert(
+        location.scriptId === scriptId && location.lineNumber === responseLine,
+        'API pause source changed'
+      );
+      assert(stringField(frame.callFrameId, 128), 'API pause frame ID is missing');
+      const evaluated = record(
+        await send('Debugger.evaluateOnCallFrame', {
+          callFrameId: frame.callFrameId,
+          expression: API_ONLOAD_FRAME_EXPRESSION,
+          returnByValue: true,
+        })
+      );
+      assert(!evaluated.exceptionDetails, 'API frame evaluation failed');
+      const result = record(record(evaluated.result).value);
+      assert(!result.error, 'API frame response is invalid');
+      assert(exactApiUrl(result.url, requestedId), 'API frame owner or URL changed');
+      assert(result.finalUrl === result.url, 'API frame redirect changed source');
+      assert(
+        Number.isInteger(result.status) &&
+          Number(result.status) >= 100 &&
+          Number(result.status) <= 599,
+        'API frame status is invalid'
+      );
+      assert(typeof result.bodyText === 'string', 'API frame body is invalid');
+      const bytes = Buffer.byteLength(result.bodyText, 'utf8');
+      assert(
+        bytes <= 2_000_000 && bytes === result.bodyBytes,
+        'API frame body exceeds bound or differs from source'
+      );
+      await withTimeout(
+        Promise.resolve(
+          onResponse({
+            url: result.url,
+            finalUrl: result.finalUrl as string,
+            status: result.status as number,
+            bodyText: result.bodyText,
+          })
+        ),
+        4000,
+        'API trace callback'
+      );
+      responses.push({
+        requestedId,
+        status: result.status as number,
+        bytes,
+        sha256: createHash('sha256').update(result.bodyText, 'utf8').digest('hex'),
+      });
+    } catch {
+      fail('capture-failed');
+    } finally {
+      let resumed = false;
+      try {
+        await send('Debugger.resume');
+        resumed = true;
+      } catch {
+        fail('resume-failed');
+      }
+      if (!resumed || errors.length) {
+        quiesce(!resumed);
+      }
+    }
+  };
+  const onPaused = (event: unknown) => {
+    pauseCount = Math.min(pauseCount + 1, 13);
+    if (stopping || stopped || errors.length || pauseCount > 12) {
+      fail('unexpected-or-excess-pause');
+      quiesce(true);
+      return;
+    }
+    try {
+      const hit = record(event).hitBreakpoints;
+      assert(
+        breakpoint && Array.isArray(hit) && hit.length === 1 && hit[0] === breakpoint.breakpointId,
+        'Unexpected API pause'
+      );
+    } catch {
+      fail('unexpected-pause');
+      quiesce(true);
+      return;
+    }
+    captureJobs++;
+    pending = pending.then(() => capture(event));
+  };
+  return {
+    async arm() {
+      assert(!listening && !stopped && !stopping);
+      session.on('Debugger.paused', onPaused);
+      listening = true;
+      try {
+        const response = record(
+          await send('Debugger.setBreakpoint', {
+            location: { scriptId, lineNumber: responseLine, columnNumber: 0 },
+            condition: apiOnloadCondition(requestedId),
+          })
+        );
+        assert(stringField(response.breakpointId, 128), 'API breakpoint ID is missing');
+        const actual = record(response.actualLocation);
+        breakpoint = { breakpointId: response.breakpointId, scriptId, lineNumber: responseLine };
+        assert(
+          actual.scriptId === scriptId && actual.lineNumber === responseLine,
+          'API breakpoint source changed'
+        );
+      } catch {
+        fail('arm-failed');
+        throw new Error('Installed API trace arm failed');
+      }
+    },
+    snapshot(): ApiTraceSnapshot {
+      return {
+        breakpoint: breakpoint ? { ...breakpoint } : null,
+        pauseCount,
+        captureJobs,
+        responses: responses.map((item) => ({ ...item })),
+        errors: [...errors],
+        debuggerDisabled,
+        debuggerDetached,
+      };
+    },
+    async stop() {
+      if (stopped) {
+        return this.snapshot();
+      }
+      stopping = true;
+      try {
+        await withTimeout(pending, 20_000, 'API trace pause drain');
+      } catch {
+        fail('drain-failed');
+        quiesce(true);
+      }
+      if (emergency) {
+        await emergency;
+      }
+      if (!debuggerDisabled && !debuggerDetached && breakpoint) {
+        try {
+          await send('Debugger.removeBreakpoint', { breakpointId: breakpoint.breakpointId });
+        } catch {
+          fail('remove-failed');
+        }
+      }
+      if (emergency) {
+        await emergency;
+      }
+      if (!debuggerDisabled && !debuggerDetached) {
+        try {
+          await send('Debugger.disable');
+          debuggerDisabled = true;
+        } catch {
+          fail('disable-failed');
+          try {
+            await withTimeout(session.detach(), 4000, 'API trace detach');
+            debuggerDetached = true;
+          } catch {
+            fail('detach-failed');
+          }
+        }
+      }
+      if (emergency) {
+        await emergency;
+      }
+      if (listening && (debuggerDisabled || debuggerDetached)) {
+        session.off('Debugger.paused', onPaused);
+        listening = false;
+      }
+      stopped = true;
+      assert(
+        errors.length === 0 && debuggerDisabled && breakpoint !== null,
+        `Installed API trace teardown: ${errors.join('; ')}`
+      );
+      return this.snapshot();
+    },
+  };
 }
 
 export function createInstalledUserscriptFrameTrace(options: {
