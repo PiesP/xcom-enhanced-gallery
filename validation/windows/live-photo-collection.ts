@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import type { BrowserContext, Page, Request, Response } from '@playwright/test';
+import type { BrowserContext, CDPSession, Page, Request, Response } from '@playwright/test';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import {
   inspectLiveStoredZip,
@@ -82,6 +82,170 @@ export async function settlePhotoTransportProbeDownloads(
     }
   }
   throw new Error('Probe native download did not reach a terminal state');
+}
+
+/** Passive page-target CDP evidence; worker traffic and native TLS have separate scopes. */
+export async function observePhotoTransportNetwork(
+  session: CDPSession,
+  expected: readonly PhotoExpectedReference[]
+) {
+  const paths = new Set(expected.map((item) => new URL(item.originalUrl).pathname));
+  const requests = new Map<
+    string,
+    { host: string; path: string; method: string; variant: string }
+  >();
+  const events: Array<Record<string, string | number | boolean | null>> = [];
+  let overflow = false;
+  let stopped = false;
+  const source = (raw: string, method: string) => {
+    try {
+      const url = new URL(raw);
+      return url.protocol === 'https:' &&
+        url.hostname === 'pbs.twimg.com' &&
+        paths.has(url.pathname)
+        ? {
+            host: url.hostname,
+            path: url.pathname,
+            method: method.slice(0, 16),
+            variant: ['orig', 'large', 'medium', 'small', 'thumb'].includes(
+              url.searchParams.get('name') ?? ''
+            )
+              ? url.searchParams.get('name')!
+              : 'other',
+          }
+        : null;
+    } catch {
+      return null;
+    }
+  };
+  const add = (
+    kind: string,
+    requestId: string,
+    details: Record<string, string | number | boolean | null>
+  ) => {
+    if (events.length >= 256) {
+      overflow = true;
+      return;
+    }
+    events.push({ kind, requestId: requestId.slice(0, 120), atEpochMs: Date.now(), ...details });
+  };
+  const onRequest = (event: { requestId: string; request: { url: string; method: string } }) => {
+    const matched = source(event.request.url, event.request.method);
+    if (!matched) {
+      return;
+    }
+    if (!requests.has(event.requestId) && requests.size >= 128) {
+      overflow = true;
+      return;
+    }
+    requests.set(event.requestId, matched);
+    add('requestWillBeSent', event.requestId, matched);
+  };
+  const onResponse = (event: {
+    requestId: string;
+    response: { status: number; resourceIPAddressSpace?: string };
+  }) => {
+    const matched = requests.get(event.requestId);
+    if (matched) {
+      add('responseReceived', event.requestId, {
+        ...matched,
+        status: event.response.status,
+        resourceIPAddressSpace: event.response.resourceIPAddressSpace?.slice(0, 40) ?? null,
+      });
+    }
+  };
+  const onFailed = (event: {
+    requestId: string;
+    canceled?: boolean;
+    blockedReason?: string;
+    corsErrorStatus?: { corsError?: string };
+  }) => {
+    const matched = requests.get(event.requestId);
+    if (matched) {
+      add('loadingFailed', event.requestId, {
+        ...matched,
+        canceled: event.canceled ?? false,
+        blockedReason: event.blockedReason?.slice(0, 80) ?? null,
+        corsErrorStatus: event.corsErrorStatus?.corsError?.slice(0, 80) ?? null,
+      });
+    }
+  };
+  const onFinished = (event: { requestId: string }) => {
+    const matched = requests.get(event.requestId);
+    if (matched) {
+      add('loadingFinished', event.requestId, matched);
+    }
+  };
+  const onPaused = (event: {
+    requestId: string;
+    networkId?: string;
+    request: { url: string; method: string };
+  }) => {
+    const matched = source(event.request.url, event.request.method);
+    if (matched) {
+      add('fetchPausedPassive', event.requestId, {
+        ...matched,
+        networkId: event.networkId?.slice(0, 120) ?? null,
+      });
+    }
+  };
+  session.on('Network.requestWillBeSent', onRequest);
+  session.on('Network.responseReceived', onResponse);
+  session.on('Network.loadingFailed', onFailed);
+  session.on('Network.loadingFinished', onFinished);
+  session.on('Fetch.requestPaused', onPaused);
+  const remove = () => {
+    session.off('Network.requestWillBeSent', onRequest);
+    session.off('Network.responseReceived', onResponse);
+    session.off('Network.loadingFailed', onFailed);
+    session.off('Network.loadingFinished', onFinished);
+    session.off('Fetch.requestPaused', onPaused);
+  };
+  try {
+    await session.send('Network.enable');
+  } catch (error) {
+    remove();
+    await session.detach();
+    throw error;
+  }
+  return {
+    snapshot: () => ({
+      target: 'page',
+      clock: 'guest epoch milliseconds',
+      fetchInterceptionEnabled: false,
+      events: [...events],
+      overflow,
+    }),
+    async stop() {
+      if (stopped) {
+        return;
+      }
+      stopped = true;
+      remove();
+      await session.detach();
+    },
+  };
+}
+
+async function queryPhotoNetworkPermissions(page: Page) {
+  return page.evaluate(async () => {
+    const states: Record<string, string> = {};
+    for (const name of ['local-network', 'loopback-network'] as const) {
+      if (!navigator.permissions?.query) {
+        states[name] = 'unsupported';
+        continue;
+      }
+      try {
+        const result = await navigator.permissions.query({
+          name: name as unknown as PermissionName,
+        });
+        states[name] = result.state;
+      } catch (error) {
+        states[name] = error instanceof TypeError ? 'unsupported' : 'query-error';
+      }
+    }
+    return { atEpochMs: Date.now(), states };
+  });
 }
 
 export function parsePhotoCollectionSelector(
@@ -1004,6 +1168,7 @@ export async function runLivePhotoCollection({
       const serverEventStart = fixture?.providerEvidence?.snapshot().length ?? 0;
       const browserVisitSince = managerObserver?.snapshot() ?? 0;
       const page = await context.newPage();
+      let transportNetwork: Awaited<ReturnType<typeof observePhotoTransportNetwork>> | null = null;
       const visit: Record<string, unknown> = {
         statusId: owner.statusId,
         status: 'failed',
@@ -1167,6 +1332,12 @@ export async function runLivePhotoCollection({
       };
       context.on('response', onResponse);
       try {
+        if (contract.transportProbe) {
+          transportNetwork = await observePhotoTransportNetwork(
+            await context.newCDPSession(page),
+            target.expected
+          );
+        }
         const url = `https://x.com/${owner.handle}/status/${owner.statusId}`;
         const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
         assert.equal(response?.status(), 200, 'Public post did not return HTTP 200');
@@ -1683,17 +1854,24 @@ export async function runLivePhotoCollection({
           visit.singleDomProbes = afterDomSingle.events.slice(beforeDomSingle.events.length);
         }
         if (contract.transportProbe) {
+          const beforeZipPermissions = await queryPhotoNetworkPermissions(page);
           const beforeZipTransport = fixture?.transportProbeSnapshot?.() ?? null;
           visit.phase = 'zip-transport-probe';
+          const zipClickStartedAtEpochMs = Date.now();
           await toolbar
             .locator(`button[aria-label="Download ${verified.length} shown files as ZIP"]`)
             .click();
+          const zipClickResolvedAtEpochMs = Date.now();
           await page.waitForTimeout(5_000);
           visit.transportProbe = {
             requested: owner.statusId,
             zipClicked: true,
+            zipClickStartedAtEpochMs,
+            zipClickResolvedAtEpochMs,
+            beforeZipPermissions,
             beforeZipTransport,
             downloadStatus: await toolbar.locator('[data-download-status]').textContent(),
+            afterWindowPermissions: await queryPhotoNetworkPermissions(page),
             afterWindowTransport: fixture?.transportProbeSnapshot?.() ?? null,
           };
           visit.transportProbeNativePending = await settlePhotoTransportProbeDownloads(
@@ -1945,6 +2123,16 @@ export async function runLivePhotoCollection({
         } finally {
           context.off('requestfailed', onRequestFailed);
           context.off('response', onResponse);
+          if (transportNetwork) {
+            try {
+              await transportNetwork.stop();
+            } catch {
+              visit.status = 'failed';
+              visit.transportProbeNetworkDetachError = true;
+            } finally {
+              visit.transportProbeNetwork = transportNetwork.snapshot();
+            }
+          }
           await page.close();
           visit.pageClosed = true;
           visit.finishedAt = new Date().toISOString();

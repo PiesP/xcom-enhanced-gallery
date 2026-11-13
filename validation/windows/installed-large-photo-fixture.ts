@@ -208,6 +208,9 @@ type FixtureRouteEvent = {
   resourceType?: string;
   settlement?: 'response' | 'finished' | 'failed';
   failure?: string | null;
+  continueEnteredAtEpochMs?: number;
+  continueResolvedAtEpochMs?: number;
+  continueRejectedAtEpochMs?: number;
 };
 type NativeSnapshot = {
   overflow: boolean;
@@ -436,7 +439,18 @@ export async function runInstalledLargePhotoFixture({
       event.method = request.method();
       event.resourceType = request.resourceType();
       if (media.purpose !== 'preview' && media.purpose !== 'display-original') {
-        await requestRoute.continue();
+        if (transportProbe && media.key.startsWith('XegLargeB')) {
+          event.continueEnteredAtEpochMs = Date.now();
+          try {
+            await requestRoute.continue();
+            event.continueResolvedAtEpochMs = Date.now();
+          } catch (error) {
+            event.continueRejectedAtEpochMs = Date.now();
+            throw error;
+          }
+        } else {
+          await requestRoute.continue();
+        }
       } else {
         event.status = 200;
         await requestRoute.fulfill({ status: 200, contentType: 'image/jpeg', body: media.bytes });

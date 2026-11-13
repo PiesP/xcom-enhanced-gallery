@@ -3,10 +3,11 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import { readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import type { BrowserContext } from '@playwright/test';
+import type { BrowserContext, CDPSession } from '@playwright/test';
 import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import {
@@ -36,6 +37,7 @@ import {
   assertDomPhotoZipOutcome,
   parsePhotoCollectionSelector,
   requiredPhotoPositions,
+  observePhotoTransportNetwork,
   settlePhotoTransportProbeDownloads,
   verifyPhotoCollection,
   verifyPhotoCollectionDownloads,
@@ -332,6 +334,67 @@ test('transport probe requires a terminal observation for an unknown native stat
     /terminal state/u
   );
   assert.equal(observations, 41);
+});
+
+test('transport probe CDP observer records only bounded source identity and passive Fetch events', async () => {
+  const emitter = new EventEmitter();
+  const commands: string[] = [];
+  let detached = false;
+  const session = {
+    on: emitter.on.bind(emitter),
+    off: emitter.off.bind(emitter),
+    send: async (command: string) => {
+      commands.push(command);
+    },
+    detach: async () => {
+      detached = true;
+    },
+  } as unknown as CDPSession;
+  const expected = fixture(true).contract.expected.slice(0, 20);
+  const observer = await observePhotoTransportNetwork(session, expected);
+  const source = `${expected[0]!.originalUrl}&secret=must-not-appear`;
+  emitter.emit('Network.requestWillBeSent', {
+    requestId: '17',
+    request: { url: source, method: 'GET', headers: { Cookie: 'must-not-appear' } },
+  });
+  emitter.emit('Network.responseReceived', {
+    requestId: '17',
+    response: {
+      status: 200,
+      resourceIPAddressSpace: 'local',
+      headers: { Cookie: 'must-not-appear' },
+    },
+  });
+  emitter.emit('Network.loadingFailed', {
+    requestId: '17',
+    blockedReason: 'other',
+    corsErrorStatus: { corsError: 'InsecurePrivateNetwork' },
+  });
+  emitter.emit('Fetch.requestPaused', {
+    requestId: 'pause-17',
+    networkId: '17',
+    request: { url: source, method: 'GET' },
+  });
+  emitter.emit('Network.requestWillBeSent', {
+    requestId: 'other',
+    request: { url: 'https://example.org/secret', method: 'GET' },
+  });
+  const snapshot = observer.snapshot();
+  assert.deepEqual(commands, ['Network.enable']);
+  assert.equal(snapshot.events.length, 4);
+  assert.deepEqual(
+    snapshot.events.map((event) => event.kind),
+    ['requestWillBeSent', 'responseReceived', 'loadingFailed', 'fetchPausedPassive']
+  );
+  assert(snapshot.events.every((event) => event.variant === 'orig'));
+  assert(!JSON.stringify(snapshot).includes('must-not-appear'));
+  for (let attempt = 0; attempt < 260; attempt++) {
+    emitter.emit('Network.loadingFinished', { requestId: '17' });
+  }
+  assert.equal(observer.snapshot().events.length, 256);
+  assert.equal(observer.snapshot().overflow, true);
+  await observer.stop();
+  assert.equal(detached, true);
 });
 
 test('boundary selection verifies the rendered source even when counter and model are correct', () => {
