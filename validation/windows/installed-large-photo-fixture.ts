@@ -28,7 +28,7 @@ export function markedLargePhotoJpeg(
   variant: 'original' | 'preview' = 'original'
 ): Buffer {
   assert(source.length >= 4 && source[0] === 0xff && source[1] === 0xd8);
-  assert(/^[AB](?:0[0-9]|1[0-9])$/u.test(marker));
+  assert(/^[ABC](?:0[0-9]|1[0-9])$/u.test(marker));
   const comment = Buffer.from(`XEG installed large photo ${marker} ${variant}`, 'ascii');
   const segment = Buffer.alloc(comment.length + 4);
   segment[0] = 0xff;
@@ -129,18 +129,24 @@ export function createInstalledLargePhotoFixture(source: Buffer) {
   const requested = make(A, 'A');
   const quoted = make(B, 'B');
   const domPhotos = quoted.map((photo, ordinal) => {
+    const marker = `C${String(ordinal).padStart(2, '0')}`;
     const sourceKey = `XegDom${String(ordinal).padStart(2, '0')}`;
+    const bytes = markedLargePhotoJpeg(source, marker);
     return {
       ...photo,
       owner: DOM,
       mediaId: `${DOM.statusId}_dom_${ordinal}`,
       displayUrl: `https://pbs.twimg.com/media/${sourceKey}?format=webp&name=large`,
+      bytes,
+      previewBytes: markedLargePhotoJpeg(source, marker, 'preview'),
       reference: {
         ...photo.reference,
         ownerId: DOM.statusId,
         sourceKey,
         originalUrl: `https://pbs.twimg.com/media/${sourceKey}?format=jpg&name=orig`,
         filename: `${DOM.handle}_${DOM.statusId}_${ordinal}.jpg`,
+        bytes: bytes.length,
+        sha256: hash(bytes),
       },
     };
   });

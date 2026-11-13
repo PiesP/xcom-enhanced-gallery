@@ -371,6 +371,17 @@ export function verifyDomPhotoCollection(
   });
 }
 
+/** The installed DOM fixture runs in English; require scope and quality independently. */
+export function assertDomPhotoSourceDetails(
+  observed: readonly string[],
+  quality: 'pending' | 'verified'
+): void {
+  assert.deepEqual(observed, [
+    '20 collected items · the post may contain more',
+    ...(quality === 'pending' ? ['Original image will be checked when saving'] : []),
+  ]);
+}
+
 export type PhotoOriginalReference = {
   index: number;
   ownerId: string;
@@ -433,6 +444,23 @@ export function verifyDomNativeProbes(
   assert(
     (after.domProbePeak ?? Number.POSITIVE_INFINITY) <= 4,
     'DOM probe queue exceeded four active sources'
+  );
+}
+
+/** A displayed preview is allowed; no original format may be touched before this save. */
+export function assertDeferredDomOriginalAbsent(
+  events: readonly DomNativeEvent[],
+  ordinal: number
+): void {
+  assert(Number.isSafeInteger(ordinal) && ordinal >= 0 && ordinal < 20);
+  const key = `XegDom${String(ordinal).padStart(2, '0')}`;
+  assert(
+    !events.some(
+      (event) =>
+        event.sourceUrl?.startsWith(`/media/${key}?`) &&
+        /(?:^|&)name=orig(?:&|$)/u.test(event.sourceUrl.slice(event.sourceUrl.indexOf('?') + 1))
+    ),
+    `Deferred DOM ordinal ${ordinal} had an original probe or transfer before its save request`
   );
 }
 export type OwnedPhotoDownload = {
@@ -935,13 +963,16 @@ export async function runLivePhotoCollection({
             '[data-xeg-gallery-container] [data-gallery-element="source-details"]'
           );
           await details.waitFor({ state: 'visible', timeout: 10_000 });
-          const summary = await details.locator('summary').innerText();
-          const partialBody = (await details.locator('p').first().textContent())?.trim() ?? '';
-          assert(
-            summary.includes('20') && partialBody.trim(),
-            'Unknown-total DOM recovery was not disclosed'
+          const summaryParts = (await details.locator('summary span').allTextContents()).map(
+            (part) => part.trim()
           );
-          visit.unknownTotal = { summary, partialBody };
+          assertDomPhotoSourceDetails(summaryParts, 'verified');
+          const partialBody = (await details.locator('p').first().textContent())?.trim() ?? '';
+          assert.equal(
+            partialBody,
+            'Only currently available media was collected. The post may contain more; bulk download includes only collected items.'
+          );
+          visit.unknownTotal = { summaryParts, partialBody };
         }
         const beforeDomSingle = domObservation ? fixture?.nativeSnapshot?.() : null;
         if (beforeDomSingle) {
@@ -955,12 +986,7 @@ export async function runLivePhotoCollection({
             'DOM eager probe count exceeded its initial budget'
           );
           verifyDomNativeProbes({ events: [] }, beforeDomSingle, 19, false);
-          assert(
-            !beforeDomSingle.events.some(
-              (event) => event.sourceUrl === '/media/XegDom12?format=webp&name=orig'
-            ),
-            'Deferred DOM ordinal 12 was probed before its save request'
-          );
+          assertDeferredDomOriginalAbsent(beforeDomSingle.events, 12);
           visit.initialDomProbes = beforeDomSingle.events.filter((event) =>
             event.sourceUrl?.startsWith('/media/XegDom')
           );
@@ -1034,7 +1060,14 @@ export async function runLivePhotoCollection({
             : null;
           if (sourceDetails) {
             assert.equal(await sourceDetails.getAttribute('data-media-id'), selected.mediaId);
-            assert(qualityBefore, 'Deferred DOM original has no visible source explanation');
+            const parts = (await sourceDetails.locator('summary span').allTextContents()).map(
+              (part) => part.trim()
+            );
+            assertDomPhotoSourceDetails(parts, 'pending');
+            assert.equal(
+              qualityBefore,
+              'This image has not been checked yet. Saving it or the ZIP will check the original source first.'
+            );
             visit.deferredSourceDetail = qualityBefore;
           }
           const beforeSingle = new Set(
@@ -1108,8 +1141,12 @@ export async function runLivePhotoCollection({
               { timeout: 10_000 }
             );
             const qualityAfter = (await sourceDetails.locator('p').last().textContent())?.trim();
-            assert(qualityAfter && qualityAfter !== qualityBefore);
+            assert.equal(qualityAfter, 'Save source: verified original image from X’s CDN.');
             assert.equal(await sourceDetails.getAttribute('data-media-id'), selected.mediaId);
+            const parts = (await sourceDetails.locator('summary span').allTextContents()).map(
+              (part) => part.trim()
+            );
+            assertDomPhotoSourceDetails(parts, 'verified');
             visit.verifiedSourceDetail = qualityAfter;
           }
           await managerObserver?.flush();

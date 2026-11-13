@@ -10,7 +10,44 @@ import {
   createInstalledLargePhotoFixture,
   largePhotoFixtureMedia,
 } from './installed-large-photo-fixture.ts';
-import { verifyDomNativeProbes, verifyDomPhotoCollection } from './live-photo-collection.ts';
+import {
+  assertDeferredDomOriginalAbsent,
+  assertDomPhotoSourceDetails,
+  verifyDomNativeProbes,
+  verifyDomPhotoCollection,
+} from './live-photo-collection.ts';
+
+test('DOM20 source detail requires exact unknown-total and pending/verified state', () => {
+  const scope = '20 collected items · the post may contain more';
+  assertDomPhotoSourceDetails([scope, 'Original image will be checked when saving'], 'pending');
+  assertDomPhotoSourceDetails([scope], 'verified');
+  assert.throws(() => assertDomPhotoSourceDetails(['20 photos'], 'verified'));
+  assert.throws(() =>
+    assertDomPhotoSourceDetails(['19 collected items · the post may contain more'], 'verified')
+  );
+  assert.throws(() =>
+    assertDomPhotoSourceDetails([scope, 'Original image unavailable for saving'], 'pending')
+  );
+  assert.throws(() =>
+    assertDomPhotoSourceDetails([scope, 'Video save quality is unverified'], 'verified')
+  );
+});
+
+test('a deferred DOM item cannot have an earlier JPEG probe or transfer', () => {
+  const event = { method: 'GET', status: 200, result: 'served' };
+  assertDeferredDomOriginalAbsent(
+    [{ ...event, sourceUrl: '/media/XegDom12?format=webp&name=large' }],
+    12
+  );
+  for (const method of ['HEAD', 'GET']) {
+    assert.throws(() =>
+      assertDeferredDomOriginalAbsent(
+        [{ ...event, method, sourceUrl: '/media/XegDom12?format=jpg&name=orig' }],
+        12
+      )
+    );
+  }
+});
 import { createUserscriptFixtureHandler } from './userscript-loopback.ts';
 
 test('installed DOM20 source keeps owner-local identity and exact missing WebP/JPEG originals', async () => {
@@ -20,6 +57,13 @@ test('installed DOM20 source keeps owner-local identity and exact missing WebP/J
   assert.notEqual(data.contract.requested.statusId, data.contract.directQuote?.statusId);
   assert(data.contract.expected.every((item) => item.filename.includes('__')));
   assert.equal(data.dom.photos.length, 20);
+  for (const [ordinal, photo] of data.dom.photos.entries()) {
+    const quoted = data.photos[ordinal]!;
+    assert(!photo.bytes.equals(quoted.bytes), `DOM owner reused quote bytes at ${ordinal}`);
+    assert(!photo.previewBytes.equals(quoted.previewBytes));
+    assert.notEqual(photo.reference.sha256, quoted.reference.sha256);
+    assert(!photo.previewBytes.equals(photo.bytes));
+  }
   const owner = data.dom.contract.requested;
   const tiles = data.dom.photos.map((photo) => ({
     href: `https://x.com/${owner.handle}/status/${owner.statusId}/photo/${photo.ordinal + 1}`,
