@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { BrowserContext, Route } from '@playwright/test';
+import type { BrowserContext, Request, Route } from '@playwright/test';
 import {
   runLivePhotoCollection,
   verifyFixtureServerApiResponses,
@@ -206,6 +206,8 @@ type FixtureRouteEvent = {
   purpose?: string;
   method?: string;
   resourceType?: string;
+  settlement?: 'response' | 'finished' | 'failed';
+  failure?: string | null;
 };
 type NativeSnapshot = {
   overflow: boolean;
@@ -213,6 +215,7 @@ type NativeSnapshot = {
   activeCount: number;
   domProbePeak?: number;
   events?: readonly { sourceUrl?: string; method: string; status?: number; result: string }[];
+  transport?: unknown;
 };
 
 /** Resolve display and original responses from the same identity but different bytes. */
@@ -321,6 +324,7 @@ export async function runInstalledLargePhotoFixture({
   installNative,
   installDomNative,
   nativeSnapshot,
+  transportProbe = false,
   managerObserver = null,
   managerApiObserver = null,
 }: {
@@ -332,6 +336,7 @@ export async function runInstalledLargePhotoFixture({
   installNative: (fixture: NativeFixture) => void;
   installDomNative?: (fixture: NativeFixture) => void;
   nativeSnapshot: () => NativeSnapshot;
+  transportProbe?: boolean;
   managerObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerObserver'];
   managerApiObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerApiObserver'];
 }) {
@@ -345,12 +350,34 @@ export async function runInstalledLargePhotoFixture({
   const beforeNative = readNative();
   installNative(fixture);
   const budget = createInstalledLargePhotoRouteBudget();
+  const routed = new Map<Request, FixtureRouteEvent>();
+  const onResponse = (response: { request(): Request; status(): number }) => {
+    const event = routed.get(response.request());
+    if (event) {
+      event.status = response.status();
+      event.settlement = 'response';
+    }
+  };
+  const onRequestFinished = (request: Request) => {
+    const event = routed.get(request);
+    if (event) {
+      event.settlement = 'finished';
+    }
+  };
+  const onRequestFailed = (request: Request) => {
+    const event = routed.get(request);
+    if (event) {
+      event.settlement = 'failed';
+      event.failure = request.failure()?.errorText.slice(0, 120) ?? null;
+    }
+  };
   const route = async (requestRoute: Route) => {
     const event = await budget.admit(requestRoute);
     if (!event) {
       return;
     }
     const request = requestRoute.request();
+    routed.set(request, event);
     const url = new URL(request.url());
     if (url.protocol === 'chrome-extension:') {
       event.kind = 'extension';
@@ -441,12 +468,15 @@ export async function runInstalledLargePhotoFixture({
     })),
   };
   let primaryError: unknown;
-  await context.route('**/*', route);
+  context.on('response', onResponse);
+  context.on('requestfinished', onRequestFinished);
+  context.on('requestfailed', onRequestFailed);
   try {
+    await context.route('**/*', route);
     const proof = await runLivePhotoCollection({
       context,
       extensionId,
-      contract: fixture.contract,
+      contract: transportProbe ? { ...fixture.contract, transportProbe: true } : fixture.contract,
       downloads,
       output,
       managerObserver,
@@ -456,6 +486,7 @@ export async function runInstalledLargePhotoFixture({
         receiptFile: 'installed-large-photo-collection.json',
         retainedPrefix: 'installed-large-photo',
         scope: 'source-known installed photo fixture; not actual public X acceptance',
+        ...(transportProbe ? { transportProbeSnapshot: nativeSnapshot } : {}),
         ...(managerObserver
           ? {
               providerEvidence: {
@@ -467,6 +498,22 @@ export async function runInstalledLargePhotoFixture({
       },
     });
     receipt.proof = proof;
+    if (transportProbe) {
+      assert.equal(proof.status, 'diagnostic', 'Transport probe did not finish its bounded window');
+      const probeSettleDeadline = Date.now() + 3_000;
+      while (nativeSnapshot().activeCount > 0 && Date.now() < probeSettleDeadline) {
+        await new Promise((done) => setTimeout(done, 50));
+      }
+      assert.equal(nativeSnapshot().activeCount, 0, 'Transport probe retained an active response');
+      receipt.nativeTransport = { before: beforeNative, after: readNative() };
+      receipt.transportProbe = {
+        status: 'diagnostic',
+        source: 'B owner only; no DOM, native ZIP acceptance, or public X visit',
+        native: nativeSnapshot(),
+      };
+      receipt.status = 'diagnostic';
+      return receipt;
+    }
     const idleDeadline = Date.now() + 3_000;
     while (nativeSnapshot().activeCount > 0 && Date.now() < idleDeadline) {
       await new Promise((done) => setTimeout(done, 50));
@@ -539,6 +586,10 @@ export async function runInstalledLargePhotoFixture({
     primaryError = error;
     receipt.error = error instanceof Error ? error.message : String(error);
   } finally {
+    context.off('response', onResponse);
+    context.off('requestfinished', onRequestFinished);
+    context.off('requestfailed', onRequestFailed);
+    routed.clear();
     receipt.requests = budget.events;
     receipt.requestOverflow = budget.overflow;
     if (!receipt.nativeTransport) {

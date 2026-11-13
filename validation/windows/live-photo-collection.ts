@@ -20,6 +20,7 @@ import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 declare const chrome: {
   runtime: { id: string };
   downloads: {
+    cancel(id: number): Promise<void>;
     search(query: { id: number }): Promise<
       Array<{
         id: number;
@@ -46,6 +47,7 @@ export type PhotoCollectionContract = {
   requested: PhotoOwner;
   directQuote: PhotoOwner | null;
   expected: readonly PhotoExpectedReference[];
+  transportProbe?: true;
 };
 
 export function parsePhotoCollectionSelector(
@@ -55,8 +57,20 @@ export function parsePhotoCollectionSelector(
 ): PhotoCollectionContract {
   assert(value && typeof value === 'object' && !Array.isArray(value));
   const input = value as Record<string, unknown>;
-  assert.deepEqual(Object.keys(input).sort(), ['directQuote', 'expected', 'requested', 'scenario']);
+  assert.deepEqual(
+    Object.keys(input).sort(),
+    [
+      'directQuote',
+      'expected',
+      'requested',
+      'scenario',
+      ...(input.transportProbe === undefined ? [] : ['transportProbe']),
+    ].sort()
+  );
   assert.equal(input.scenario, 'photo-collection-20-40');
+  const transportProbe = input.transportProbe === true;
+  assert(input.transportProbe === undefined || transportProbe, 'Unsupported transport probe');
+  assert(!transportProbe || installation === 'extension', 'Transport probe requires extension');
   assert(
     installation === 'extension' || installation === 'userscript',
     'Photo collection route requires an installed extension or manager userscript'
@@ -74,6 +88,7 @@ export function parsePhotoCollectionSelector(
   const requested = parseOwner(input.requested);
   const directQuote = input.directQuote === null ? null : parseOwner(input.directQuote);
   assert(!directQuote || directQuote.statusId !== requested.statusId);
+  assert(!transportProbe || directQuote, 'Transport probe requires the direct B owner');
   assert(Array.isArray(input.expected), 'Photo selector must pin every independent original');
   const expected = input.expected.map((raw: unknown, index: number): PhotoExpectedReference => {
     assert(raw && typeof raw === 'object' && !Array.isArray(raw));
@@ -121,10 +136,10 @@ export function parsePhotoCollectionSelector(
   const url = (owner: PhotoOwner) => `https://x.com/${owner.handle}/status/${owner.statusId}`;
   assert.deepEqual(
     liveUrls,
-    directQuote ? [url(requested), url(directQuote)] : [url(requested)],
+    transportProbe ? [] : directQuote ? [url(requested), url(directQuote)] : [url(requested)],
     'Photo collection URLs must match the exact declared owners'
   );
-  return { requested, directQuote, expected };
+  return { requested, directQuote, expected, ...(transportProbe ? { transportProbe: true } : {}) };
 }
 
 export type PhotoProviderTrace = NonNullable<ReturnType<typeof summarizeTweetResultResponse>>;
@@ -908,8 +923,13 @@ export async function runLivePhotoCollection({
     observation?: 'dom';
     providerEvidence?: { snapshot(): readonly unknown[]; bodies: ReadonlyMap<string, Buffer> };
     nativeSnapshot?: () => DomNativeSnapshot;
+    transportProbeSnapshot?: () => unknown;
   } | null;
 }) {
+  assert(
+    !contract.transportProbe || (fixture && !managerObserver),
+    'Probe needs owned extension fixture'
+  );
   assert(
     !managerApiObserver || managerObserver,
     'GM API observation requires an owned manager installation'
@@ -937,7 +957,9 @@ export async function runLivePhotoCollection({
   const failedVisits: Array<{ ownerId: string; error: string }> = [];
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
-    for (const owner of [contract.directQuote, contract.requested]) {
+    for (const owner of contract.transportProbe
+      ? [contract.directQuote]
+      : [contract.directQuote, contract.requested]) {
       if (!owner) {
         continue;
       }
@@ -1626,6 +1648,37 @@ export async function runLivePhotoCollection({
           verifyDomNativeProbes(beforeDomSingle, afterDomSingle, 12, true);
           visit.singleDomProbes = afterDomSingle.events.slice(beforeDomSingle.events.length);
         }
+        if (contract.transportProbe) {
+          const beforeZipTransport = fixture?.transportProbeSnapshot?.() ?? null;
+          await toolbar
+            .locator(`button[aria-label="Download ${verified.length} shown files as ZIP"]`)
+            .click();
+          await page.waitForTimeout(5_000);
+          visit.transportProbe = {
+            requested: owner.statusId,
+            zipClicked: true,
+            beforeZipTransport,
+            downloadStatus: await toolbar.locator('[data-download-status]').textContent(),
+            afterWindowTransport: fixture?.transportProbeSnapshot?.() ?? null,
+          };
+          const pendingNative = (await queryDownloads(extensionPage, extensionId)).filter(
+            (item) => item.state === 'in_progress'
+          );
+          assert(pendingNative.length <= 1, 'Probe produced more than one native download');
+          visit.transportProbeNativePending = pendingNative.map((item) => item.id);
+          if (pendingNative.length > 0) {
+            await extensionPage.evaluate(
+              async (ids: number[]) => {
+                for (const id of ids) {
+                  await chrome.downloads.cancel(id);
+                }
+              },
+              pendingNative.map((item) => item.id)
+            );
+          }
+          visit.status = 'diagnostic';
+          continue;
+        }
         const beforeZip = managerObserver
           ? null
           : new Set((await queryDownloads(extensionPage, extensionId)).map((item) => item.id));
@@ -1887,7 +1940,8 @@ export async function runLivePhotoCollection({
         );
       }
     }
-    receipt.status = failedVisits.length === 0 ? 'observed' : 'failed';
+    receipt.status =
+      failedVisits.length > 0 ? 'failed' : contract.transportProbe ? 'diagnostic' : 'observed';
     if (failedVisits.length > 0) {
       receipt.error = failedVisits;
     }

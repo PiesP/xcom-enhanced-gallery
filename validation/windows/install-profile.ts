@@ -22224,8 +22224,9 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope:
-      photoCollection !== null
+    scope: photoCollection?.transportProbe
+      ? 'diagnostic only: installed-extension B ZIP transport; no native ZIP or public X acceptance'
+      : photoCollection !== null
         ? 'focused installed-extension 20/40 photo collection and native saved-byte proof; no full actual-site/video/settings campaign'
         : reportedFilenameText !== null
           ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
@@ -22287,7 +22288,8 @@ export async function run({
       })
     );
     nativeLoopback = await startExtensionNativeFixtureLoopback(
-      join(root, 'validation/windows/userscript-fixture-certificate.ps1')
+      join(root, 'validation/windows/userscript-fixture-certificate.ps1'),
+      photoCollection?.transportProbe === true
     );
     result.fixtureTransport = {
       kind: 'task-owned-https-loopback',
@@ -22508,6 +22510,7 @@ export async function run({
             installNative: ({ originals }) => nativeLoopback!.setLargePhotos(originals),
             installDomNative: ({ dom }) => nativeLoopback!.setLargeDomPhotos(dom.originals),
             nativeSnapshot: () => nativeLoopback!.snapshot(),
+            transportProbe: photoCollection.transportProbe === true,
           });
         }
       }
@@ -22553,7 +22556,10 @@ export async function run({
       result.liveBrowserScope =
         'fresh browser process without fixture host mapping or SPKI exception';
     }
-    if (!sameVersionInput) {
+    if (photoCollection?.transportProbe) {
+      assert.equal(result.largePhotoFixture?.status, 'diagnostic');
+      result.evidenceStatus = 'diagnostic-only';
+    } else if (!sameVersionInput) {
       const live = photoCollection
         ? await runLivePhotoCollection({
             context,
@@ -22628,7 +22634,7 @@ export async function run({
     } else {
       result.evidenceStatus = 'same-version-fixture-observed';
     }
-    result.status = 'passed';
+    result.status = photoCollection?.transportProbe ? 'diagnostic' : 'passed';
   } catch (error) {
     primarySeen = true;
     primaryError = error;

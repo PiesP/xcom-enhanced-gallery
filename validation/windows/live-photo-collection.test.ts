@@ -246,6 +246,25 @@ test('photo collection checks all B-then-A identities and each owner-local ordin
   );
 });
 
+test('transport probe is extension-only and cannot visit public X', () => {
+  const { contract } = fixture(true);
+  const selector = { scenario: 'photo-collection-20-40', ...contract, transportProbe: true };
+  assert.deepEqual(parsePhotoCollectionSelector(selector, 'extension', []), {
+    ...contract,
+    transportProbe: true,
+  });
+  assert.throws(() => parsePhotoCollectionSelector(selector, 'userscript', []));
+  assert.throws(() =>
+    parsePhotoCollectionSelector(selector, 'extension', [
+      `https://x.com/${requested.handle}/status/${requested.statusId}`,
+      `https://x.com/${directQuote.handle}/status/${directQuote.statusId}`,
+    ])
+  );
+  assert.throws(() =>
+    parsePhotoCollectionSelector({ ...selector, transportProbe: false }, 'extension', [])
+  );
+});
+
 test('boundary selection verifies the rendered source even when counter and model are correct', () => {
   const { contract, trace, gallery } = fixture(true);
   const expected = verifyPhotoCollection(contract, [trace], gallery);
