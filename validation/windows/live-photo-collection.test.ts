@@ -36,6 +36,7 @@ import {
   assertDomPhotoZipOutcome,
   parsePhotoCollectionSelector,
   requiredPhotoPositions,
+  settlePhotoTransportProbeDownloads,
   verifyPhotoCollection,
   verifyPhotoCollectionDownloads,
   verifySelectedPhoto,
@@ -263,6 +264,46 @@ test('transport probe is extension-only and cannot visit public X', () => {
   assert.throws(() =>
     parsePhotoCollectionSelector({ ...selector, transportProbe: false }, 'extension', [])
   );
+});
+
+test('transport probe waits for canceled native downloads to become terminal', async () => {
+  let canceled = false;
+  let observations = 0;
+  const query = async () => {
+    observations += 1;
+    return [{ id: 17, state: canceled && observations >= 3 ? 'interrupted' : 'in_progress' }];
+  };
+  const canceledIds: number[][] = [];
+  assert.deepEqual(
+    await settlePhotoTransportProbeDownloads(
+      query,
+      async (ids) => {
+        canceledIds.push(ids);
+        canceled = true;
+      },
+      async () => {}
+    ),
+    [17]
+  );
+  assert.deepEqual(canceledIds, [[17]]);
+  assert(observations >= 3);
+});
+
+test('transport probe fails closed while a native download remains pending', async () => {
+  let canceled = 0;
+  const query = async () => [{ id: 17, state: 'in_progress' }];
+  await assert.rejects(
+    settlePhotoTransportProbeDownloads(
+      query,
+      async () => {
+        canceled += 1;
+      },
+      async () => {}
+    ),
+    /terminal state/u
+  );
+  assert.equal(canceled, 1);
+  await assert.rejects(settlePhotoTransportProbeDownloads(query, null, async () => {}));
 });
 
 test('boundary selection verifies the rendered source even when counter and model are correct', () => {

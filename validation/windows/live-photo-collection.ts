@@ -50,6 +50,31 @@ export type PhotoCollectionContract = {
   transportProbe?: true;
 };
 
+/** A diagnostic must account for a native ZIP after cancellation and page closure. */
+export async function settlePhotoTransportProbeDownloads(
+  query: () => Promise<readonly { id: number; state: string }[]>,
+  cancel: ((ids: number[]) => Promise<void>) | null,
+  pause: () => Promise<void> = () => new Promise((done) => setTimeout(done, 50))
+): Promise<number[]> {
+  const initial = (await query()).filter((item) => item.state === 'in_progress');
+  assert(initial.length <= 1, 'Probe produced more than one native download');
+  const ids = initial.map((item) => item.id);
+  if (ids.length > 0 && cancel) {
+    await cancel(ids);
+  }
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const pending = (await query()).filter((item) => item.state === 'in_progress');
+    if (pending.length === 0) {
+      return ids;
+    }
+    assert(pending.length <= 1, 'Probe produced more than one native download');
+    if (attempt < 39) {
+      await pause();
+    }
+  }
+  throw new Error('Probe native download did not reach a terminal state');
+}
+
 export function parsePhotoCollectionSelector(
   value: unknown,
   installation: string,
@@ -1650,6 +1675,7 @@ export async function runLivePhotoCollection({
         }
         if (contract.transportProbe) {
           const beforeZipTransport = fixture?.transportProbeSnapshot?.() ?? null;
+          visit.phase = 'zip-transport-probe';
           await toolbar
             .locator(`button[aria-label="Download ${verified.length} shown files as ZIP"]`)
             .click();
@@ -1661,21 +1687,15 @@ export async function runLivePhotoCollection({
             downloadStatus: await toolbar.locator('[data-download-status]').textContent(),
             afterWindowTransport: fixture?.transportProbeSnapshot?.() ?? null,
           };
-          const pendingNative = (await queryDownloads(extensionPage, extensionId)).filter(
-            (item) => item.state === 'in_progress'
-          );
-          assert(pendingNative.length <= 1, 'Probe produced more than one native download');
-          visit.transportProbeNativePending = pendingNative.map((item) => item.id);
-          if (pendingNative.length > 0) {
-            await extensionPage.evaluate(
-              async (ids: number[]) => {
-                for (const id of ids) {
+          visit.transportProbeNativePending = await settlePhotoTransportProbeDownloads(
+            () => queryDownloads(extensionPage, extensionId),
+            (ids) =>
+              extensionPage.evaluate(async (owned: number[]) => {
+                for (const id of owned) {
                   await chrome.downloads.cancel(id);
                 }
-              },
-              pendingNative.map((item) => item.id)
-            );
-          }
+              }, ids)
+          );
           visit.status = 'diagnostic';
           continue;
         }
@@ -1919,6 +1939,18 @@ export async function runLivePhotoCollection({
           await page.close();
           visit.pageClosed = true;
           visit.finishedAt = new Date().toISOString();
+          if (contract.transportProbe) {
+            try {
+              await settlePhotoTransportProbeDownloads(
+                () => queryDownloads(extensionPage, extensionId),
+                null
+              );
+              visit.transportProbeTerminalAfterPageClose = true;
+            } catch (error) {
+              visit.status = 'failed';
+              visit.operationError = error instanceof Error ? error.message : String(error);
+            }
+          }
         }
       }
       if (fixture && visit.status !== 'observed') {
@@ -1940,10 +1972,12 @@ export async function runLivePhotoCollection({
         );
       }
     }
-    receipt.status =
-      failedVisits.length > 0 ? 'failed' : contract.transportProbe ? 'diagnostic' : 'observed';
-    if (failedVisits.length > 0) {
-      receipt.error = failedVisits;
+    const failed = failedVisits.length > 0 || visits.some((visit) => visit.status === 'failed');
+    receipt.status = failed ? 'failed' : contract.transportProbe ? 'diagnostic' : 'observed';
+    if (failed) {
+      receipt.error = visits
+        .filter((visit) => visit.status === 'failed')
+        .map((visit) => ({ ownerId: visit.statusId, error: visit.operationError }));
     }
   } catch (error) {
     receipt.error = error instanceof Error ? error.message : String(error);

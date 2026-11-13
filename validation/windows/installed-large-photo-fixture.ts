@@ -504,12 +504,14 @@ export async function runInstalledLargePhotoFixture({
       while (nativeSnapshot().activeCount > 0 && Date.now() < probeSettleDeadline) {
         await new Promise((done) => setTimeout(done, 50));
       }
-      assert.equal(nativeSnapshot().activeCount, 0, 'Transport probe retained an active response');
+      const afterProbeNative = nativeSnapshot();
+      assert.equal(budget.overflow, false, 'Transport probe route budget overflowed');
+      assertLargePhotoNativeTransport(beforeNative, afterProbeNative);
       receipt.nativeTransport = { before: beforeNative, after: readNative() };
       receipt.transportProbe = {
         status: 'diagnostic',
         source: 'B owner only; no DOM, native ZIP acceptance, or public X visit',
-        native: nativeSnapshot(),
+        native: afterProbeNative,
       };
       receipt.status = 'diagnostic';
       return receipt;
