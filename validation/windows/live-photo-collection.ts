@@ -336,6 +336,41 @@ export function verifyPhotoCollection(
   return expected;
 }
 
+/** DOM identity is bounded by observed owned links; it does not establish the post total. */
+export function verifyDomPhotoCollection(
+  contract: PhotoCollectionContract,
+  tiles: readonly { href: string; displayUrl: string }[],
+  gallery: { total: number; entries: readonly PhotoGalleryEntry[]; truncated: boolean }
+): VerifiedPhoto[] {
+  assert.equal(contract.directQuote, null, 'DOM fixture must have one directly observed owner');
+  validateOwner(contract.requested);
+  assert.equal(tiles.length, contract.requested.count, 'Owned DOM tiles are incomplete');
+  assert.equal(gallery.total, tiles.length, 'Gallery count differs from observed DOM tiles');
+  assert(!gallery.truncated && gallery.entries.length === tiles.length);
+  assert.equal(contract.expected.length, tiles.length, 'Independent originals are incomplete');
+  return tiles.map((tile, index) => {
+    const pinned = contract.expected[index]!;
+    const expectedHref = `https://x.com/${contract.requested.handle}/status/${contract.requested.statusId}/photo/${index + 1}`;
+    assert.equal(tile.href, expectedHref, `DOM owner/ordinal differs at ${index}`);
+    assert.equal(pinned.ownerId, contract.requested.statusId);
+    assert.equal(pinned.ordinal, index);
+    assert.equal(stem(tile.displayUrl), pinned.sourceKey);
+    const actual = gallery.entries[index]!;
+    const mediaId = `${contract.requested.statusId}_dom_${index}`;
+    assert.equal(actual.index, index, 'DOM gallery entry is missing or reordered');
+    assert.equal(actual.mediaId, mediaId, 'DOM gallery media identity differs');
+    assert.equal(stem(actual.displayUrl), pinned.sourceKey, 'DOM gallery source differs');
+    return {
+      index,
+      owner: contract.requested,
+      mediaId,
+      attachmentOrdinal: index,
+      displayStem: pinned.sourceKey,
+      expected: pinned,
+    };
+  });
+}
+
 export type PhotoOriginalReference = {
   index: number;
   ownerId: string;
@@ -344,6 +379,62 @@ export type PhotoOriginalReference = {
   filename: string;
   bytes: Buffer;
 };
+type DomNativeEvent = {
+  sourceUrl?: string;
+  method: string;
+  status?: number;
+  result: string;
+};
+type DomNativeSnapshot = {
+  domProbePeak?: number;
+  events: readonly DomNativeEvent[];
+};
+
+/** A completed probe must preserve its requested encoding and exact source path. */
+export function verifyDomNativeProbes(
+  before: DomNativeSnapshot,
+  after: DomNativeSnapshot,
+  ordinal: number,
+  expectTransfer: boolean
+): void {
+  assert(Number.isSafeInteger(ordinal) && ordinal >= 0 && ordinal < 20);
+  assert(before.events.length <= after.events.length);
+  const key = `XegDom${String(ordinal).padStart(2, '0')}`;
+  const events = after.events.slice(before.events.length);
+  for (const [format, status] of [
+    ['webp', 404],
+    ['jpg', 200],
+  ] as const) {
+    assert(
+      events.some(
+        (event) =>
+          event.sourceUrl === `/media/${key}?format=${format}&name=orig` &&
+          event.method === 'HEAD' &&
+          event.status === status &&
+          (status === 404
+            ? event.result === 'http-404' || event.result === 'http-failure'
+            : event.result === 'served')
+      ),
+      `DOM original ${ordinal} ${format} probe was not observed at its exact URL/status`
+    );
+  }
+  if (expectTransfer) {
+    assert(
+      events.some(
+        (event) =>
+          event.sourceUrl === `/media/${key}?format=jpg&name=orig` &&
+          event.method === 'GET' &&
+          event.status === 200 &&
+          event.result === 'served'
+      ),
+      `DOM original ${ordinal} JPEG bytes were not transferred`
+    );
+  }
+  assert(
+    (after.domProbePeak ?? Number.POSITIVE_INFINITY) <= 4,
+    'DOM probe queue exceeded four active sources'
+  );
+}
 export type OwnedPhotoDownload = {
   nativeId: number | string;
   state: 'complete';
@@ -514,6 +605,7 @@ async function observeGallery(page: Page, expectedCount: number) {
   }
   return {
     total: first.total,
+    initialIndex: first.currentIndex,
     mountedCount: first.entries.length,
     entries: [...observed.values()].sort((a, b) => a.index - b.index),
     truncated: observed.size !== expectedCount,
@@ -608,6 +700,8 @@ export async function runLivePhotoCollection({
     receiptFile: string;
     retainedPrefix: string;
     scope: string;
+    observation?: 'dom';
+    nativeSnapshot?: () => DomNativeSnapshot;
   } | null;
 }) {
   const receipt: Record<string, unknown> = {
@@ -678,6 +772,7 @@ export async function runLivePhotoCollection({
         };
       };
       const observations: PhotoProviderTrace[] = [];
+      const providerStatuses: Array<{ requestedId: string | null; status: number }> = [];
       const pending = new Set<Promise<void>>();
       const captureErrors: unknown[] = [];
       let overflow = false;
@@ -702,6 +797,14 @@ export async function runLivePhotoCollection({
           );
           const bytes = await response.body();
           assert(bytes.length <= 2_000_000, 'Provider response exceeds bounded trace');
+          const variables: unknown = JSON.parse(
+            new URL(response.url()).searchParams.get('variables') ?? '{}'
+          );
+          const requestedId =
+            variables && typeof variables === 'object' && 'tweetId' in variables
+              ? String(variables.tweetId)
+              : null;
+          providerStatuses.push({ requestedId, status: response.status() });
           const observation = summarizeTweetResultResponse(
             response.url(),
             response.status(),
@@ -725,15 +828,38 @@ export async function runLivePhotoCollection({
         await page
           .locator('html[data-xeg-gallery-ready="true"]')
           .waitFor({ state: 'attached', timeout: 20_000 });
-        await openCurrentStatusImage(page, url, visit);
+        const domObservation = fixture?.observation === 'dom';
+        const domTiles = domObservation
+          ? await page
+              .locator('article[data-testid="tweet"] a[href*="/photo/"]:has(img)')
+              .evaluateAll((anchors) =>
+                anchors.map((anchor) => ({
+                  href: (anchor as HTMLAnchorElement).href,
+                  displayUrl: anchor.querySelector('img')?.getAttribute('src') ?? '',
+                }))
+              )
+          : null;
+        if (domObservation) {
+          assert.equal(domTiles?.length, 20, 'DOM fixture did not expose twenty owned tiles');
+          await page.locator('article[data-testid="tweet"] a[href$="/photo/20"] img').click();
+          await page
+            .locator('[data-xeg-gallery-container]')
+            .waitFor({ state: 'attached', timeout: 20_000 });
+        } else {
+          await openCurrentStatusImage(page, url, visit);
+        }
         const providerDeadline = Date.now() + 10_000;
         while (
-          !observations.some(
-            (entry) =>
-              entry.requestedTweetId === target.requested.statusId &&
-              entry.httpStatus === 200 &&
-              entry.result?.id === target.requested.statusId
-          ) &&
+          !(domObservation
+            ? providerStatuses.some(
+                (entry) => entry.requestedId === target.requested.statusId && entry.status === 403
+              )
+            : observations.some(
+                (entry) =>
+                  entry.requestedTweetId === target.requested.statusId &&
+                  entry.httpStatus === 200 &&
+                  entry.result?.id === target.requested.statusId
+              )) &&
           Date.now() < providerDeadline
         ) {
           await new Promise((done) => setTimeout(done, 100));
@@ -741,24 +867,50 @@ export async function runLivePhotoCollection({
         await Promise.all([...pending]);
         assert.equal(captureErrors.length, 0, 'Provider trace capture failed');
         assert(!overflow, 'Provider trace exceeded observation budget');
+        if (domObservation) {
+          assert(
+            providerStatuses.some(
+              (entry) => entry.requestedId === target.requested.statusId && entry.status === 403
+            ),
+            'Fresh exact-owner API 403 was not observed'
+          );
+          assert(
+            !providerStatuses.some(
+              (entry) => entry.requestedId === target.requested.statusId && entry.status === 200
+            ),
+            'Successful API response would invalidate the DOM-only fixture'
+          );
+          visit.apiFailure = providerStatuses;
+        }
         const gallery = await observeGallery(
           page,
           target.requested.count + (target.directQuote?.count ?? 0)
         );
-        const verified = verifyPhotoCollection(target, observations, gallery);
-        const clickedSource = (
-          visit.readiness as { target?: { imageSource?: { path?: string } } } | undefined
-        )?.target?.imageSource?.path;
-        const clickedIndex = Number(
-          (visit.displayedSelection as { currentIndex?: unknown } | undefined)?.currentIndex
-        );
+        const verified = domObservation
+          ? verifyDomPhotoCollection(target, domTiles!, gallery)
+          : verifyPhotoCollection(target, observations, gallery);
+        const clickedSource = domObservation
+          ? verified[19]?.displayStem
+          : (visit.readiness as { target?: { imageSource?: { path?: string } } } | undefined)
+              ?.target?.imageSource?.path;
+        const clickedIndex = domObservation
+          ? 19
+          : Number(
+              (visit.displayedSelection as { currentIndex?: unknown } | undefined)?.currentIndex
+            );
         assert(
           Number.isSafeInteger(clickedIndex) && clickedIndex >= 0 && clickedIndex < verified.length
         );
         assert(
           clickedSource &&
-            stem(`https://pbs.twimg.com${clickedSource}`) === verified[clickedIndex]?.displayStem,
+            (domObservation ? clickedSource : stem(`https://pbs.twimg.com${clickedSource}`)) ===
+              verified[clickedIndex]?.displayStem,
           'Clicked source did not select its pinned gallery item'
+        );
+        assert.equal(
+          gallery.initialIndex,
+          clickedIndex,
+          'Clicked photo selected another gallery index'
         );
         visit.clicked = {
           index: clickedIndex,
@@ -778,9 +930,215 @@ export async function runLivePhotoCollection({
           })),
         };
         visit.selectedPositions = await verifyBoundaryPhotoSelections(page, verified);
+        if (domObservation) {
+          const details = page.locator(
+            '[data-xeg-gallery-container] [data-gallery-element="source-details"]'
+          );
+          await details.waitFor({ state: 'visible', timeout: 10_000 });
+          const summary = await details.locator('summary').innerText();
+          const partialBody = (await details.locator('p').first().textContent())?.trim() ?? '';
+          assert(
+            summary.includes('20') && partialBody.trim(),
+            'Unknown-total DOM recovery was not disclosed'
+          );
+          visit.unknownTotal = { summary, partialBody };
+        }
+        const beforeDomSingle = domObservation ? fixture?.nativeSnapshot?.() : null;
+        if (beforeDomSingle) {
+          const eagerWebp = beforeDomSingle.events.filter(
+            (event) =>
+              /^\/media\/XegDom\d{2}\?format=webp&name=orig$/u.test(event.sourceUrl ?? '') &&
+              event.method === 'HEAD'
+          );
+          assert(
+            eagerWebp.length > 0 && new Set(eagerWebp.map((event) => event.sourceUrl)).size <= 4,
+            'DOM eager probe count exceeded its initial budget'
+          );
+          verifyDomNativeProbes({ events: [] }, beforeDomSingle, 19, false);
+          assert(
+            !beforeDomSingle.events.some(
+              (event) => event.sourceUrl === '/media/XegDom12?format=webp&name=orig'
+            ),
+            'Deferred DOM ordinal 12 was probed before its save request'
+          );
+          visit.initialDomProbes = beforeDomSingle.events.filter((event) =>
+            event.sourceUrl?.startsWith('/media/XegDom')
+          );
+        }
         const toolbar = page.locator(
           '[data-xeg-gallery-container] [data-gallery-element="toolbar"]'
         );
+        const references: PhotoOriginalReference[] = [];
+        let referenceTotal = 0;
+        for (const item of verified) {
+          const filename = item.expected.filename;
+          const format = new URL(item.expected.originalUrl).searchParams.get('format');
+          assert(format);
+          const original = fixture
+            ? { bytes: fixture.originals.get(item.expected.originalUrl) }
+            : await fetchBoundedLiveOriginal(item.expected.originalUrl, format);
+          assert(original.bytes, 'Synthetic fixture original is absent');
+          referenceTotal += original.bytes.length;
+          assert(
+            referenceTotal <= 128 * 1024 * 1024,
+            'Independent photo references exceeded budget'
+          );
+          references.push({
+            index: item.index,
+            ownerId: item.owner.statusId,
+            attachmentOrdinal: item.attachmentOrdinal,
+            sourceUrl: item.expected.originalUrl,
+            filename,
+            bytes: original.bytes,
+          });
+        }
+        visit.references = references.map((entry) => ({
+          index: entry.index,
+          ownerId: entry.ownerId,
+          ordinal: entry.attachmentOrdinal,
+          sourceUrl: entry.sourceUrl,
+          filename: entry.filename,
+          bytes: entry.bytes.length,
+          sha256: createHash('sha256').update(entry.bytes).digest('hex'),
+        }));
+        const selectedIndex = domObservation ? 12 : target.directQuote ? 20 : 19;
+        const saveSelected = async () => {
+          const selected = verified[selectedIndex]!;
+          const current = await toolbar.getAttribute('data-current-index');
+          let position = Number(current);
+          assert(Number.isSafeInteger(position));
+          while (position !== selectedIndex) {
+            const direction = position < selectedIndex ? 'Next' : 'Previous';
+            await toolbar.locator(`button[aria-label="${direction}"]`).click();
+            position += direction === 'Next' ? 1 : -1;
+            await page.waitForFunction(
+              (index) =>
+                document
+                  .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
+                  ?.getAttribute('data-current-index') === String(index),
+              position,
+              { timeout: 10_000 }
+            );
+          }
+          const selectedId = await page
+            .locator(
+              `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${selectedIndex}"]`
+            )
+            .getAttribute('data-media-id');
+          assert.equal(selectedId, selected.mediaId, 'Selected media changed before single save');
+          const sourceDetails = domObservation
+            ? page.locator('[data-xeg-gallery-container] [data-gallery-element="source-details"]')
+            : null;
+          const qualityBefore = sourceDetails
+            ? (await sourceDetails.locator('p').last().textContent())?.trim()
+            : null;
+          if (sourceDetails) {
+            assert.equal(await sourceDetails.getAttribute('data-media-id'), selected.mediaId);
+            assert(qualityBefore, 'Deferred DOM original has no visible source explanation');
+            visit.deferredSourceDetail = qualityBefore;
+          }
+          const beforeSingle = new Set(
+            (await queryDownloads(extensionPage, extensionId)).map((item) => item.id)
+          );
+          const cdpSingleSince = managerObserver?.snapshot() ?? 0;
+          await toolbar.locator('button[aria-label="Download"]').click();
+          const singleProgress: Array<{
+            id: number;
+            state: string;
+            bytesReceived: number;
+            totalBytes: number;
+          }> = [];
+          const singleItem = await waitForOwnedDownload(
+            extensionPage,
+            extensionId,
+            beforeSingle,
+            64 * 1024 * 1024,
+            singleProgress
+          );
+          if (!managerObserver) {
+            assert(
+              await extensionPage.evaluate(nativeSingleSourceMatchesDocument, {
+                id: singleItem.id,
+                extensionId,
+                expectedSource: references[selectedIndex]!.sourceUrl,
+              }),
+              'Native single used another public source'
+            );
+          } else {
+            const nativeSource = await extensionPage.evaluate(
+              async ({ id, managerId }) => {
+                const matches = await chrome.downloads.search({ id });
+                const item = matches.length === 1 ? matches[0] : null;
+                return item?.id === id && item.byExtensionId === managerId
+                  ? { url: item.url ?? null, finalUrl: item.finalUrl ?? null }
+                  : null;
+              },
+              { id: singleItem.id, managerId: extensionId }
+            );
+            assert(nativeSource?.url, 'Manager single native source is unavailable');
+            assert(
+              nativeSource.url === references[selectedIndex]!.sourceUrl ||
+                nativeSource.url.startsWith('blob:https://x.com/'),
+              'Manager single native URL is not the selected original or owned Blob'
+            );
+            if (
+              nativeSource.finalUrl &&
+              nativeSource.url === references[selectedIndex]!.sourceUrl
+            ) {
+              assert.equal(
+                nativeSource.finalUrl,
+                references[selectedIndex]!.sourceUrl,
+                'Manager single redirected to another source'
+              );
+            }
+            visit.managerSingleSource = nativeSource;
+          }
+          const singleBytes = await readOwnedFile(singleItem, downloads, 64 * 1024 * 1024);
+          visit.retainedSingle = await retain('single', singleBytes);
+          if (sourceDetails) {
+            await page.waitForFunction(
+              (previous) => {
+                const details = document.querySelector(
+                  '[data-xeg-gallery-container] [data-gallery-element="source-details"]'
+                );
+                const detail = details?.querySelector('p:last-of-type')?.textContent?.trim();
+                return Boolean(detail && detail !== previous);
+              },
+              qualityBefore,
+              { timeout: 10_000 }
+            );
+            const qualityAfter = (await sourceDetails.locator('p').last().textContent())?.trim();
+            assert(qualityAfter && qualityAfter !== qualityBefore);
+            assert.equal(await sourceDetails.getAttribute('data-media-id'), selected.mediaId);
+            visit.verifiedSourceDetail = qualityAfter;
+          }
+          await managerObserver?.flush();
+          const cdpSingleBegins = managerObserver?.beginsSince(cdpSingleSince) ?? [];
+          assert(
+            cdpSingleBegins.length <= 1,
+            'One manager single save created multiple CDP downloads'
+          );
+          const cdpSingle = cdpSingleBegins.length
+            ? await managerObserver!.waitForCompletion(
+                cdpSingleSince,
+                basename(singleItem.filename)
+              )
+            : null;
+          if (cdpSingle) {
+            assert.equal(
+              cdpSingle.receivedBytes,
+              singleBytes.length,
+              'Manager single CDP completion size differs'
+            );
+          }
+          return { singleItem, singleBytes, singleProgress, cdpSingle };
+        };
+        const earlySingle = domObservation ? await saveSelected() : null;
+        if (beforeDomSingle && fixture?.nativeSnapshot) {
+          const afterDomSingle = fixture.nativeSnapshot();
+          verifyDomNativeProbes(beforeDomSingle, afterDomSingle, 12, true);
+          visit.singleDomProbes = afterDomSingle.events.slice(beforeDomSingle.events.length);
+        }
         const beforeZip = managerObserver
           ? null
           : new Set((await queryDownloads(extensionPage, extensionId)).map((item) => item.id));
@@ -826,139 +1184,43 @@ export async function runLivePhotoCollection({
           );
         }
         const archive = inspectLiveStoredZip(zipBytes, verified.length, 40);
-        const references: PhotoOriginalReference[] = [];
-        let referenceTotal = 0;
+        if (domObservation && fixture?.nativeSnapshot) {
+          const afterDomZip = fixture.nativeSnapshot();
+          for (let ordinal = 0; ordinal < 20; ordinal++) {
+            const source = `/media/XegDom${String(ordinal).padStart(2, '0')}?format=jpg&name=orig`;
+            assert(
+              afterDomZip.events.some(
+                (event) =>
+                  event.sourceUrl === source &&
+                  event.method === 'GET' &&
+                  event.status === 200 &&
+                  event.result === 'served'
+              ),
+              `DOM ZIP original ${ordinal} was not transferred`
+            );
+          }
+          assert((afterDomZip.domProbePeak ?? Number.POSITIVE_INFINITY) <= 4);
+          visit.zipDomProbePeak = afterDomZip.domProbePeak;
+        }
         for (const item of verified) {
-          const filename = item.expected.filename;
           assert.equal(
-            archive.entries.filter((entry) => entry.filename === filename).length,
+            archive.entries.filter((entry) => entry.filename === item.expected.filename).length,
             1,
             'ZIP lacks one pinned owner-local filename'
           );
-          const format = new URL(item.expected.originalUrl).searchParams.get('format');
-          assert(format);
-          const original = fixture
-            ? { bytes: fixture.originals.get(item.expected.originalUrl) }
-            : await fetchBoundedLiveOriginal(item.expected.originalUrl, format);
-          assert(original.bytes, 'Synthetic fixture original is absent');
-          referenceTotal += original.bytes.length;
-          assert(
-            referenceTotal + zipBytes.length <= 128 * 1024 * 1024,
-            'Reference plus ZIP exceeded retained proof budget'
-          );
-          references.push({
-            index: item.index,
-            ownerId: item.owner.statusId,
-            attachmentOrdinal: item.attachmentOrdinal,
-            sourceUrl: item.expected.originalUrl,
-            filename,
-            bytes: original.bytes,
-          });
         }
-        visit.references = references.map((entry) => ({
-          index: entry.index,
-          ownerId: entry.ownerId,
-          ordinal: entry.attachmentOrdinal,
-          sourceUrl: entry.sourceUrl,
-          filename: entry.filename,
-          bytes: entry.bytes.length,
-          sha256: createHash('sha256').update(entry.bytes).digest('hex'),
-        }));
-        const selectedIndex = target.directQuote ? 20 : 19;
-        const selected = verified[selectedIndex]!;
-        const current = await toolbar.getAttribute('data-current-index');
-        let position = Number(current);
-        assert(Number.isSafeInteger(position));
-        while (position !== selectedIndex) {
-          const direction = position < selectedIndex ? 'Next' : 'Previous';
-          await toolbar.locator(`button[aria-label="${direction}"]`).click();
-          position += direction === 'Next' ? 1 : -1;
-          await page.waitForFunction(
-            (index) =>
-              document
-                .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
-                ?.getAttribute('data-current-index') === String(index),
-            position,
-            { timeout: 10_000 }
+        if (domObservation) {
+          const outcome = page.locator(
+            '[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]'
           );
+          await outcome.waitFor({ state: 'visible', timeout: 10_000 });
+          const paragraphs = await outcome.locator('p').allTextContents();
+          const partialBody = (visit.unknownTotal as { partialBody: string }).partialBody;
+          assert(paragraphs.includes(partialBody), 'ZIP outcome lost the unknown post total');
+          visit.unknownTotalZip = paragraphs;
         }
-        const selectedId = await page
-          .locator(
-            `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${selectedIndex}"]`
-          )
-          .getAttribute('data-media-id');
-        assert.equal(selectedId, selected.mediaId, 'Selected media changed before single save');
-        const beforeSingle = new Set(
-          (await queryDownloads(extensionPage, extensionId)).map((item) => item.id)
-        );
-        const cdpSingleSince = managerObserver?.snapshot() ?? 0;
-        await toolbar.locator('button[aria-label="Download"]').click();
-        const singleProgress: Array<{
-          id: number;
-          state: string;
-          bytesReceived: number;
-          totalBytes: number;
-        }> = [];
-        const singleItem = await waitForOwnedDownload(
-          extensionPage,
-          extensionId,
-          beforeSingle,
-          64 * 1024 * 1024,
-          singleProgress
-        );
-        if (!managerObserver) {
-          assert(
-            await extensionPage.evaluate(nativeSingleSourceMatchesDocument, {
-              id: singleItem.id,
-              extensionId,
-              expectedSource: references[selectedIndex]!.sourceUrl,
-            }),
-            'Native single used another public source'
-          );
-        } else {
-          const nativeSource = await extensionPage.evaluate(
-            async ({ id, managerId }) => {
-              const matches = await chrome.downloads.search({ id });
-              const item = matches.length === 1 ? matches[0] : null;
-              return item?.id === id && item.byExtensionId === managerId
-                ? { url: item.url ?? null, finalUrl: item.finalUrl ?? null }
-                : null;
-            },
-            { id: singleItem.id, managerId: extensionId }
-          );
-          assert(nativeSource?.url, 'Manager single native source is unavailable');
-          assert(
-            nativeSource.url === references[selectedIndex]!.sourceUrl ||
-              nativeSource.url.startsWith('blob:https://x.com/'),
-            'Manager single native URL is not the selected original or owned Blob'
-          );
-          if (nativeSource.finalUrl && nativeSource.url === references[selectedIndex]!.sourceUrl) {
-            assert.equal(
-              nativeSource.finalUrl,
-              references[selectedIndex]!.sourceUrl,
-              'Manager single redirected to another source'
-            );
-          }
-          visit.managerSingleSource = nativeSource;
-        }
-        const singleBytes = await readOwnedFile(singleItem, downloads, 64 * 1024 * 1024);
-        visit.retainedSingle = await retain('single', singleBytes);
-        await managerObserver?.flush();
-        const cdpSingleBegins = managerObserver?.beginsSince(cdpSingleSince) ?? [];
-        assert(
-          cdpSingleBegins.length <= 1,
-          'One manager single save created multiple CDP downloads'
-        );
-        const cdpSingle = cdpSingleBegins.length
-          ? await managerObserver!.waitForCompletion(cdpSingleSince, basename(singleItem.filename))
-          : null;
-        if (cdpSingle) {
-          assert.equal(
-            cdpSingle.receivedBytes,
-            singleBytes.length,
-            'Manager single CDP completion size differs'
-          );
-        }
+        const { singleItem, singleBytes, singleProgress, cdpSingle } =
+          earlySingle ?? (await saveSelected());
         assert(
           singleBytes.length + referenceTotal + zipBytes.length <= 128 * 1024 * 1024,
           'Photo proof exceeded retained byte budget'

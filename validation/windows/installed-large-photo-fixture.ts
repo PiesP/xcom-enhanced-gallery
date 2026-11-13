@@ -13,8 +13,9 @@ import {
   type PhotoOwner,
 } from './live-photo-collection.ts';
 
-const A: PhotoOwner = { handle: 'fixture_a', statusId: '9666600000000000001', count: 20 };
-const B: PhotoOwner = { handle: 'fixture_b', statusId: '9666600000000000002', count: 20 };
+const A: PhotoOwner = { handle: 'fixture_owner_', statusId: '9666600000000000001', count: 20 };
+const B: PhotoOwner = { handle: 'fixture_owner_', statusId: '9666600000000000002', count: 20 };
+const DOM: PhotoOwner = { handle: 'fixture_owner_', statusId: '9666600000000000003', count: 20 };
 const PHOTO_WIDTH = 54;
 const PHOTO_HEIGHT = 1080;
 const ownerUrl = (owner: PhotoOwner) => `https://x.com/${owner.handle}/status/${owner.statusId}`;
@@ -76,7 +77,7 @@ function providerTweet(owner: PhotoOwner, photos: readonly FixturePhoto[], quote
     core: {
       user_results: {
         result: {
-          rest_id: owner.statusId,
+          rest_id: '9666600000000099999',
           legacy: { screen_name: owner.handle, name: owner.handle },
         },
       },
@@ -127,6 +128,22 @@ export function createInstalledLargePhotoFixture(source: Buffer) {
     });
   const requested = make(A, 'A');
   const quoted = make(B, 'B');
+  const domPhotos = quoted.map((photo, ordinal) => {
+    const sourceKey = `XegDom${String(ordinal).padStart(2, '0')}`;
+    return {
+      ...photo,
+      owner: DOM,
+      mediaId: `${DOM.statusId}_dom_${ordinal}`,
+      displayUrl: `https://pbs.twimg.com/media/${sourceKey}?format=webp&name=large`,
+      reference: {
+        ...photo.reference,
+        ownerId: DOM.statusId,
+        sourceKey,
+        originalUrl: `https://pbs.twimg.com/media/${sourceKey}?format=jpg&name=orig`,
+        filename: `${DOM.handle}_${DOM.statusId}_${ordinal}.jpg`,
+      },
+    };
+  });
   const originals = new Map(
     [...quoted, ...requested].map((item) => [item.reference.originalUrl, item.bytes])
   );
@@ -160,32 +177,51 @@ export function createInstalledLargePhotoFixture(source: Buffer) {
       [ownerUrl(A), pageHtml(A, requested, quoted)],
     ]),
     photos: [...quoted, ...requested],
+    dom: {
+      contract: {
+        requested: DOM,
+        directQuote: null,
+        expected: domPhotos.map((item) => item.reference),
+      },
+      originals: new Map(domPhotos.map((item) => [item.reference.originalUrl, item.bytes])),
+      pages: new Map([[ownerUrl(DOM), pageHtml(DOM, domPhotos)]]),
+      photos: domPhotos,
+    },
   };
 }
 
 type NativeFixture = ReturnType<typeof createInstalledLargePhotoFixture>;
 
 type FixtureRouteEvent = { kind: string; status: number; key?: string };
-type NativeSnapshot = { overflow: boolean; unexpectedCount: number; activeCount: number };
+type NativeSnapshot = {
+  overflow: boolean;
+  unexpectedCount: number;
+  activeCount: number;
+  domProbePeak?: number;
+  events?: readonly { sourceUrl?: string; method: string; status?: number; result: string }[];
+};
 
 /** Resolve display and original responses from the same identity but different bytes. */
 export function largePhotoFixtureMedia(
   photos: readonly FixturePhoto[],
   source: string,
   resourceType: string
-): { purpose: 'original' | 'preview'; key: string; bytes: Buffer } {
+): { purpose: 'original' | 'missing-original' | 'preview'; key: string; bytes: Buffer } {
   const url = new URL(source);
   assert.equal(url.protocol, 'https:');
   assert.equal(url.hostname, 'pbs.twimg.com');
-  assert.match(url.pathname, /^\/media\/XegLarge[AB]\d{2}\.jpg$/u);
-  const key = url.pathname.slice('/media/'.length, -'.jpg'.length);
+  assert.match(url.pathname, /^\/media\/(?:XegLarge[AB]\d{2}\.jpg|XegDom\d{2})$/u);
+  const key = url.pathname.slice('/media/'.length).replace(/\.jpg$/u, '');
   const photo = photos.find((item) => item.reference.sourceKey === key);
   assert(photo, 'Undeclared large-photo source');
   if (source === photo.reference.originalUrl) {
     return { purpose: 'original', key, bytes: photo.bytes };
   }
+  if (key.startsWith('XegDom') && url.search === '?format=webp&name=orig') {
+    return { purpose: 'missing-original', key, bytes: Buffer.alloc(0) };
+  }
   assert.deepEqual([...url.searchParams.keys()], ['format', 'name']);
-  assert.equal(url.searchParams.get('format'), 'jpg');
+  assert.equal(url.searchParams.get('format'), key.startsWith('XegDom') ? 'webp' : 'jpg');
   assert(
     ['large', 'medium', 'small', 'thumb'].includes(url.searchParams.get('name') ?? ''),
     'Undeclared large-photo preview'
@@ -239,6 +275,7 @@ export async function runInstalledLargePhotoFixture({
   output,
   root,
   installNative,
+  installDomNative,
   nativeSnapshot,
   managerObserver = null,
 }: {
@@ -248,6 +285,7 @@ export async function runInstalledLargePhotoFixture({
   output: string;
   root: string;
   installNative: (fixture: NativeFixture) => void;
+  installDomNative?: (fixture: NativeFixture) => void;
   nativeSnapshot: () => NativeSnapshot;
   managerObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerObserver'];
 }) {
@@ -273,7 +311,7 @@ export async function runInstalledLargePhotoFixture({
       await requestRoute.continue();
       return;
     }
-    const page = fixture.pages.get(url.href);
+    const page = fixture.pages.get(url.href) ?? fixture.dom.pages.get(url.href);
     if (page && request.isNavigationRequest() && request.method() === 'GET') {
       event.kind = 'document';
       event.status = 200;
@@ -290,8 +328,20 @@ export async function runInstalledLargePhotoFixture({
       } catch {
         /* Reject malformed fixture API input below. */
       }
+      assert(request.method() === 'GET', 'Undeclared large-photo API method');
+      if (id === fixture.dom.contract.requested.statusId) {
+        event.kind = 'dom-api-denied';
+        event.status = 403;
+        await requestRoute.fulfill({
+          status: 403,
+          contentType: 'application/json',
+          headers: { 'Cache-Control': 'no-store' },
+          body: '{}',
+        });
+        return;
+      }
       const body = id ? fixture.apiResponses.get(id) : undefined;
-      assert(body && request.method() === 'GET', 'Undeclared large-photo API request');
+      assert(body, 'Undeclared large-photo API request');
       event.kind = 'api';
       event.status = 200;
       await requestRoute.fulfill({ status: 200, contentType: 'application/json', body });
@@ -299,12 +349,16 @@ export async function runInstalledLargePhotoFixture({
     }
     if (
       url.hostname === 'pbs.twimg.com' &&
-      /^\/media\/XegLarge[AB]\d{2}\.jpg$/u.test(url.pathname)
+      /^\/media\/(?:XegLarge[AB]\d{2}\.jpg|XegDom\d{2})$/u.test(url.pathname)
     ) {
-      const media = largePhotoFixtureMedia(fixture.photos, url.href, request.resourceType());
+      const media = largePhotoFixtureMedia(
+        [...fixture.photos, ...fixture.dom.photos],
+        url.href,
+        request.resourceType()
+      );
       event.kind = 'media';
       event.key = media.key;
-      if (media.purpose === 'original') {
+      if (media.purpose !== 'preview') {
         await requestRoute.continue();
       } else {
         event.status = 200;
@@ -355,6 +409,56 @@ export async function runInstalledLargePhotoFixture({
     });
     receipt.proof = proof;
     assert.equal(proof.status, 'observed', 'Installed 20/40 fixture proof is incomplete');
+    const idleDeadline = Date.now() + 3_000;
+    while (nativeSnapshot().activeCount > 0 && Date.now() < idleDeadline) {
+      await new Promise((done) => setTimeout(done, 50));
+    }
+    assert.equal(
+      nativeSnapshot().activeCount,
+      0,
+      'Original transport remained active before DOM phase'
+    );
+    assert(installDomNative, 'Installed DOM phase requires its own native original route');
+    installDomNative(fixture);
+    const beforeDomNative = nativeSnapshot();
+    assert(beforeDomNative.events, 'DOM original transport observations are unavailable');
+    const domProof = await runLivePhotoCollection({
+      context,
+      extensionId,
+      contract: fixture.dom.contract,
+      downloads,
+      output,
+      managerObserver,
+      fixture: {
+        observation: 'dom',
+        originals: fixture.dom.originals,
+        receiptFile: 'installed-dom-photo-collection.json',
+        retainedPrefix: 'installed-dom-photo',
+        scope:
+          'source-known installed DOM 20 photo fixture after exact-owner API 403; unknown post total',
+        nativeSnapshot: () => {
+          const snapshot = nativeSnapshot();
+          assert(snapshot.events, 'DOM original transport observations are unavailable');
+          return {
+            events: snapshot.events,
+            ...(snapshot.domProbePeak === undefined ? {} : { domProbePeak: snapshot.domProbePeak }),
+          };
+        },
+      },
+    });
+    receipt.domProof = domProof;
+    assert.equal(domProof.status, 'observed', 'Installed DOM 20 fixture proof is incomplete');
+    const afterDomNative = nativeSnapshot();
+    assert(afterDomNative.events, 'DOM original transport observations are unavailable');
+    receipt.domNativeTransport = {
+      eventStart: beforeDomNative.events.length,
+      events: afterDomNative.events.slice(beforeDomNative.events.length),
+      peakActiveProbes: afterDomNative.domProbePeak,
+    };
+    assert(
+      budget.events.some((event) => event.kind === 'dom-api-denied' && event.status === 403),
+      'Installed DOM fixture did not observe a denied API request'
+    );
     assert.equal(budget.overflow, false, 'Large-photo fixture route budget exceeded');
     const afterNative = readNative();
     receipt.nativeTransport = { before: beforeNative, after: afterNative };
