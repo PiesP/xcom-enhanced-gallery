@@ -49,6 +49,7 @@ export type PhotoCollectionContract = {
   expected: readonly PhotoExpectedReference[];
   transportProbe?: true;
   sourceKnownOnly?: true;
+  sourceKnownScope?: 'dom20';
 };
 
 /** A diagnostic must account for a native ZIP after cancellation and page closure. */
@@ -265,13 +266,23 @@ export function parsePhotoCollectionSelector(
       'scenario',
       ...(input.transportProbe === undefined ? [] : ['transportProbe']),
       ...(input.sourceKnownOnly === undefined ? [] : ['sourceKnownOnly']),
+      ...(input.sourceKnownScope === undefined ? [] : ['sourceKnownScope']),
     ].sort()
   );
   assert.equal(input.scenario, 'photo-collection-20-40');
   const transportProbe = input.transportProbe === true;
   const sourceKnownOnly = input.sourceKnownOnly === true;
+  const sourceKnownScope = input.sourceKnownScope;
   assert(input.transportProbe === undefined || transportProbe, 'Unsupported transport probe');
   assert(input.sourceKnownOnly === undefined || sourceKnownOnly, 'Unsupported source-known mode');
+  assert(
+    sourceKnownScope === undefined || sourceKnownScope === 'dom20',
+    'Unsupported source-known scope'
+  );
+  assert(
+    sourceKnownScope === undefined || sourceKnownOnly,
+    'DOM-only scope needs source-known mode'
+  );
   assert(!transportProbe || !sourceKnownOnly, 'Photo modes are mutually exclusive');
   assert(!transportProbe || installation === 'extension', 'Transport probe requires extension');
   assert(!sourceKnownOnly || installation === 'extension', 'Source-known mode requires extension');
@@ -354,6 +365,7 @@ export function parsePhotoCollectionSelector(
     expected,
     ...(transportProbe ? { transportProbe: true } : {}),
     ...(sourceKnownOnly ? { sourceKnownOnly: true } : {}),
+    ...(sourceKnownScope === 'dom20' ? { sourceKnownScope } : {}),
   };
 }
 
@@ -946,6 +958,241 @@ export function verifyPhotoCollectionDownloads(
   };
 }
 
+/** Toolbar arrows move from displayed focus, which can differ from last requested index. */
+export function planPhotoAdjacentMove(
+  currentIndex: number,
+  focusedIndex: number | null,
+  targetIndex: number,
+  total: number
+): { displayedIndex: number; direction: 'Next' | 'Previous'; nextIndex: number } | null {
+  assert(Number.isSafeInteger(total) && total > 1);
+  assert(Number.isSafeInteger(currentIndex) && currentIndex >= 0 && currentIndex < total);
+  assert(Number.isSafeInteger(targetIndex) && targetIndex >= 0 && targetIndex < total);
+  const displayedIndex =
+    focusedIndex !== null &&
+    Number.isSafeInteger(focusedIndex) &&
+    focusedIndex >= 0 &&
+    focusedIndex < total
+      ? focusedIndex
+      : currentIndex;
+  if (displayedIndex === targetIndex && currentIndex === targetIndex) {
+    return null;
+  }
+  const direction =
+    displayedIndex < targetIndex || (displayedIndex === targetIndex && targetIndex < total - 1)
+      ? 'Next'
+      : 'Previous';
+  const nextIndex = displayedIndex + (direction === 'Next' ? 1 : -1);
+  assert(nextIndex >= 0 && nextIndex < total, 'Photo navigation has no adjacent destination');
+  return { displayedIndex, direction, nextIndex };
+}
+
+async function readPhotoNavigationSnapshot(page: Page) {
+  return page.evaluate(() => {
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+    const port = gallery?.querySelector('[data-gallery-element="items"]');
+    const parseIndex = (raw: string | null | undefined) =>
+      raw !== null && raw !== undefined && /^(0|[1-9]\d*)$/u.test(raw) ? Number(raw) : null;
+    const button = (direction: 'Next' | 'Previous') => {
+      const element = toolbar?.querySelector(`button[aria-label="${direction}"]`);
+      const rect = element?.getBoundingClientRect();
+      return {
+        disabled: element instanceof HTMLButtonElement ? element.disabled : null,
+        ariaDisabled: element?.getAttribute('aria-disabled') ?? null,
+        rect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+      };
+    };
+    return {
+      atEpochMs: Date.now(),
+      currentIndex: parseIndex(toolbar?.getAttribute('data-current-index')),
+      focusedIndex: parseIndex(toolbar?.getAttribute('data-focused-index')),
+      counterPosition: parseIndex(
+        gallery
+          ?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]')
+          ?.getAttribute('data-position')
+      ),
+      previous: button('Previous'),
+      next: button('Next'),
+      scroll: port
+        ? { top: port.scrollTop, height: port.scrollHeight, clientHeight: port.clientHeight }
+        : null,
+    };
+  });
+}
+
+type PhotoNavigationSnapshot = Awaited<ReturnType<typeof readPhotoNavigationSnapshot>>;
+type PhotoNavigationDiagnostics = {
+  progress: Array<{
+    phase: 'before' | 'after' | 'poll';
+    target: number;
+    expectedNext: number;
+    snapshot: PhotoNavigationSnapshot;
+  }>;
+  droppedProgress: number;
+  failure?: string;
+  selectionFailure?: { index: number; snapshot: SelectedPhotoSnapshot | null; error: string };
+};
+
+async function navigatePhotoToPosition(
+  page: Page,
+  target: number,
+  total: number,
+  diagnostics?: PhotoNavigationDiagnostics
+) {
+  const moves: Array<{ from: number; to: number; direction: 'Next' | 'Previous' }> = [];
+  const record = (
+    phase: 'before' | 'after' | 'poll',
+    expectedNext: number,
+    snapshot: PhotoNavigationSnapshot
+  ) => {
+    if (!diagnostics) {
+      return;
+    }
+    if (diagnostics.progress.length >= 128) {
+      diagnostics.progress.shift();
+      diagnostics.droppedProgress += 1;
+    }
+    diagnostics.progress.push({ phase, target, expectedNext, snapshot });
+  };
+  for (let attempt = 0; attempt < total * 3; attempt++) {
+    const before = await readPhotoNavigationSnapshot(page);
+    assert(before.currentIndex !== null, 'Photo toolbar has no current index');
+    const plan = planPhotoAdjacentMove(before.currentIndex, before.focusedIndex, target, total);
+    if (!plan) {
+      return moves;
+    }
+    record('before', plan.nextIndex, before);
+    try {
+      await page
+        .locator(
+          `[data-xeg-gallery-container] [data-gallery-element="toolbar"] button[aria-label="${plan.direction}"]`
+        )
+        .click({ timeout: 10_000 });
+      let after = await readPhotoNavigationSnapshot(page);
+      record('after', plan.nextIndex, after);
+      const deadline = Date.now() + 10_000;
+      while (after.currentIndex !== plan.nextIndex && Date.now() < deadline) {
+        await new Promise((done) => setTimeout(done, 100));
+        after = await readPhotoNavigationSnapshot(page);
+        record('poll', plan.nextIndex, after);
+      }
+      assert.equal(
+        after.currentIndex,
+        plan.nextIndex,
+        `Photo ${plan.direction} did not reach displayed-adjacent index`
+      );
+      moves.push({ from: plan.displayedIndex, to: plan.nextIndex, direction: plan.direction });
+    } catch (error) {
+      if (diagnostics) {
+        diagnostics.failure = error instanceof Error ? error.message.slice(0, 240) : String(error);
+      }
+      throw error;
+    }
+  }
+  const failure = `Photo navigation exceeded ${total * 3} bounded moves to ${target}`;
+  if (diagnostics) {
+    diagnostics.failure = failure;
+  }
+  throw new Error(failure);
+}
+
+async function armPhotoScrollTrace(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const owner = window as Window & {
+      __xegPhotoBoundaryTrace?: {
+        events: Array<Record<string, string | number | boolean | null>>;
+        dropped: number;
+        listener: (event: Event) => void;
+      };
+    };
+    if (
+      owner.__xegPhotoBoundaryTrace ||
+      document.documentElement.hasAttribute('data-xeg-scroll-trace')
+    ) {
+      throw new Error('Photo scroll trace already owned');
+    }
+    const state = {
+      events: [] as Array<Record<string, string | number | boolean | null>>,
+      dropped: 0,
+      listener: (_event: Event) => {},
+    };
+    state.listener = (event: Event) => {
+      if (
+        !(event instanceof CustomEvent) ||
+        typeof event.detail !== 'string' ||
+        event.detail.length > 2048
+      ) {
+        state.dropped += 1;
+        return;
+      }
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(event.detail);
+      } catch {
+        state.dropped += 1;
+        return;
+      }
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        state.dropped += 1;
+        return;
+      }
+      const input = parsed as Record<string, unknown>;
+      const entry: Record<string, string | number | boolean | null> = { atEpochMs: Date.now() };
+      for (const key of [
+        'event',
+        'at',
+        'decision',
+        'reason',
+        'visible',
+        'userAt',
+        'programmaticAt',
+        'index',
+        'currentIndex',
+        'focusedIndex',
+      ]) {
+        const value = input[key];
+        if (
+          value === null ||
+          typeof value === 'number' ||
+          typeof value === 'boolean' ||
+          (typeof value === 'string' && value.length <= 80)
+        ) {
+          entry[key] = value;
+        }
+      }
+      if (state.events.length >= 64) {
+        state.dropped += 1;
+        return;
+      }
+      state.events.push(entry);
+    };
+    owner.__xegPhotoBoundaryTrace = state;
+    window.addEventListener('xeg:gallery-scroll-trace', state.listener);
+    document.documentElement.setAttribute('data-xeg-scroll-trace', '');
+  });
+}
+
+async function stopPhotoScrollTrace(page: Page) {
+  return page.evaluate(() => {
+    const owner = window as Window & {
+      __xegPhotoBoundaryTrace?: {
+        events: Array<Record<string, string | number | boolean | null>>;
+        dropped: number;
+        listener: (event: Event) => void;
+      };
+    };
+    const state = owner.__xegPhotoBoundaryTrace;
+    if (!state) {
+      throw new Error('Photo scroll trace owner is missing');
+    }
+    window.removeEventListener('xeg:gallery-scroll-trace', state.listener);
+    document.documentElement.removeAttribute('data-xeg-scroll-trace');
+    delete owner.__xegPhotoBoundaryTrace;
+    return { events: state.events, dropped: state.dropped };
+  });
+}
+
 export async function observePhotoGallery(page: Page, expectedCount: number) {
   const gallery = page.locator('[data-xeg-gallery-container]');
   const snapshot = () =>
@@ -973,28 +1220,15 @@ export async function observePhotoGallery(page: Page, expectedCount: number) {
       first.currentIndex < expectedCount
   );
   const observed = new Map(first.entries.map((entry) => [entry.index, entry]));
-  const navigate = async (index: number, direction: 'Next' | 'Previous') => {
-    await gallery
-      .locator(`[data-gallery-element="toolbar"] button[aria-label="${direction}"]`)
-      .click();
-    await page.waitForFunction(
-      (expected) =>
-        document
-          .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
-          ?.getAttribute('data-current-index') === String(expected),
-      index,
-      { timeout: 10_000 }
-    );
+  const navigate = async (index: number) => {
+    await navigatePhotoToPosition(page, index, expectedCount);
     const selected = (await snapshot()).entries.filter((entry) => entry.index === index);
     assert.equal(selected.length, 1, `Selected gallery position ${index} has no unique media`);
     observed.set(index, selected[0]!);
   };
   if (observed.size !== expectedCount) {
-    for (let index = first.currentIndex - 1; index >= 0; index--) {
-      await navigate(index, 'Previous');
-    }
-    for (let index = 1; index < expectedCount; index++) {
-      await navigate(index, 'Next');
+    for (let index = 0; index < expectedCount; index++) {
+      await navigate(index);
     }
   }
   return {
@@ -1006,51 +1240,49 @@ export async function observePhotoGallery(page: Page, expectedCount: number) {
   };
 }
 
+async function waitForVerifiedPhoto(
+  page: Page,
+  item: VerifiedPhoto,
+  total: number,
+  diagnostics?: PhotoNavigationDiagnostics
+): Promise<SelectedPhotoSnapshot> {
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  let selected: SelectedPhotoSnapshot | null = null;
+  let lastFailure: unknown = new Error(`Selected photo ${item.index} did not settle`);
+  const deadline = Date.now() + 10_000;
+  do {
+    selected = await gallery.evaluate(inspectSelectedPhotoDocument);
+    try {
+      verifySelectedPhoto(item, total, selected);
+      assert(selected);
+      return selected;
+    } catch (error) {
+      lastFailure = error;
+    }
+    await new Promise((done) => setTimeout(done, 100));
+  } while (Date.now() < deadline);
+  if (diagnostics) {
+    diagnostics.selectionFailure = {
+      index: item.index,
+      snapshot: selected,
+      error: lastFailure instanceof Error ? lastFailure.message.slice(0, 240) : String(lastFailure),
+    };
+  }
+  throw lastFailure;
+}
+
 export async function verifyBoundaryPhotoSelections(
   page: Page,
-  expected: readonly VerifiedPhoto[]
+  expected: readonly VerifiedPhoto[],
+  diagnostics?: PhotoNavigationDiagnostics
 ) {
   assert(expected.length === 20 || expected.length === 40);
-  const gallery = page.locator('[data-xeg-gallery-container]');
-  const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
-  let current = Number(await toolbar.getAttribute('data-current-index'));
-  assert(Number.isSafeInteger(current) && current >= 0 && current < expected.length);
   const visits: Array<SelectedPhotoSnapshot & { ownerId: string; ordinal: number }> = [];
   const moves: Array<{ from: number; to: number; direction: 'Next' | 'Previous' }> = [];
   for (const index of requiredPhotoPositions(expected.length as 20 | 40)) {
-    while (current !== index) {
-      const direction = current < index ? 'Next' : 'Previous';
-      const from = current;
-      await toolbar.locator(`button[aria-label="${direction}"]`).click();
-      current += direction === 'Next' ? 1 : -1;
-      await page.waitForFunction(
-        (target) =>
-          document
-            .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
-            ?.getAttribute('data-current-index') === String(target),
-        current,
-        { timeout: 10_000 }
-      );
-      moves.push({ from, to: current, direction });
-    }
+    moves.push(...(await navigatePhotoToPosition(page, index, expected.length, diagnostics)));
     const item = expected[index]!;
-    let selected: SelectedPhotoSnapshot | null = null;
-    let lastFailure: unknown = new Error(`Selected photo ${index} did not settle`);
-    const deadline = Date.now() + 10_000;
-    do {
-      selected = await gallery.evaluate(inspectSelectedPhotoDocument);
-      try {
-        verifySelectedPhoto(item, expected.length, selected);
-        break;
-      } catch (error) {
-        lastFailure = error;
-      }
-      await new Promise((done) => setTimeout(done, 100));
-    } while (Date.now() < deadline);
-    if (!selected || !selected.imageLoaded || !selected.imageVisible) {
-      throw lastFailure;
-    }
-    verifySelectedPhoto(item, expected.length, selected);
+    const selected = await waitForVerifiedPhoto(page, item, expected.length, diagnostics);
     visits.push({ ...selected, ownerId: item.owner.statusId, ordinal: item.attachmentOrdinal });
   }
   if (expected.length === 40) {
@@ -1191,6 +1423,8 @@ export async function runLivePhotoCollection({
       const browserVisitSince = managerObserver?.snapshot() ?? 0;
       const page = await context.newPage();
       let transportNetwork: Awaited<ReturnType<typeof observePhotoTransportNetwork>> | null = null;
+      let photoTraceArmed = false;
+      let boundaryDiagnostics: PhotoNavigationDiagnostics | undefined;
       const visit: Record<string, unknown> = {
         statusId: owner.statusId,
         status: 'failed',
@@ -1444,6 +1678,12 @@ export async function runLivePhotoCollection({
           );
         }
         const domObservation = fixture?.observation === 'dom';
+        if (domObservation && contract.sourceKnownScope === 'dom20') {
+          boundaryDiagnostics = { progress: [], droppedProgress: 0 };
+          visit.boundaryDiagnostics = boundaryDiagnostics;
+          await armPhotoScrollTrace(page);
+          photoTraceArmed = true;
+        }
         const domTiles = domObservation
           ? await page
               .locator('article[data-testid="tweet"] a[href*="/photo/"]:has(img)')
@@ -1633,7 +1873,11 @@ export async function runLivePhotoCollection({
             sourceStem: item.displayStem,
           })),
         };
-        visit.selectedPositions = await verifyBoundaryPhotoSelections(page, verified);
+        visit.selectedPositions = await verifyBoundaryPhotoSelections(
+          page,
+          verified,
+          boundaryDiagnostics
+        );
         if (domObservation) {
           const details = page.locator(
             '[data-xeg-gallery-container] [data-gallery-element="source-details"]'
@@ -1706,22 +1950,18 @@ export async function runLivePhotoCollection({
         const selectedIndex = domObservation ? 12 : target.directQuote ? 20 : 19;
         const saveSelected = async () => {
           const selected = verified[selectedIndex]!;
-          const current = await toolbar.getAttribute('data-current-index');
-          let position = Number(current);
-          assert(Number.isSafeInteger(position));
-          while (position !== selectedIndex) {
-            const direction = position < selectedIndex ? 'Next' : 'Previous';
-            await toolbar.locator(`button[aria-label="${direction}"]`).click();
-            position += direction === 'Next' ? 1 : -1;
-            await page.waitForFunction(
-              (index) =>
-                document
-                  .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
-                  ?.getAttribute('data-current-index') === String(index),
-              position,
-              { timeout: 10_000 }
-            );
-          }
+          visit.singleNavigationMoves = await navigatePhotoToPosition(
+            page,
+            selectedIndex,
+            verified.length,
+            boundaryDiagnostics
+          );
+          visit.singleSelection = await waitForVerifiedPhoto(
+            page,
+            selected,
+            verified.length,
+            boundaryDiagnostics
+          );
           const selectedId = await page
             .locator(
               `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${selectedIndex}"]`
@@ -2070,6 +2310,15 @@ export async function runLivePhotoCollection({
       } catch (error) {
         visit.operationError =
           error instanceof Error ? error.message.slice(0, 1000) : String(error).slice(0, 1000);
+        if (contract.sourceKnownScope === 'dom20' && fixture?.observation === 'dom') {
+          const screenshot = 'installed-dom-photo-failure.png';
+          try {
+            await page.screenshot({ path: join(output, screenshot), timeout: 10_000 });
+            visit.failureScreenshot = screenshot;
+          } catch {
+            visit.failureScreenshotError = true;
+          }
+        }
         visit.ownedDownloadsAtFailure = await queryDownloads(extensionPage, extensionId)
           .then((items) =>
             items.slice(-20).map(({ id, state, bytesReceived, totalBytes, exists, error }) => ({
@@ -2172,6 +2421,15 @@ export async function runLivePhotoCollection({
               visit.operationError = 'Transport probe network observer did not detach';
             } finally {
               visit.transportProbeNetwork = transportNetwork.snapshot();
+            }
+          }
+          if (photoTraceArmed) {
+            try {
+              visit.scrollTrace = await stopPhotoScrollTrace(page);
+            } catch {
+              visit.status = 'failed';
+              visit.scrollTraceCleanupError = true;
+              visit.operationError = 'Photo scroll trace did not detach';
             }
           }
           await page.close();

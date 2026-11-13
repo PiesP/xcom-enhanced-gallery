@@ -1190,6 +1190,7 @@ type InstallResult = {
   live?: unknown;
   evidenceStatus?: string;
   publicAcceptance?: 'not-run';
+  fixtureScope?: 'dom20';
   error?: string;
 };
 type TrustedDownloadInputEvidence = {
@@ -22268,7 +22269,9 @@ export async function run({
   };
   if (photoCollection?.sourceKnownOnly) {
     result.scope =
-      'source-known installed-extension API 20/40 and DOM 20 fixtures only; no public X acceptance';
+      photoCollection.sourceKnownScope === 'dom20'
+        ? 'source-known installed-extension DOM 20 fixture only; API 20/40 and public X not run'
+        : 'source-known installed-extension API 20/40 and DOM 20 fixtures only; no public X acceptance';
   }
   try {
     if (upgradeInput) {
@@ -22519,15 +22522,23 @@ export async function run({
             output,
             root,
             installNative: ({ originals, pages, dom }) => {
-              nativeLoopback!.setLargePhotos(originals);
-              if (photoCollection.sourceKnownOnly) {
-                nativeLoopback!.setLargePhotoDocuments(new Map([...pages, ...dom.pages]));
+              if (photoCollection.sourceKnownScope === 'dom20') {
+                nativeLoopback!.setLargeDomPhotos(dom.originals, true);
+                nativeLoopback!.setLargePhotoDocuments(dom.pages, 'dom20');
+              } else {
+                nativeLoopback!.setLargePhotos(originals);
+                if (photoCollection.sourceKnownOnly) {
+                  nativeLoopback!.setLargePhotoDocuments(new Map([...pages, ...dom.pages]));
+                }
               }
             },
             installDomNative: ({ dom }) => nativeLoopback!.setLargeDomPhotos(dom.originals),
             nativeSnapshot: () => nativeLoopback!.snapshot(),
             transportProbe: photoCollection.transportProbe === true,
             sourceKnownOnly: photoCollection.sourceKnownOnly === true,
+            ...(photoCollection.sourceKnownScope
+              ? { sourceKnownScope: photoCollection.sourceKnownScope }
+              : {}),
           });
         }
       }
@@ -22578,8 +22589,14 @@ export async function run({
       result.evidenceStatus = 'diagnostic-only';
     } else if (photoCollection?.sourceKnownOnly) {
       assert.equal(result.largePhotoFixture?.status, 'passed');
-      result.evidenceStatus = 'source-known-fixture-only';
+      result.evidenceStatus =
+        photoCollection.sourceKnownScope === 'dom20'
+          ? 'source-known-dom20-fixture-only'
+          : 'source-known-fixture-only';
       result.publicAcceptance = 'not-run';
+      if (photoCollection.sourceKnownScope === 'dom20') {
+        result.fixtureScope = 'dom20';
+      }
     } else if (!sameVersionInput) {
       const live = photoCollection
         ? await runLivePhotoCollection({

@@ -442,10 +442,12 @@ export function createExtensionNativeFixtureHandler() {
       }
       largePhotosInstalled = true;
     },
-    setLargePhotoDocuments(pages: ReadonlyMap<string, string>) {
-      assert(largePhotosInstalled, 'Install the 20/40 photo originals first');
-      assert.deepEqual([...pages.keys()].sort(), [...LARGE_PHOTO_DOCUMENT_URLS].sort());
-      const additions = LARGE_PHOTO_DOCUMENT_URLS.map((source) => {
+    setLargePhotoDocuments(pages: ReadonlyMap<string, string>, scope: 'all' | 'dom20' = 'all') {
+      assert(largePhotosInstalled, 'Install the declared photo originals first');
+      const urls =
+        scope === 'dom20' ? LARGE_PHOTO_DOCUMENT_URLS.slice(2) : LARGE_PHOTO_DOCUMENT_URLS;
+      assert.deepEqual([...pages.keys()].sort(), [...urls].sort());
+      const additions = urls.map((source) => {
         const url = new URL(source);
         const bytes = Buffer.from(pages.get(source)!);
         assert(bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
@@ -465,14 +467,17 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(key, route);
       }
     },
-    setLargeDomPhotos(originals: ReadonlyMap<string, Buffer>) {
-      assert(largePhotosInstalled, 'Install the 20/40 photo originals first');
+    setLargeDomPhotos(originals: ReadonlyMap<string, Buffer>, domOnly = false) {
+      assert(
+        domOnly ? allowed.size > 0 && !largePhotosInstalled : largePhotosInstalled,
+        'DOM photo fixture phase is unavailable'
+      );
       assert.equal(originals.size, 20, 'DOM photo fixture requires twenty originals');
       assert.equal(active.size, 0, 'Photo fixture transport must be idle before DOM phase');
       const previous = [...allowed.keys()].filter((key) =>
         /^pbs\.twimg\.com\/media\/XegLarge[AB]\d{2}\.jpg\?format=jpg&name=orig$/u.test(key)
       );
-      assert.equal(previous.length, 40, 'Previous 20/40 original set is incomplete');
+      assert.equal(previous.length, domOnly ? 0 : 40, 'Previous photo original set differs');
       const additions = new Map<string, NativeRoute>();
       for (const [source, bytes] of originals) {
         const url = new URL(source);
@@ -498,6 +503,9 @@ export function createExtensionNativeFixtureHandler() {
       }
       for (const [key, route] of additions) {
         allowed.set(key, route);
+      }
+      if (domOnly) {
+        largePhotosInstalled = true;
       }
     },
     setExperienceImages(images: Buffer[]) {

@@ -36,6 +36,7 @@ import {
   assertExactPhotoNativeSource,
   assertDomPhotoZipOutcome,
   parsePhotoCollectionSelector,
+  planPhotoAdjacentMove,
   requiredPhotoPositions,
   observePhotoTransportNetwork,
   settlePhotoTransportProbeDownloads,
@@ -288,6 +289,20 @@ test('source-known photo mode is exclusive, extension-only, and has no public UR
   assert.throws(() =>
     parsePhotoCollectionSelector({ ...selector, sourceKnownOnly: false }, 'extension', [])
   );
+  assert.deepEqual(
+    parsePhotoCollectionSelector({ ...selector, sourceKnownScope: 'dom20' }, 'extension', []),
+    { ...contract, sourceKnownOnly: true, sourceKnownScope: 'dom20' }
+  );
+  assert.throws(() =>
+    parsePhotoCollectionSelector({ ...selector, sourceKnownScope: 'api20' }, 'extension', [])
+  );
+  assert.throws(() =>
+    parsePhotoCollectionSelector(
+      { scenario: 'photo-collection-20-40', ...contract, sourceKnownScope: 'dom20' },
+      'extension',
+      []
+    )
+  );
 });
 
 test('transport probe waits for canceled native downloads to become terminal', async () => {
@@ -458,6 +473,32 @@ test('boundary selection verifies the rendered source even when counter and mode
     () => verifySelectedPhoto(expected[20]!, 40, { ...selected, mediaId: expected[19]!.mediaId }),
     /media ID differs/u
   );
+});
+
+test('photo arrow expectation follows displayed focus and rejects invalid targets', () => {
+  assert.deepEqual(planPhotoAdjacentMove(19, 16, 15, 20), {
+    displayedIndex: 16,
+    direction: 'Previous',
+    nextIndex: 15,
+  });
+  assert.deepEqual(planPhotoAdjacentMove(3, 3, 4, 20), {
+    displayedIndex: 3,
+    direction: 'Next',
+    nextIndex: 4,
+  });
+  assert.deepEqual(planPhotoAdjacentMove(19, 16, 16, 20), {
+    displayedIndex: 16,
+    direction: 'Next',
+    nextIndex: 17,
+  });
+  assert.deepEqual(planPhotoAdjacentMove(3, 99, 2, 20), {
+    displayedIndex: 3,
+    direction: 'Previous',
+    nextIndex: 2,
+  });
+  assert.equal(planPhotoAdjacentMove(3, 3, 3, 20), null);
+  assert.throws(() => planPhotoAdjacentMove(19, 16, -1, 20));
+  assert.throws(() => planPhotoAdjacentMove(19, 16, 20, 20));
 });
 
 test('photo ZIP proof compares every owner and byte body independent of archive order', async () => {
@@ -798,6 +839,44 @@ test('native photo documents require the three exact source-known paths and byte
     extension.snapshot().events.filter((event) => event.purpose === 'document').length,
     3
   );
+});
+
+test('DOM-only native photo fixture serves C document and originals without A or B', async () => {
+  const fixture = createInstalledLargePhotoFixture(source);
+  const base = Buffer.from('base');
+  const extension = createExtensionNativeFixtureHandler();
+  extension.setPayloads(
+    [base, base, base],
+    Object.fromEntries(
+      ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+        name,
+        base,
+      ])
+    )
+  );
+  extension.setLargeDomPhotos(fixture.dom.originals, true);
+  assert.throws(() => extension.setLargePhotoDocuments(fixture.pages, 'dom20'));
+  extension.setLargePhotoDocuments(fixture.dom.pages, 'dom20');
+  const [domSource, domHtml] = [...fixture.dom.pages][0]!;
+  const domUrl = new URL(domSource);
+  assert.deepEqual(
+    await readHosted(extension.handle, domUrl.pathname, domUrl.hostname, {
+      'Sec-Fetch-Dest': 'document',
+    }),
+    { status: 200, bytes: Buffer.from(domHtml) }
+  );
+  const original = new URL(fixture.dom.contract.expected[0]!.originalUrl);
+  assert.deepEqual(
+    await readHosted(extension.handle, original.pathname + original.search, original.hostname),
+    { status: 200, bytes: fixture.dom.originals.get(original.href) }
+  );
+  for (const sourceUrl of [...fixture.pages.keys(), fixture.contract.expected[0]!.originalUrl]) {
+    const url = new URL(sourceUrl);
+    assert.equal(
+      (await readHosted(extension.handle, url.pathname + url.search, url.hostname)).status,
+      404
+    );
+  }
 });
 
 test('both installed native transports serve exact original bytes and reject another quality', async () => {

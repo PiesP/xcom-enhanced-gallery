@@ -339,6 +339,7 @@ export async function runInstalledLargePhotoFixture({
   nativeSnapshot,
   transportProbe = false,
   sourceKnownOnly = false,
+  sourceKnownScope,
   managerObserver = null,
   managerApiObserver = null,
 }: {
@@ -352,15 +353,20 @@ export async function runInstalledLargePhotoFixture({
   nativeSnapshot: () => NativeSnapshot;
   transportProbe?: boolean;
   sourceKnownOnly?: boolean;
+  sourceKnownScope?: 'dom20';
   managerObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerObserver'];
   managerApiObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerApiObserver'];
 }) {
   assert(!transportProbe || !sourceKnownOnly, 'Photo fixture modes are mutually exclusive');
   assert(!sourceKnownOnly || !managerObserver, 'Source-known document mode requires extension');
+  assert(!sourceKnownScope || sourceKnownOnly, 'DOM-only fixture requires source-known mode');
+  const domOnly = sourceKnownScope === 'dom20';
   const fixture = createInstalledLargePhotoFixture(
     await readFile(join(root, 'test/e2e/fixtures/large-photo-narrow.jpg'))
   );
-  const nativeDocuments = new Map([...fixture.pages, ...fixture.dom.pages]);
+  const nativeDocuments = domOnly
+    ? new Map(fixture.dom.pages)
+    : new Map([...fixture.pages, ...fixture.dom.pages]);
   const readNative = (): NativeSnapshot => {
     const { overflow, unexpectedCount, activeCount } = nativeSnapshot();
     return { overflow, unexpectedCount, activeCount };
@@ -411,7 +417,9 @@ export async function runInstalledLargePhotoFixture({
       await requestRoute.continue();
       return;
     }
-    const page = fixture.pages.get(url.href) ?? fixture.dom.pages.get(url.href);
+    const page = domOnly
+      ? fixture.dom.pages.get(url.href)
+      : (fixture.pages.get(url.href) ?? fixture.dom.pages.get(url.href));
     if (page && request.isNavigationRequest() && request.method() === 'GET') {
       event.kind = sourceKnownOnly ? 'document-native' : 'document';
       event.key = url.pathname;
@@ -441,6 +449,10 @@ export async function runInstalledLargePhotoFixture({
         /* Reject malformed fixture API input below. */
       }
       assert(request.method() === 'GET', 'Undeclared large-photo API method');
+      assert(
+        !domOnly || id === fixture.dom.contract.requested.statusId,
+        'DOM-only API owner differs'
+      );
       if (id === fixture.dom.contract.requested.statusId) {
         event.kind = 'dom-api-denied';
         event.status = 403;
@@ -463,6 +475,7 @@ export async function runInstalledLargePhotoFixture({
       url.hostname === 'pbs.twimg.com' &&
       /^\/media\/(?:XegLarge[AB]\d{2}\.jpg|XegDom\d{2})$/u.test(url.pathname)
     ) {
+      assert(!domOnly || url.pathname.startsWith('/media/XegDom'), 'DOM-only media differs');
       const media = largePhotoFixtureMedia(
         [...fixture.photos, ...fixture.dom.photos],
         url.href,
@@ -508,14 +521,19 @@ export async function runInstalledLargePhotoFixture({
   };
   const receipt: Record<string, unknown> = {
     status: 'failed',
-    scope: 'source-known installed 20/40 photo fixture; separate from actual public X',
-    originals: fixture.contract.expected.map((item) => ({
-      ownerId: item.ownerId,
-      ordinal: item.ordinal,
-      sourceKey: item.sourceKey,
-      bytes: item.bytes,
-      sha256: item.sha256,
-    })),
+    scope: domOnly
+      ? 'source-known installed DOM 20 photo fixture only; API 20/40 and public X not run'
+      : 'source-known installed 20/40 photo fixture; separate from actual public X',
+    ...(domOnly ? { fixtureScope: 'dom20' } : {}),
+    originals: (domOnly ? fixture.dom.contract.expected : fixture.contract.expected).map(
+      (item) => ({
+        ownerId: item.ownerId,
+        ordinal: item.ordinal,
+        sourceKey: item.sourceKey,
+        bytes: item.bytes,
+        sha256: item.sha256,
+      })
+    ),
   };
   let primaryError: unknown;
   context.on('response', onResponse);
@@ -524,71 +542,84 @@ export async function runInstalledLargePhotoFixture({
   try {
     installNative(fixture);
     await context.route('**/*', route);
-    const proof = await runLivePhotoCollection({
-      context,
-      extensionId,
-      contract: transportProbe
-        ? { ...fixture.contract, transportProbe: true }
-        : sourceKnownOnly
-          ? { ...fixture.contract, sourceKnownOnly: true }
-          : fixture.contract,
-      downloads,
-      output,
-      managerObserver,
-      managerApiObserver,
-      fixture: {
-        originals: fixture.originals,
-        receiptFile: 'installed-large-photo-collection.json',
-        retainedPrefix: 'installed-large-photo',
-        scope: 'source-known installed photo fixture; not actual public X acceptance',
-        ...(sourceKnownOnly ? { nativeDocuments } : {}),
-        ...(transportProbe ? { transportProbeSnapshot: nativeSnapshot } : {}),
-        ...(managerObserver
-          ? {
-              providerEvidence: {
-                snapshot: () => nativeSnapshot().events ?? [],
-                bodies: fixture.apiResponses,
-              },
-            }
-          : {}),
-      },
-    });
-    receipt.proof = proof;
-    if (transportProbe) {
-      assert.equal(proof.status, 'diagnostic', 'Transport probe did not finish its bounded window');
-      const probeSettleDeadline = Date.now() + 3_000;
-      while (nativeSnapshot().activeCount > 0 && Date.now() < probeSettleDeadline) {
+    if (domOnly) {
+      receipt.proof = { status: 'NOT_RUN', scope: 'api20/api40' };
+      assertLargePhotoNativeTransport(beforeNative, nativeSnapshot());
+    } else {
+      const proof = await runLivePhotoCollection({
+        context,
+        extensionId,
+        contract: transportProbe
+          ? { ...fixture.contract, transportProbe: true }
+          : sourceKnownOnly
+            ? { ...fixture.contract, sourceKnownOnly: true }
+            : fixture.contract,
+        downloads,
+        output,
+        managerObserver,
+        managerApiObserver,
+        fixture: {
+          originals: fixture.originals,
+          receiptFile: 'installed-large-photo-collection.json',
+          retainedPrefix: 'installed-large-photo',
+          scope: 'source-known installed photo fixture; not actual public X acceptance',
+          ...(sourceKnownOnly ? { nativeDocuments } : {}),
+          ...(transportProbe ? { transportProbeSnapshot: nativeSnapshot } : {}),
+          ...(managerObserver
+            ? {
+                providerEvidence: {
+                  snapshot: () => nativeSnapshot().events ?? [],
+                  bodies: fixture.apiResponses,
+                },
+              }
+            : {}),
+        },
+      });
+      receipt.proof = proof;
+      if (transportProbe) {
+        assert.equal(
+          proof.status,
+          'diagnostic',
+          'Transport probe did not finish its bounded window'
+        );
+        const probeSettleDeadline = Date.now() + 3_000;
+        while (nativeSnapshot().activeCount > 0 && Date.now() < probeSettleDeadline) {
+          await new Promise((done) => setTimeout(done, 50));
+        }
+        const afterProbeNative = nativeSnapshot();
+        assert.equal(budget.overflow, false, 'Transport probe route budget overflowed');
+        assertLargePhotoNativeTransport(beforeNative, afterProbeNative);
+        receipt.nativeTransport = { before: beforeNative, after: readNative() };
+        receipt.transportProbe = {
+          status: 'diagnostic',
+          source: 'B owner only; no DOM, native ZIP acceptance, or public X visit',
+          native: afterProbeNative,
+        };
+        receipt.status = 'diagnostic';
+        return receipt;
+      }
+      const idleDeadline = Date.now() + 3_000;
+      if (sourceKnownOnly) {
+        await settleDocumentRoutes();
+      }
+      while (nativeSnapshot().activeCount > 0 && Date.now() < idleDeadline) {
         await new Promise((done) => setTimeout(done, 50));
       }
-      const afterProbeNative = nativeSnapshot();
-      assert.equal(budget.overflow, false, 'Transport probe route budget overflowed');
-      assertLargePhotoNativeTransport(beforeNative, afterProbeNative);
-      receipt.nativeTransport = { before: beforeNative, after: readNative() };
-      receipt.transportProbe = {
-        status: 'diagnostic',
-        source: 'B owner only; no DOM, native ZIP acceptance, or public X visit',
-        native: afterProbeNative,
-      };
-      receipt.status = 'diagnostic';
-      return receipt;
+      assertPhotoFixtureIdle(proof, nativeSnapshot(), budget.overflow);
+      assert(installDomNative, 'Installed DOM phase requires its own native original route');
+      installDomNative(fixture);
     }
-    const idleDeadline = Date.now() + 3_000;
-    if (sourceKnownOnly) {
-      await settleDocumentRoutes();
-    }
-    while (nativeSnapshot().activeCount > 0 && Date.now() < idleDeadline) {
-      await new Promise((done) => setTimeout(done, 50));
-    }
-    assertPhotoFixtureIdle(proof, nativeSnapshot(), budget.overflow);
-    assert(installDomNative, 'Installed DOM phase requires its own native original route');
-    installDomNative(fixture);
     const beforeDomNative = nativeSnapshot();
     assert(beforeDomNative.events, 'DOM original transport observations are unavailable');
     const domProof = await runLivePhotoCollection({
       context,
       extensionId,
       contract: sourceKnownOnly
-        ? { ...fixture.dom.contract, sourceKnownOnly: true }
+        ? {
+            ...fixture.dom.contract,
+            sourceKnownOnly: true,
+            ...(domOnly ? { sourceKnownScope: 'dom20' as const } : {}),
+          }
         : fixture.dom.contract,
       downloads,
       output,
@@ -640,7 +671,13 @@ export async function runInstalledLargePhotoFixture({
         await new Promise((done) => setTimeout(done, 50));
       }
     }
-    assert.equal(proof.status, 'observed', 'Installed 20/40 fixture proof is incomplete');
+    if (!domOnly) {
+      assert.equal(
+        (receipt.proof as { status?: unknown }).status,
+        'observed',
+        'Installed 20/40 fixture proof is incomplete'
+      );
+    }
     assert.equal(domProof.status, 'observed', 'Installed DOM 20 fixture proof is incomplete');
     const afterDomNative = nativeSnapshot();
     assert(afterDomNative.events, 'DOM original transport observations are unavailable');
