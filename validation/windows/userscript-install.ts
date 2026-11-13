@@ -95,6 +95,9 @@ const PROFILE_PREFIX = 'xeg-userscript-install-';
 const MOBILE_MANAGER_DENIAL_URL = `https://mobile.x.com/testuser/status/${TWEET_ID}?xeg-manager-denial=1`;
 
 const MAX_DOWNLOADS = 8;
+// The selected B20/A40/DOM20 fixture adds three singles and three ZIPs.
+const PHOTO_FIXTURE_DOWNLOADS = 6;
+const PHOTO_FIXTURE_MAX_NATIVE_ENTRIES = 14;
 const FIRST_MEDIA_URL = `https://pbs.twimg.com/media/${MEDIA_COHORTS.normal[0]}.jpg?format=jpg&name=orig`;
 const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
@@ -451,6 +454,8 @@ type UserscriptInstallationResult = {
     imageBytes: number[];
     imageSha256: string[];
     maxDownloads: number;
+    maxObservedDownloads: number;
+    maxFailedNativeEntries: number;
     maxRoutedImageRequests: number;
     maxLoopbackRequests: number;
     maxLoopbackImageBytes: number;
@@ -2916,11 +2921,12 @@ async function installUserscript(
 }
 
 /** Browser-level events require no optional permissions from Tampermonkey. */
-export function createBrowserDownloadObserver(cdp: CDPSession) {
+export function createBrowserDownloadObserver(cdp: CDPSession, photoCollectionFixture = false) {
+  const maximumBegins = MAX_DOWNLOADS + 4 + (photoCollectionFixture ? PHOTO_FIXTURE_DOWNLOADS : 0);
   const begun: BrowserDownloadBegin[] = [];
   const progress = new Map<string, BrowserDownloadStatus>();
   const onBegin = (event: BrowserDownloadBegin) => {
-    assert(begun.length < MAX_DOWNLOADS + 4, 'Too many task-profile downloads');
+    assert(begun.length < maximumBegins, 'Too many task-profile downloads');
     begun.push({ guid: event.guid, suggestedFilename: event.suggestedFilename, url: event.url });
   };
   const onProgress = (event: BrowserDownloadProgress) => {
@@ -5605,6 +5611,11 @@ export async function runUserscriptInstallation({
       imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),
       maxDownloads: MAX_DOWNLOADS,
+      maxObservedDownloads:
+        MAX_DOWNLOADS + 4 + (photoCollectionFixture ? PHOTO_FIXTURE_DOWNLOADS : 0),
+      maxFailedNativeEntries: photoCollectionFixture
+        ? PHOTO_FIXTURE_MAX_NATIVE_ENTRIES
+        : MAX_DOWNLOADS,
       maxRoutedImageRequests: 80,
       maxLoopbackRequests: 64,
       maxLoopbackImageBytes: 64 * 1024,
@@ -5612,7 +5623,7 @@ export async function runUserscriptInstallation({
       maxLoopbackApiServedBytes: 3 * 1024 * 1024,
       productionBudget: 'unchanged',
     };
-    observer = createBrowserDownloadObserver(cdp);
+    observer = createBrowserDownloadObserver(cdp, photoCollectionFixture);
     result.fixture = await runFixture(
       context,
       observer,
@@ -5689,7 +5700,7 @@ export async function runUserscriptInstallation({
           downloads,
           output,
           observer?.events(),
-          8
+          photoCollectionFixture ? PHOTO_FIXTURE_MAX_NATIVE_ENTRIES : 8
         );
         result.cleanup.failedNativeRetentionVerified = true;
       } catch (error) {
@@ -5775,12 +5786,13 @@ async function liveNativeInventory(page: Page): Promise<LiveNativeItem[]> {
   });
 }
 
-async function retainFailedLiveNativeFiles(
+export async function retainFailedLiveNativeFiles(
   downloads: string,
   output: string,
   nativeAttempts: unknown,
-  maxEntries: 4 | 8 = 4
+  maxEntries: 4 | 8 | 14 = 4
 ) {
+  assert([4, 8, 14].includes(maxEntries), 'Unsupported failed native entry bound');
   const names = await readdir(downloads);
   assert(names.length <= maxEntries, 'Failed profile has too many native entries to retain');
   const retained: Record<string, unknown>[] = [];

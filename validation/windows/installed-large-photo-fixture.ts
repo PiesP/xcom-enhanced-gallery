@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import type { BrowserContext, Route } from '@playwright/test';
 import {
   runLivePhotoCollection,
+  verifyFixtureServerApiResponses,
   type PhotoCollectionContract,
   type PhotoExpectedReference,
   type PhotoOwner,
@@ -515,7 +516,14 @@ export async function runInstalledLargePhotoFixture({
       peakActiveProbes: afterDomNative.domProbePeak,
     };
     assert(
-      budget.events.some((event) => event.kind === 'dom-api-denied' && event.status === 403),
+      budget.events.some((event) => event.kind === 'dom-api-denied' && event.status === 403) ||
+        (managerObserver &&
+          verifyFixtureServerApiResponses(
+            afterDomNative.events.slice(beforeDomNative.events.length),
+            fixture.dom.contract.requested.statusId,
+            Buffer.from('{}'),
+            403
+          ).length > 0),
       'Installed DOM fixture did not observe a denied API request'
     );
     assert.equal(budget.overflow, false, 'Large-photo fixture route budget exceeded');

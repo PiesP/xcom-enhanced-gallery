@@ -105,6 +105,12 @@ Conflicting client observations fail. Existing product owner IDs, sources,
 full collections, native files and ZIP bytes remain independently required.
 Public A/B observations never use fixture server evidence; missing client
 responses remain unverified.
+The selected manager fixture adds three singles and three ZIPs to the existing
+fixture: browser event admission is bounded to 18 instead of the default 12, and
+failed native-file retention to 14 instead of 8. The 4 MiB per-file and 16 MiB
+total failure-retention byte bounds remain unchanged; unexpected extra entries
+keep the failed profile preserved. These are evidence-count bounds, separate
+from product download concurrency and binary ownership budgets.
 Source failures retain bounded current-selection and expected-source diagnostics.
 Fast native HEAD response
 peaks are observations; separately held asynchronous source probes test the four-worker
