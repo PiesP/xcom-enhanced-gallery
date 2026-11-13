@@ -64,6 +64,7 @@ import {
   validateLiveUrls,
 } from './live-page.ts';
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
+import { parsePhotoCollectionSelector, runLivePhotoCollection } from './live-photo-collection.ts';
 import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import { createLateImageLayoutProbe, type LateLayoutReceipt } from './late-image-layout.ts';
@@ -21705,10 +21706,41 @@ export async function run({
     assert.equal(liveUrls.length, 0, 'Source image qualification uses only owned fixture URLs');
     assert.equal(liveObservation, null, 'Source image qualification cannot share live observation');
   }
+  const validatedLiveUrls = validateLiveUrls(liveUrls);
+  const photoCollectionSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/live-photo-collection.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const photoCollection =
+    photoCollectionSelectorText === null
+      ? null
+      : parsePhotoCollectionSelector(
+          JSON.parse(photoCollectionSelectorText),
+          installation,
+          validatedLiveUrls
+        );
+  if (photoCollection) {
+    assert.equal(liveObservation, null);
+    assert(!reportedFilenameProbe && !liveSettingsProbe);
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['live-photo-collection.json'],
+      'Photo collection needs an exclusive selector'
+    );
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert(
-      liveUrls.length === 0 ||
+      photoCollection !== null ||
+        liveUrls.length === 0 ||
         (reportedFilenameTarget !== null &&
           liveUrls.length === 1 &&
           liveUrls[0] === reportedFilenameTarget.pageUrl),
@@ -21729,8 +21761,11 @@ export async function run({
       null,
       'Installed userscript fixture does not support duration observation'
     );
-    const { runUserscriptInstallation, runUserscriptLiveInstallation } =
-      await import('./userscript-install.ts');
+    const {
+      runUserscriptInstallation,
+      runUserscriptLiveInstallation,
+      runUserscriptPhotoCollectionInstallation,
+    } = await import('./userscript-install.ts');
     const fixture = await runUserscriptInstallation({
       chromium,
       root,
@@ -21739,22 +21774,34 @@ export async function run({
       headless,
       attachmentFilenameProbe,
     });
-    if (reportedFilenameTarget === null) {
+    if (reportedFilenameTarget === null && photoCollection === null) {
       return fixture;
     }
     const stage = await mkdtemp(join(root, 'xeg-userscript-live-stage-'));
-    let live: Awaited<ReturnType<typeof runUserscriptLiveInstallation>> | undefined;
+    let live:
+      | Awaited<ReturnType<typeof runUserscriptLiveInstallation>>
+      | Awaited<ReturnType<typeof runUserscriptPhotoCollectionInstallation>>
+      | undefined;
     let liveError: unknown;
     let liveFailed = false;
     try {
-      live = await runUserscriptLiveInstallation({
-        chromium,
-        root,
-        output: stage,
-        browserName,
-        headless,
-        target: reportedFilenameTarget,
-      });
+      live = photoCollection
+        ? await runUserscriptPhotoCollectionInstallation({
+            chromium,
+            root,
+            output: stage,
+            browserName,
+            headless,
+            contract: photoCollection,
+          })
+        : await runUserscriptLiveInstallation({
+            chromium,
+            root,
+            output: stage,
+            browserName,
+            headless,
+            target: reportedFilenameTarget!,
+          });
     } catch (error) {
       liveFailed = true;
       liveError = error;
@@ -21785,7 +21832,7 @@ export async function run({
       throw liveError;
     }
     assert(live, 'Live userscript phase produced no result');
-    return { ...fixture, live, liveEvidence, liveUrls: [reportedFilenameTarget.pageUrl] };
+    return { ...fixture, live, liveEvidence, liveUrls: validatedLiveUrls };
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
@@ -21981,7 +22028,7 @@ export async function run({
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
     assert.equal(liveObservation, null);
   }
-  const validatedLiveUrls = validateLiveUrls(liveUrls);
+  assert(!photoCollection || (!upgradeInput && !sameVersionInput));
   assert(
     !liveSettingsProbe ||
       (!settingsProbe &&
@@ -22012,7 +22059,8 @@ export async function run({
         settingsProbe ||
         nativeUiProbe ||
         uxDetailsProbe ||
-        videoFormatProbe,
+        videoFormatProbe ||
+        photoCollection !== null,
     }
   );
   if (reportedFilenameProbe) {
@@ -22058,35 +22106,37 @@ export async function run({
     liveUrls: validatedLiveUrls,
     liveObservation,
     scope:
-      reportedFilenameText !== null
-        ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
-        : liveSettingsProbe
-          ? 'focused installed language/theme settings acceptance; no full prior live campaign'
-          : videoFormatProbe
-            ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
-            : sourceImageProbe
-              ? 'focused installed-Edge source image 404, empty and corrupt recovery; owned X fixture only'
-              : mediaApiProbe
-                ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
-                : uxDetailsProbe
-                  ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-                  : settingsProbe
-                    ? 'installed-extension settings persistence fixture; no live X observation'
-                    : failedEntryProbe
-                      ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-                      : experienceProbe
-                        ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
-                        : recoveryProbe
-                          ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-                          : openingProbe
-                            ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                            : validatedLiveUrls.length
-                              ? actualSiteAcceptance
-                                ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                                : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                              : sameVersionInput
-                                ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                                : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+      photoCollection !== null
+        ? 'focused installed-extension 20/40 photo collection and native saved-byte proof; no full actual-site/video/settings campaign'
+        : reportedFilenameText !== null
+          ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
+          : liveSettingsProbe
+            ? 'focused installed language/theme settings acceptance; no full prior live campaign'
+            : videoFormatProbe
+              ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
+              : sourceImageProbe
+                ? 'focused installed-Edge source image 404, empty and corrupt recovery; owned X fixture only'
+                : mediaApiProbe
+                  ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
+                  : uxDetailsProbe
+                    ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+                    : settingsProbe
+                      ? 'installed-extension settings persistence fixture; no live X observation'
+                      : failedEntryProbe
+                        ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+                        : experienceProbe
+                          ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
+                          : recoveryProbe
+                            ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                            : openingProbe
+                              ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                              : validatedLiveUrls.length
+                                ? actualSiteAcceptance
+                                  ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                                  : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                                : sameVersionInput
+                                  ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                                  : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
   try {
@@ -22373,29 +22423,37 @@ export async function run({
         'fresh browser process without fixture host mapping or SPKI exception';
     }
     if (!sameVersionInput) {
-      const live = liveSettingsProbe
-        ? await runLiveSettingsAcceptance({
+      const live = photoCollection
+        ? await runLivePhotoCollection({
             context,
             extensionId,
-            liveUrls: validatedLiveUrls,
+            contract: photoCollection,
+            downloads,
             output,
           })
-        : await observeLiveUrls({
-            context,
-            extensionId,
-            liveUrls: validatedLiveUrls,
-            output,
-            actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-            reportedFilename:
-              reportedFilenameTarget === null
-                ? null
-                : {
-                    root,
-                    downloads,
-                    target: reportedFilenameTarget,
-                    browserName: browserName as 'chrome' | 'msedge',
-                  },
-          });
+        : liveSettingsProbe
+          ? await runLiveSettingsAcceptance({
+              context,
+              extensionId,
+              liveUrls: validatedLiveUrls,
+              output,
+            })
+          : await observeLiveUrls({
+              context,
+              extensionId,
+              liveUrls: validatedLiveUrls,
+              output,
+              actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
+              reportedFilename:
+                reportedFilenameTarget === null
+                  ? null
+                  : {
+                      root,
+                      downloads,
+                      target: reportedFilenameTarget,
+                      browserName: browserName as 'chrome' | 'msedge',
+                    },
+            });
       if (liveSettingsProbe) {
         assert.equal(
           live.evidenceStatus,
@@ -22403,14 +22461,25 @@ export async function run({
           'Required current X language/settings acceptance is blocked or failed'
         );
       }
+      if (photoCollection) {
+        assert.equal(
+          live.status,
+          'observed',
+          'Focused photo collection or saved-byte proof is incomplete'
+        );
+      }
       result.live = live;
-      result.evidenceStatus = validatedLiveUrls.length
-        ? live.evidenceStatus
-        : mediaApiProbe
-          ? 'media-api-reuse-fixture-observed'
-          : sourceImageProbe
-            ? 'source-image-failures-fixture-observed'
-            : 'fixture-observed';
+      result.evidenceStatus = photoCollection
+        ? 'photo-collection-observed'
+        : validatedLiveUrls.length
+          ? typeof live.evidenceStatus === 'string'
+            ? live.evidenceStatus
+            : 'unverified'
+          : mediaApiProbe
+            ? 'media-api-reuse-fixture-observed'
+            : sourceImageProbe
+              ? 'source-image-failures-fixture-observed'
+              : 'fixture-observed';
       if (reportedFilenameText !== null) {
         assert(Array.isArray(live.pages) && live.pages.length === 1);
         const page: unknown = live.pages[0];

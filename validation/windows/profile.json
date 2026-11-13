@@ -97,6 +97,7 @@
       "validation/windows/live-page.ts",
       "validation/windows/qualification-policy.ts",
       "validation/windows/live-acceptance.ts",
+      "validation/windows/live-photo-collection.ts",
       "validation/windows/live-page-document.ts"
     ],
     "build_commands": [

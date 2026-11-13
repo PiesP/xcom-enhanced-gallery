@@ -29,6 +29,7 @@ import { expectedLiveFilename, liveFilenameConforms } from './live-filename.ts';
 import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import { isLiveFilenameOriginal, type LiveFilenameTarget } from './live-filename-target.ts';
+import { runLivePhotoCollection, type PhotoCollectionContract } from './live-photo-collection.ts';
 import {
   inspectHitTestedAction,
   inspectLiveCandidateDocument,
@@ -6153,6 +6154,186 @@ async function captureUserscriptLiveEntryFailure(
     evidence.screenshotError = error instanceof Error ? error.name : typeof error;
   }
   return evidence;
+}
+
+/** Fresh owned manager profile for the declared 20/40 photo-only qualification. */
+export async function runUserscriptPhotoCollectionInstallation(options: {
+  chromium: BrowserType;
+  root: string;
+  output: string;
+  browserName: string;
+  headless: boolean;
+  contract: PhotoCollectionContract;
+}) {
+  const { chromium, root, output, browserName, headless, contract } = options;
+  assert(['chrome', 'msedge'].includes(browserName));
+  await mkdir(output, { recursive: true });
+  const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+  const profile = await mkdtemp(join(root, PROFILE_PREFIX));
+  assertOwned(root, profile);
+  const downloads = join(profile, 'downloads');
+  await mkdir(downloads);
+  await mkdir(join(profile, 'Default'));
+  await writeFile(
+    join(profile, 'Default', 'Preferences'),
+    JSON.stringify({
+      download: {
+        default_directory: downloads,
+        prompt_for_download: false,
+        directory_upgrade: true,
+      },
+    })
+  );
+  const receipt: Record<string, unknown> = {
+    status: 'failed',
+    scope:
+      'fresh installed Tampermonkey public 20/40 photo collection; no full actual-site campaign',
+    sourceSha256: sha256(source),
+    browserName,
+    cleanup: {},
+  };
+  const cleanup = receipt.cleanup as Record<string, unknown>;
+  const cleanupErrors: unknown[] = [];
+  let primaryError: unknown;
+  let context: BrowserContext | undefined;
+  let cdp: CDPSession | undefined;
+  let managerId: string | undefined;
+  let managerPage: Page | undefined;
+  let observer: ReturnType<typeof createBrowserDownloadObserver> | undefined;
+  try {
+    context = await chromium.launchPersistentContext(profile, {
+      channel: browserName,
+      headless,
+      acceptDownloads: true,
+      downloadsPath: downloads,
+      locale: 'en-US',
+      viewport: { width: 1280, height: 800 },
+      ignoreDefaultArgs: ['--disable-extensions'],
+      args: ['--enable-unsafe-extension-debugging'],
+    });
+    const browser = context.browser();
+    assert(browser, 'Owned manager context has no browser');
+    receipt.browserVersion = browser.version();
+    receipt.profileTransport = 'public network without fixture host mappings or SPKI exception';
+    await enableDeveloperMode(context, browserName);
+    await verifyDownloadDirectory(context, downloads);
+    cdp = await browser.newBrowserCDPSession();
+    await cdp.send('Browser.setDownloadBehavior', { behavior: 'default', eventsEnabled: true });
+    ({ id: managerId } = await cdp.send('Extensions.loadUnpacked', {
+      path: join(root, 'test-tools/userscript-manager'),
+    }));
+    assert(typeof managerId === 'string');
+    receipt.manager = await installUserscript(
+      context,
+      managerId,
+      root,
+      output,
+      browserName,
+      sha256(source),
+      profile,
+      (ask, id, ownedContext) =>
+        inspectAndAllowNativeManagerPermission(
+          cdp!,
+          root,
+          output,
+          profile,
+          browserName,
+          ask,
+          id,
+          ownedContext
+        )
+    );
+    managerPage = await context.newPage();
+    await managerPage.goto(`chrome-extension://${managerId}/options.html`);
+    assert(isOwnedManagerOptionsUrl(managerPage.url(), managerId));
+    observer = createBrowserDownloadObserver(cdp);
+    const focused = await runLivePhotoCollection({
+      context,
+      extensionId: managerId,
+      contract,
+      downloads,
+      output,
+      managerObserver: observer,
+    });
+    receipt.focused = focused;
+    assert.equal(focused.status, 'observed', 'Manager photo collection proof is incomplete');
+    receipt.status = 'observed';
+  } catch (error) {
+    primaryError = error;
+    receipt.error = safeRouteError(error);
+  } finally {
+    if (observer) {
+      receipt.browserDownloadEvents = observer.events();
+      observer.dispose();
+      cleanup.downloadObserverRemoved = true;
+    }
+    if (managerPage) {
+      await managerPage.close().then(
+        () => {
+          cleanup.managerPageClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (cdp && managerId) {
+      await cdp.send('Extensions.uninstall', { id: managerId }).then(
+        () => {
+          cleanup.managerUninstalled = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (context) {
+      await context.close().then(
+        () => {
+          cleanup.browserClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    let failureRetained = true;
+    if (primaryError || cleanupErrors.length) {
+      try {
+        receipt.failedNativeRetention = await retainFailedLiveNativeFiles(downloads, output, [], 8);
+      } catch (error) {
+        failureRetained = false;
+        cleanupErrors.push(error);
+        cleanup.failureRetentionError = safeRouteError(error);
+      }
+    }
+    if ((cleanup.browserClosed || !context) && failureRetained) {
+      await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }).then(
+        () => {
+          cleanup.profileRemoved = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    } else {
+      cleanup.profilePreserved = true;
+    }
+    if (cleanupErrors.length) {
+      receipt.status = 'failed';
+      cleanup.errors = cleanupErrors.map(safeRouteError);
+    }
+    await writeFile(
+      join(output, 'userscript-photo-collection-installation.json'),
+      JSON.stringify(receipt, null, 2),
+      { flag: 'wx', mode: 0o600 }
+    );
+  }
+  if (primaryError && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'Photo manager qualification and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Photo manager cleanup failed');
+  }
+  return receipt;
 }
 
 /** Fresh manager profile: one observed live save and one repeat after diagnostics are removed. */
