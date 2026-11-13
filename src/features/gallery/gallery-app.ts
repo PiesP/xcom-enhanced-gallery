@@ -181,12 +181,18 @@ export class GalleryApp {
       stopOpeningFeedback();
 
       if (result.success && result.mediaItems.length > 0) {
-        const partialRecovery = result.metadata?.recoveryScope === 'visible-tile';
-        this.openGallery(
-          result.mediaItems,
-          result.clickedIndex,
-          partialRecovery ? 'visible-tile' : null
-        );
+        const recoveryScope = result.metadata?.recoveryScope;
+        const apiMediaCount = result.metadata?.apiMediaCount;
+        const scope =
+          recoveryScope === 'visible-tile' || recoveryScope === 'visible-article'
+            ? recoveryScope
+            : result.metadata?.sourceType === 'twitter-api' &&
+                typeof apiMediaCount === 'number' &&
+                apiMediaCount > result.mediaItems.length
+              ? 'api-supported-subset'
+              : null;
+        const partialRecovery = scope !== null;
+        this.openGallery(result.mediaItems, result.clickedIndex, scope);
         const observedQuality = result.mediaItems.some(
           (media) =>
             media.downloadSource?.quality === 'observed' ||
@@ -197,11 +203,18 @@ export class GalleryApp {
           notifySafely(
             getNotificationAdapter(),
             lang.translate(
-              partialRecovery ? 'msg.gal.partialRecovery.title' : 'msg.gal.observedQuality.title'
+              scope === 'api-supported-subset'
+                ? 'msg.gal.knownSubset.title'
+                : partialRecovery
+                  ? 'msg.gal.partialRecovery.title'
+                  : 'msg.gal.observedQuality.title'
             ),
             partialRecovery
-              ? lang.translate('msg.gal.partialRecovery.body') +
-                  (observedQuality ? ` ${lang.translate('msg.gal.observedQuality.body')}` : '')
+              ? lang.translate(
+                  scope === 'api-supported-subset'
+                    ? 'msg.gal.knownSubset.body'
+                    : 'msg.gal.partialRecovery.body'
+                ) + (observedQuality ? ` ${lang.translate('msg.gal.observedQuality.body')}` : '')
               : lang.translate('msg.gal.observedQuality.body')
           );
         }
@@ -337,7 +350,7 @@ export class GalleryApp {
   openGallery(
     mediaItems: MediaInfo[],
     startIndex = 0,
-    recoveryScope: 'visible-tile' | null = null
+    recoveryScope: 'visible-tile' | 'visible-article' | 'api-supported-subset' | null = null
   ): void {
     if (mediaItems.length === 0) {
       return;
@@ -347,7 +360,7 @@ export class GalleryApp {
 
     try {
       const validIndex = clampIndex(startIndex, mediaItems.length);
-      if (recoveryScope === 'visible-tile') {
+      if (recoveryScope) {
         openGallery(mediaItems, validIndex, recoveryScope);
       } else {
         openGallery(mediaItems, validIndex);

@@ -7,6 +7,7 @@ import { generateMediaFilename } from '@shared/core/filename/filename-utils';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { isAbortError, USER_CANCELLED_MESSAGE } from '@shared/error/cancellation';
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
+import { resolveDomImagesForDownload } from '@shared/services/media-extraction/extractors/dom-image-original';
 import type { DownloadOptions, SingleDownloadResult } from '@shared/services/download/types';
 import { reportProgress } from '@shared/services/download/types';
 import { ErrorCode, type MediaInfo } from '@shared/types/media.types';
@@ -84,17 +85,24 @@ export async function downloadSingleFile(
     return createAbortResult();
   }
 
-  const filename = generateMediaFilename(media, { nowMs: Date.now() });
+  const resolvedMedia =
+    options.blob || options.domOriginalsResolved
+      ? media
+      : ((await resolveDomImagesForDownload([media], abortSignal))[0] ?? media);
+  if (abortSignal?.aborted) {
+    return createAbortResult();
+  }
+  const filename = generateMediaFilename(resolvedMedia, { nowMs: Date.now() });
 
   if (options.blob) {
     return downloadBlobWithAdapter(options.blob, filename, abortSignal, options);
   }
 
-  if (media.downloadSource?.quality === 'unverified-original') {
+  if (resolvedMedia.downloadSource?.quality === 'unverified-original') {
     return createErrorDownloadResult(new DownloadSourceUnavailableError());
   }
 
-  const downloadUrl = getMediaDownloadUrl(media);
+  const downloadUrl = getMediaDownloadUrl(resolvedMedia);
   if (!isValidMediaUrl(downloadUrl)) {
     return createErrorDownloadResult(new Error('Invalid media download URL'));
   }

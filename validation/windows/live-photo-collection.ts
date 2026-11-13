@@ -1,0 +1,2499 @@
+// SPDX-License-Identifier: MIT
+// Copyright (c) 2026 PiesP
+
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFile, writeFile } from 'node:fs/promises';
+import { basename, join } from 'node:path';
+import type { BrowserContext, CDPSession, Page, Request, Response } from '@playwright/test';
+import { readOwnedNativeBytes } from './firefox-install.ts';
+import {
+  inspectLiveStoredZip,
+  openCurrentStatusImage,
+  queryDownloads,
+  readOwnedFile,
+  waitForOwnedDownload,
+} from './live-acceptance.ts';
+import { summarizeTweetResultResponse } from './live-page.ts';
+import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
+
+declare const chrome: {
+  runtime: { id: string };
+  downloads: {
+    cancel(id: number): Promise<void>;
+    search(query: { id: number }): Promise<
+      Array<{
+        id: number;
+        byExtensionId?: string;
+        url?: string;
+        finalUrl?: string;
+      }>
+    >;
+  };
+};
+
+/** The caller must first establish these counts from current source-bound X evidence. */
+export type PhotoOwner = { handle: string; statusId: string; count: 20 };
+export type PhotoExpectedReference = {
+  ownerId: string;
+  ordinal: number;
+  sourceKey: string;
+  originalUrl: string;
+  filename: string;
+  bytes: number;
+  sha256: string;
+};
+export type PhotoCollectionContract = {
+  requested: PhotoOwner;
+  directQuote: PhotoOwner | null;
+  expected: readonly PhotoExpectedReference[];
+  transportProbe?: true;
+  sourceKnownOnly?: true;
+  sourceKnownScope?: 'dom20';
+};
+
+/** A diagnostic must account for a native ZIP after cancellation and page closure. */
+export async function settlePhotoTransportProbeDownloads(
+  query: () => Promise<readonly { id: number; state: string }[]>,
+  cancel: ((ids: number[]) => Promise<void>) | null,
+  pause: () => Promise<void> = () => new Promise((done) => setTimeout(done, 50))
+): Promise<number[]> {
+  const initial = (await query()).filter((item) => item.state === 'in_progress');
+  assert(initial.length <= 1, 'Probe produced more than one native download');
+  const ids = initial.map((item) => item.id);
+  const unsettled = new Set(ids);
+  if (ids.length > 0 && cancel) {
+    await cancel(ids);
+  }
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const downloads = await query();
+    const pending = downloads.filter((item) => item.state === 'in_progress');
+    assert(pending.length <= 1, 'Probe produced more than one native download');
+    for (const item of downloads) {
+      if (item.state === 'in_progress') {
+        unsettled.add(item.id);
+      } else if (item.state === 'complete' || item.state === 'interrupted') {
+        unsettled.delete(item.id);
+      }
+    }
+    if (pending.length === 0 && unsettled.size === 0) {
+      return ids;
+    }
+    if (attempt < 39) {
+      await pause();
+    }
+  }
+  throw new Error('Probe native download did not reach a terminal state');
+}
+
+/** Passive page-target CDP evidence; worker traffic and native TLS have separate scopes. */
+export async function observePhotoTransportNetwork(
+  session: CDPSession,
+  expected: readonly PhotoExpectedReference[]
+) {
+  const paths = new Set(expected.map((item) => new URL(item.originalUrl).pathname));
+  const requests = new Map<
+    string,
+    { host: string; path: string; method: string; variant: string }
+  >();
+  const events: Array<Record<string, string | number | boolean | null>> = [];
+  let overflow = false;
+  let stopped = false;
+  const source = (raw: string, method: string) => {
+    try {
+      const url = new URL(raw);
+      return url.protocol === 'https:' &&
+        url.hostname === 'pbs.twimg.com' &&
+        paths.has(url.pathname)
+        ? {
+            host: url.hostname,
+            path: url.pathname,
+            method: method.slice(0, 16),
+            variant: ['orig', 'large', 'medium', 'small', 'thumb'].includes(
+              url.searchParams.get('name') ?? ''
+            )
+              ? url.searchParams.get('name')!
+              : 'other',
+          }
+        : null;
+    } catch {
+      return null;
+    }
+  };
+  const add = (
+    kind: string,
+    requestId: string,
+    details: Record<string, string | number | boolean | null>
+  ) => {
+    if (events.length >= 256) {
+      overflow = true;
+      return;
+    }
+    events.push({ kind, requestId: requestId.slice(0, 120), atEpochMs: Date.now(), ...details });
+  };
+  const onRequest = (event: { requestId: string; request: { url: string; method: string } }) => {
+    const matched = source(event.request.url, event.request.method);
+    if (!matched) {
+      return;
+    }
+    if (!requests.has(event.requestId) && requests.size >= 128) {
+      overflow = true;
+      return;
+    }
+    requests.set(event.requestId, matched);
+    add('requestWillBeSent', event.requestId, matched);
+  };
+  const onResponse = (event: {
+    requestId: string;
+    response: { status: number; resourceIPAddressSpace?: string };
+  }) => {
+    const matched = requests.get(event.requestId);
+    if (matched) {
+      add('responseReceived', event.requestId, {
+        ...matched,
+        status: event.response.status,
+        resourceIPAddressSpace: event.response.resourceIPAddressSpace?.slice(0, 40) ?? null,
+      });
+    }
+  };
+  const onFailed = (event: {
+    requestId: string;
+    canceled?: boolean;
+    blockedReason?: string;
+    corsErrorStatus?: { corsError?: string };
+  }) => {
+    const matched = requests.get(event.requestId);
+    if (matched) {
+      add('loadingFailed', event.requestId, {
+        ...matched,
+        canceled: event.canceled ?? false,
+        blockedReason: event.blockedReason?.slice(0, 80) ?? null,
+        corsErrorStatus: event.corsErrorStatus?.corsError?.slice(0, 80) ?? null,
+      });
+    }
+  };
+  const onFinished = (event: { requestId: string }) => {
+    const matched = requests.get(event.requestId);
+    if (matched) {
+      add('loadingFinished', event.requestId, matched);
+    }
+  };
+  const onPaused = (event: {
+    requestId: string;
+    networkId?: string;
+    request: { url: string; method: string };
+  }) => {
+    const matched = source(event.request.url, event.request.method);
+    if (matched) {
+      add('fetchPausedPassive', event.requestId, {
+        ...matched,
+        networkId: event.networkId?.slice(0, 120) ?? null,
+      });
+    }
+  };
+  session.on('Network.requestWillBeSent', onRequest);
+  session.on('Network.responseReceived', onResponse);
+  session.on('Network.loadingFailed', onFailed);
+  session.on('Network.loadingFinished', onFinished);
+  session.on('Fetch.requestPaused', onPaused);
+  const remove = () => {
+    session.off('Network.requestWillBeSent', onRequest);
+    session.off('Network.responseReceived', onResponse);
+    session.off('Network.loadingFailed', onFailed);
+    session.off('Network.loadingFinished', onFinished);
+    session.off('Fetch.requestPaused', onPaused);
+  };
+  try {
+    await session.send('Network.enable');
+  } catch (error) {
+    remove();
+    await session.detach();
+    throw error;
+  }
+  return {
+    snapshot: () => ({
+      target: 'page',
+      clock: 'guest epoch milliseconds',
+      fetchInterceptionEnabled: false,
+      events: [...events],
+      overflow,
+    }),
+    async stop() {
+      if (stopped) {
+        return;
+      }
+      stopped = true;
+      remove();
+      await session.detach();
+    },
+  };
+}
+
+async function queryPhotoNetworkPermissions(page: Page) {
+  return page.evaluate(async () => {
+    const states: Record<string, string> = {};
+    for (const name of ['local-network', 'loopback-network'] as const) {
+      if (!navigator.permissions?.query) {
+        states[name] = 'unsupported';
+        continue;
+      }
+      try {
+        const result = await navigator.permissions.query({
+          name: name as unknown as PermissionName,
+        });
+        states[name] = result.state;
+      } catch (error) {
+        states[name] = error instanceof TypeError ? 'unsupported' : 'query-error';
+      }
+    }
+    return { atEpochMs: Date.now(), states };
+  });
+}
+
+export function parsePhotoCollectionSelector(
+  value: unknown,
+  installation: string,
+  liveUrls: readonly string[]
+): PhotoCollectionContract {
+  assert(value && typeof value === 'object' && !Array.isArray(value));
+  const input = value as Record<string, unknown>;
+  assert.deepEqual(
+    Object.keys(input).sort(),
+    [
+      'directQuote',
+      'expected',
+      'requested',
+      'scenario',
+      ...(input.transportProbe === undefined ? [] : ['transportProbe']),
+      ...(input.sourceKnownOnly === undefined ? [] : ['sourceKnownOnly']),
+      ...(input.sourceKnownScope === undefined ? [] : ['sourceKnownScope']),
+    ].sort()
+  );
+  assert.equal(input.scenario, 'photo-collection-20-40');
+  const transportProbe = input.transportProbe === true;
+  const sourceKnownOnly = input.sourceKnownOnly === true;
+  const sourceKnownScope = input.sourceKnownScope;
+  assert(input.transportProbe === undefined || transportProbe, 'Unsupported transport probe');
+  assert(input.sourceKnownOnly === undefined || sourceKnownOnly, 'Unsupported source-known mode');
+  assert(
+    sourceKnownScope === undefined || sourceKnownScope === 'dom20',
+    'Unsupported source-known scope'
+  );
+  assert(
+    sourceKnownScope === undefined || sourceKnownOnly,
+    'DOM-only scope needs source-known mode'
+  );
+  assert(!transportProbe || !sourceKnownOnly, 'Photo modes are mutually exclusive');
+  assert(!transportProbe || installation === 'extension', 'Transport probe requires extension');
+  assert(!sourceKnownOnly || installation === 'extension', 'Source-known mode requires extension');
+  assert(
+    installation === 'extension' || installation === 'userscript',
+    'Photo collection route requires an installed extension or manager userscript'
+  );
+  const parseOwner = (raw: unknown): PhotoOwner => {
+    assert(raw && typeof raw === 'object' && !Array.isArray(raw));
+    const owner = raw as Record<string, unknown>;
+    assert.deepEqual(Object.keys(owner).sort(), ['count', 'handle', 'statusId']);
+    assert(typeof owner.handle === 'string' && typeof owner.statusId === 'string');
+    assert.equal(owner.count, 20);
+    const parsed = { handle: owner.handle, statusId: owner.statusId, count: 20 as const };
+    validateOwner(parsed);
+    return parsed;
+  };
+  const requested = parseOwner(input.requested);
+  const directQuote = input.directQuote === null ? null : parseOwner(input.directQuote);
+  assert(!directQuote || directQuote.statusId !== requested.statusId);
+  assert(!transportProbe || directQuote, 'Transport probe requires the direct B owner');
+  assert(!sourceKnownOnly || directQuote, 'Source-known mode requires the direct B owner');
+  assert(Array.isArray(input.expected), 'Photo selector must pin every independent original');
+  const expected = input.expected.map((raw: unknown, index: number): PhotoExpectedReference => {
+    assert(raw && typeof raw === 'object' && !Array.isArray(raw));
+    const entry = raw as Record<string, unknown>;
+    assert.deepEqual(Object.keys(entry).sort(), [
+      'bytes',
+      'filename',
+      'ordinal',
+      'originalUrl',
+      'ownerId',
+      'sha256',
+      'sourceKey',
+    ]);
+    const owner = directQuote && index < 20 ? directQuote : requested;
+    const ordinal = index % 20;
+    assert.equal(entry.ownerId, owner.statusId, 'Pinned photo owner differs from ordered group');
+    assert.equal(entry.ordinal, ordinal, 'Pinned photo ordinal differs from owner-local order');
+    assert(typeof entry.sourceKey === 'string' && /^[A-Za-z0-9_-]{1,80}$/u.test(entry.sourceKey));
+    assert(typeof entry.originalUrl === 'string' && stem(entry.originalUrl) === entry.sourceKey);
+    const original = new URL(entry.originalUrl);
+    const format = original.searchParams.get('format');
+    assert(format && /^(?:jpg|jpeg|png|gif|webp)$/u.test(format));
+    assert.deepEqual([...original.searchParams.keys()].sort(), ['format', 'name']);
+    assert.equal(original.searchParams.get('name'), 'orig');
+    assert(typeof entry.filename === 'string');
+    assert.equal(entry.filename, `${owner.handle}_${owner.statusId}_${ordinal}.${format}`);
+    assert(
+      typeof entry.bytes === 'number' &&
+        Number.isSafeInteger(entry.bytes) &&
+        entry.bytes > 0 &&
+        entry.bytes <= 4 * 1024 * 1024
+    );
+    assert(typeof entry.sha256 === 'string' && /^[a-f0-9]{64}$/u.test(entry.sha256));
+    return {
+      ownerId: entry.ownerId as string,
+      ordinal,
+      sourceKey: entry.sourceKey,
+      originalUrl: entry.originalUrl,
+      filename: entry.filename,
+      bytes: entry.bytes,
+      sha256: entry.sha256,
+    };
+  });
+  assert.equal(expected.length, requested.count + (directQuote?.count ?? 0));
+  const url = (owner: PhotoOwner) => `https://x.com/${owner.handle}/status/${owner.statusId}`;
+  assert.deepEqual(
+    liveUrls,
+    transportProbe || sourceKnownOnly
+      ? []
+      : directQuote
+        ? [url(requested), url(directQuote)]
+        : [url(requested)],
+    'Photo collection URLs must match the exact declared owners'
+  );
+  return {
+    requested,
+    directQuote,
+    expected,
+    ...(transportProbe ? { transportProbe: true } : {}),
+    ...(sourceKnownOnly ? { sourceKnownOnly: true } : {}),
+    ...(sourceKnownScope === 'dom20' ? { sourceKnownScope } : {}),
+  };
+}
+
+export type PhotoProviderTrace = NonNullable<ReturnType<typeof summarizeTweetResultResponse>>;
+export type PhotoGalleryEntry = {
+  index: number;
+  mediaId: string;
+  displayUrl: string;
+};
+export type VerifiedPhoto = {
+  index: number;
+  owner: PhotoOwner;
+  /** Product gallery identity; distinct from the provider entity ID. */
+  mediaId: string;
+  providerMediaId: string | null;
+  attachmentOrdinal: number;
+  displayStem: string;
+  expected: PhotoExpectedReference;
+};
+
+export type SelectedPhotoSnapshot = {
+  total: number;
+  currentIndex: number;
+  focusedIndex: number;
+  counterPosition: number;
+  itemIndex: number;
+  active: boolean;
+  focused: boolean;
+  mediaId: string;
+  declaredUrl: string;
+  renderedUrl: string;
+  imageLoaded: boolean;
+  imageVisible: boolean;
+};
+
+/** Inspect only the selected photo; other gallery items need not be visible or mounted. */
+export function inspectSelectedPhotoDocument(gallery: Element): SelectedPhotoSnapshot | null {
+  const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
+  const counter = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
+  const currentIndex = Number(toolbar?.getAttribute('data-current-index'));
+  const selected = [...gallery.querySelectorAll('[data-gallery-element="item"]')].filter(
+    (item) => item.getAttribute('data-index') === String(currentIndex)
+  );
+  const item = selected.length === 1 ? selected[0] : null;
+  const image = item?.querySelector('img');
+  if (!(item instanceof HTMLElement) || !(image instanceof HTMLImageElement)) {
+    return null;
+  }
+  const style = getComputedStyle(image);
+  const bounds = image.getBoundingClientRect();
+  return {
+    total: Number(counter?.getAttribute('data-total')),
+    currentIndex,
+    focusedIndex: Number(toolbar?.getAttribute('data-focused-index')),
+    counterPosition: Number(counter?.getAttribute('data-position')),
+    itemIndex: Number(item.getAttribute('data-index')),
+    active: item.getAttribute('data-media-active') === 'true',
+    focused: item.getAttribute('data-media-focused') === 'true',
+    mediaId: item.getAttribute('data-media-id') ?? '',
+    declaredUrl: item.getAttribute('data-media-display-url') ?? '',
+    renderedUrl: image.currentSrc || image.src,
+    imageLoaded:
+      item.getAttribute('data-media-loaded') === 'true' && image.complete && image.naturalWidth > 0,
+    imageVisible:
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity) !== 0 &&
+      bounds.width > 0 &&
+      bounds.height > 0 &&
+      bounds.bottom > 0 &&
+      bounds.top < innerHeight &&
+      bounds.right > 0 &&
+      bounds.left < innerWidth,
+  };
+}
+
+/** A correct counter and model cannot mask a stale or wrong rendered image. */
+export function verifySelectedPhoto(
+  expected: VerifiedPhoto,
+  expectedTotal: number,
+  snapshot: SelectedPhotoSnapshot | null
+): void {
+  assert(snapshot, `Selected gallery position ${expected.index} was not rendered`);
+  assert.equal(snapshot.total, expectedTotal, 'Selected photo total differs');
+  assert.equal(snapshot.currentIndex, expected.index, 'Selected photo index differs');
+  assert.equal(snapshot.focusedIndex, expected.index, 'Selected photo focus differs');
+  assert.equal(snapshot.counterPosition, expected.index + 1, 'Selected photo counter differs');
+  assert.equal(snapshot.itemIndex, expected.index, 'Selected item index differs');
+  assert(
+    snapshot.active && snapshot.focused && snapshot.imageLoaded && snapshot.imageVisible,
+    'Selected photo is not active, focused, loaded and visible'
+  );
+  assert.equal(snapshot.mediaId, expected.mediaId, 'Selected photo media ID differs');
+  assert.equal(stem(snapshot.declaredUrl), expected.displayStem, 'Selected model source differs');
+  assert.equal(
+    stem(snapshot.renderedUrl),
+    expected.displayStem,
+    'Selected rendered source differs'
+  );
+}
+
+export function requiredPhotoPositions(total: 20 | 40): readonly number[] {
+  return total === 20
+    ? [0, 3, 4, 9, 11, 12, 19]
+    : [0, 3, 4, 9, 11, 12, 19, 20, 23, 24, 29, 31, 32, 39];
+}
+
+const MEDIA_PATH = /^\/media\/([A-Za-z0-9_-]+)(?:\.(?:jpe?g|png|webp|gif))?$/iu;
+const HANDLE = /^[A-Za-z0-9_]{1,15}$/u;
+const STATUS = /^[1-9]\d{1,39}$/u;
+
+function stem(value: string): string {
+  const url = new URL(value);
+  const match = MEDIA_PATH.exec(url.pathname);
+  assert(
+    url.protocol === 'https:' &&
+      url.hostname === 'pbs.twimg.com' &&
+      !url.username &&
+      !url.password &&
+      !url.port &&
+      !url.hash &&
+      match?.[1],
+    'Photo source is not one admitted pbs media identity'
+  );
+  return match[1];
+}
+
+function validateOwner(owner: PhotoOwner): void {
+  assert(HANDLE.test(owner.handle) && STATUS.test(owner.statusId) && owner.count === 20);
+}
+
+/** A product gallery count and the separately observed identity list are both required. */
+export function verifyPhotoCollection(
+  contract: PhotoCollectionContract,
+  observations: readonly PhotoProviderTrace[],
+  gallery: {
+    total: number;
+    entries: readonly PhotoGalleryEntry[];
+    truncated: boolean;
+  }
+): VerifiedPhoto[] {
+  validateOwner(contract.requested);
+  if (contract.directQuote) {
+    validateOwner(contract.directQuote);
+    assert.notEqual(contract.directQuote.statusId, contract.requested.statusId);
+  }
+  const expectedCount = contract.requested.count + (contract.directQuote?.count ?? 0);
+  assert.equal(gallery.total, expectedCount, 'Gallery total differs from declared owner counts');
+  assert.equal(gallery.truncated, false, 'Gallery identity observation was truncated');
+  assert.equal(gallery.entries.length, expectedCount, 'Full gallery identities were not retained');
+  assert.equal(contract.expected.length, expectedCount, 'Pinned originals are incomplete');
+
+  const candidates = observations.filter(
+    (entry) =>
+      entry.operation === 'TweetResultByRestId' &&
+      entry.requestedTweetId === contract.requested.statusId &&
+      entry.httpStatus === 200 &&
+      !entry.providerErrors &&
+      entry.result?.id === contract.requested.statusId
+  );
+  assert(candidates.length > 0, 'Requested post has no exact successful provider trace');
+  const mapOwner = (
+    owner: PhotoOwner,
+    value: NonNullable<PhotoProviderTrace['result']> | null
+  ): Array<Omit<VerifiedPhoto, 'expected'>> => {
+    assert(value && value.id === owner.statusId, 'Provider media belongs to another post');
+    assert.equal(value.collectionCount, owner.count, 'Provider reported a different owner count');
+    assert.equal(value.media.length, owner.count, 'Provider identities are truncated');
+    return value.media.map((item, ordinal) => {
+      assert.equal(item.type, 'photo', 'Declared photo collection contains another media kind');
+      assert(item.id && /^\d{1,40}$/u.test(item.id), 'Provider media ID is absent');
+      assert.equal(item.entityOrdinal, ordinal, 'Provider owner-local ordinal changed');
+      assert(item.poster?.host === 'pbs.twimg.com', 'Provider photo poster is absent');
+      const displayStem = stem(`https://pbs.twimg.com${item.poster.path}`);
+      return {
+        index: -1,
+        owner,
+        mediaId: item.id,
+        providerMediaId: item.id,
+        attachmentOrdinal: ordinal,
+        displayStem,
+      };
+    });
+  };
+  const mappings = candidates.map((entry) => {
+    const ordered = [
+      ...(contract.directQuote ? mapOwner(contract.directQuote, entry.directQuote) : []),
+      ...mapOwner(contract.requested, entry.result),
+    ];
+    assert.equal(ordered.length, expectedCount);
+    assert.equal(
+      new Set(ordered.map((item) => `${item.owner.statusId}:${item.providerMediaId}`)).size,
+      expectedCount,
+      'Provider media identities are duplicated'
+    );
+    return ordered.map((item, index) => {
+      const pinned = contract.expected[index]!;
+      assert.equal(pinned.ownerId, item.owner.statusId, `Pinned owner differs at ${index}`);
+      assert.equal(pinned.ordinal, item.attachmentOrdinal, `Pinned ordinal differs at ${index}`);
+      assert.equal(pinned.sourceKey, item.displayStem, `Pinned source differs at ${index}`);
+      return { ...item, index, mediaId: `${item.owner.statusId}_api_${index}`, expected: pinned };
+    });
+  });
+  const expected = mappings[0]!;
+  assert(
+    mappings.every((mapping) => JSON.stringify(mapping) === JSON.stringify(expected)),
+    'Conflicting exact provider traces'
+  );
+  for (const [index, actual] of gallery.entries.entries()) {
+    const item = expected[index]!;
+    assert.equal(actual.index, index, `Gallery position ${index} is absent or reordered`);
+    assert.equal(actual.mediaId, item.mediaId, `Gallery position ${index} has another media ID`);
+    assert.equal(
+      stem(actual.displayUrl),
+      item.displayStem,
+      `Gallery position ${index} has another source`
+    );
+  }
+  return expected;
+}
+
+/** DOM identity is bounded by observed owned links; it does not establish the post total. */
+export function verifyDomPhotoCollection(
+  contract: PhotoCollectionContract,
+  tiles: readonly { href: string; displayUrl: string }[],
+  gallery: { total: number; entries: readonly PhotoGalleryEntry[]; truncated: boolean }
+): VerifiedPhoto[] {
+  assert.equal(contract.directQuote, null, 'DOM fixture must have one directly observed owner');
+  validateOwner(contract.requested);
+  assert.equal(tiles.length, contract.requested.count, 'Owned DOM tiles are incomplete');
+  assert.equal(gallery.total, tiles.length, 'Gallery count differs from observed DOM tiles');
+  assert(!gallery.truncated && gallery.entries.length === tiles.length);
+  assert.equal(contract.expected.length, tiles.length, 'Independent originals are incomplete');
+  return tiles.map((tile, index) => {
+    const pinned = contract.expected[index]!;
+    const expectedHref = `https://x.com/${contract.requested.handle}/status/${contract.requested.statusId}/photo/${index + 1}`;
+    assert.equal(tile.href, expectedHref, `DOM owner/ordinal differs at ${index}`);
+    assert.equal(pinned.ownerId, contract.requested.statusId);
+    assert.equal(pinned.ordinal, index);
+    assert.equal(stem(tile.displayUrl), pinned.sourceKey);
+    const actual = gallery.entries[index]!;
+    const mediaId = `${contract.requested.statusId}_dom_${index}`;
+    assert.equal(actual.index, index, 'DOM gallery entry is missing or reordered');
+    assert.equal(actual.mediaId, mediaId, 'DOM gallery media identity differs');
+    assert.equal(stem(actual.displayUrl), pinned.sourceKey, 'DOM gallery source differs');
+    return {
+      index,
+      owner: contract.requested,
+      mediaId,
+      providerMediaId: null,
+      attachmentOrdinal: index,
+      displayStem: pinned.sourceKey,
+      expected: pinned,
+    };
+  });
+}
+
+/** Synthetic-server receipt only: never proof that a client received an API payload. */
+export function verifyFixtureServerApiResponses(
+  events: readonly unknown[],
+  requestedId: string,
+  body: Buffer,
+  status: 200 | 403
+) {
+  assert(body.length > 0 && body.length <= 2_000_000, 'Fixture API body exceeds bounded trace');
+  const matching = events.filter((value): value is Record<string, unknown> =>
+    Boolean(
+      value &&
+      typeof value === 'object' &&
+      'requestedId' in value &&
+      value.requestedId === requestedId
+    )
+  );
+  assert(matching.length <= 12, 'Fixture API response observation exceeded budget');
+  return matching.flatMap((event) => {
+    assert.equal(event.host, 'x.com');
+    assert.equal(event.operation, 'TweetResultByRestId');
+    assert.equal(event.method, 'GET');
+    assert.equal(event.purpose, 'metadata');
+    assert.equal(event.cohort, status === 200 ? 'large-api' : 'large-dom-api');
+    assert.equal(event.status, status, 'Fixture server status conflicts with declared input');
+    if (event.result === 'started' || event.result === 'aborted') {
+      return [];
+    }
+    assert.equal(event.result, status === 200 ? 'served' : 'http-403');
+    assert.equal(event.bytes, body.length, 'Fixture server body size differs');
+    assert.equal(
+      event.sha256,
+      createHash('sha256').update(body).digest('hex'),
+      'Fixture server body hash differs'
+    );
+    assert(typeof event.atMs === 'number' && Number.isFinite(event.atMs));
+    assert(
+      typeof event.finishedAtMs === 'number' &&
+        Number.isFinite(event.finishedAtMs) &&
+        event.finishedAtMs >= event.atMs
+    );
+    return [
+      {
+        requestedId,
+        status,
+        method: 'GET',
+        bytes: body.length,
+        sha256: event.sha256,
+        atMs: event.atMs,
+        finishedAtMs: event.finishedAtMs,
+      },
+    ];
+  });
+}
+
+/** The installed DOM fixture runs in English; require scope and quality independently. */
+export function assertDomPhotoSourceDetails(
+  observed: readonly string[],
+  quality: 'pending' | 'verified'
+): void {
+  assert.deepEqual(observed, [
+    '20 collected items · the post may contain more',
+    ...(quality === 'pending' ? ['Original image will be checked when saving'] : []),
+  ]);
+}
+
+/** Admit only this owned X request, independently of its observation channel. */
+export function photoProviderRequestMatches(source: URL, requestedId: string): boolean {
+  if (
+    source.origin !== 'https://x.com' ||
+    source.username ||
+    source.password ||
+    source.port ||
+    source.hash ||
+    !/^\/i\/api\/graphql\/[^/]+\/TweetResultByRestId$/u.test(source.pathname)
+  ) {
+    return false;
+  }
+  try {
+    const variables: unknown = JSON.parse(source.searchParams.get('variables') ?? '{}');
+    return Boolean(
+      variables &&
+      typeof variables === 'object' &&
+      'tweetId' in variables &&
+      variables.tweetId === requestedId
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** HTTP refusals are observed outcomes, not malformed successful metadata. */
+export function summarizeSuccessfulPhotoProviderResponse(
+  url: string,
+  status: number,
+  bodyText: string
+): PhotoProviderTrace | null {
+  assert(Buffer.byteLength(bodyText, 'utf8') <= 2_000_000, 'Provider body exceeds trace bound');
+  if (status !== 200) {
+    return null;
+  }
+  return summarizeTweetResultResponse(
+    url,
+    status,
+    JSON.parse(bodyText.replace(/^\uFEFF/u, '')),
+    40
+  );
+}
+
+/** Bind this selected scenario to the exact requested and completed native source. */
+export function assertExactPhotoNativeSource(
+  source: { url: string | null; finalUrl: string | null } | null,
+  expectedSource: string
+): void {
+  assert(source, 'Native single source observation is unavailable');
+  assert.equal(source.url, expectedSource, 'Native single requested another original URL');
+  assert.equal(
+    source.finalUrl,
+    expectedSource,
+    'Native single final URL differs from its original'
+  );
+}
+
+/** Saved bytes and the user-visible collected/saved/omitted result are separate obligations. */
+export function assertDomPhotoZipOutcome(
+  title: string,
+  paragraphs: readonly string[],
+  partialBody: string
+): void {
+  assert.equal(title, 'ZIP handed off to browser');
+  assert.deepEqual(paragraphs, [
+    'ZIP includes 20; left out 0.',
+    'Scope: 20 media items shown in this gallery.',
+    partialBody,
+    'The browser accepted the ZIP request. Completion on disk is not confirmed.',
+  ]);
+}
+
+export type PhotoOriginalReference = {
+  index: number;
+  ownerId: string;
+  attachmentOrdinal: number;
+  sourceUrl: string;
+  filename: string;
+  bytes: Buffer;
+};
+type DomNativeEvent = {
+  sourceUrl?: string;
+  method: string;
+  status?: number;
+  result: string;
+};
+type DomNativeSnapshot = {
+  domProbePeak?: number;
+  events: readonly DomNativeEvent[];
+};
+
+/** A completed probe must preserve its requested encoding and exact source path. */
+export function verifyDomNativeProbes(
+  before: DomNativeSnapshot,
+  after: DomNativeSnapshot,
+  ordinal: number,
+  expectTransfer: boolean
+): void {
+  assert(Number.isSafeInteger(ordinal) && ordinal >= 0 && ordinal < 20);
+  assert(before.events.length <= after.events.length);
+  const key = `XegDom${String(ordinal).padStart(2, '0')}`;
+  const events = after.events.slice(before.events.length);
+  for (const [format, status] of [
+    ['webp', 404],
+    ['jpg', 200],
+  ] as const) {
+    assert(
+      events.some(
+        (event) =>
+          event.sourceUrl === `/media/${key}?format=${format}&name=orig` &&
+          event.method === 'HEAD' &&
+          event.status === status &&
+          (status === 404
+            ? event.result === 'http-404' || event.result === 'http-failure'
+            : event.result === 'served')
+      ),
+      `DOM original ${ordinal} ${format} probe was not observed at its exact URL/status`
+    );
+  }
+  if (expectTransfer) {
+    assert(
+      events.some(
+        (event) =>
+          event.sourceUrl === `/media/${key}?format=jpg&name=orig` &&
+          event.method === 'GET' &&
+          event.status === 200 &&
+          event.result === 'served'
+      ),
+      `DOM original ${ordinal} JPEG bytes were not transferred`
+    );
+  }
+  assert(
+    (after.domProbePeak ?? Number.POSITIVE_INFINITY) <= 4,
+    'DOM probe queue exceeded four active sources'
+  );
+}
+
+/** A displayed preview is allowed; no original format may be touched before this save. */
+export function assertDeferredDomOriginalAbsent(
+  events: readonly DomNativeEvent[],
+  ordinal: number
+): void {
+  assert(Number.isSafeInteger(ordinal) && ordinal >= 0 && ordinal < 20);
+  const key = `XegDom${String(ordinal).padStart(2, '0')}`;
+  assert(
+    !events.some(
+      (event) =>
+        event.sourceUrl?.startsWith(`/media/${key}?`) &&
+        /(?:^|&)name=orig(?:&|$)/u.test(event.sourceUrl.slice(event.sourceUrl.indexOf('?') + 1))
+    ),
+    `Deferred DOM ordinal ${ordinal} had an original probe or transfer before its save request`
+  );
+}
+export type OwnedPhotoDownload = {
+  nativeId: number | string;
+  state: 'complete';
+  ownedPath: string;
+  filename: string;
+  bytesReceived: number;
+  bytes: Buffer;
+};
+
+/** Compare actual files with independent GET bodies; archive entry order is immaterial. */
+export function verifyPhotoCollectionDownloads(
+  expected: readonly VerifiedPhoto[],
+  references: readonly PhotoOriginalReference[],
+  selectedIndex: number,
+  single: OwnedPhotoDownload,
+  zip: OwnedPhotoDownload
+): {
+  selected: { index: number; ownerId: string; ordinal: number; filename: string; sha256: string };
+  zipEntries: Array<{
+    index: number;
+    ownerId: string;
+    ordinal: number;
+    filename: string;
+    sha256: string;
+  }>;
+} {
+  assert(expected.length === 20 || expected.length === 40, 'Photo proof requires 20 or 40 items');
+  assert.equal(references.length, expected.length, 'Independent originals are incomplete');
+  assert(
+    Number.isSafeInteger(selectedIndex) && selectedIndex >= 0 && selectedIndex < expected.length
+  );
+  const validId = (value: number | string) =>
+    (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) ||
+    (typeof value === 'string' && /^[A-Za-z0-9-]{8,80}$/u.test(value));
+  assert(
+    validId(single.nativeId) && validId(zip.nativeId) && single.nativeId !== zip.nativeId,
+    'Distinct new native download IDs are required'
+  );
+  for (const download of [single, zip]) {
+    assert.equal(download.state, 'complete', 'Native download is incomplete');
+    assert.equal(basename(download.ownedPath), download.filename, 'Native file path/name differs');
+    assert.equal(download.bytesReceived, download.bytes.length, 'Native byte count differs');
+  }
+  const byName = new Map<string, PhotoOriginalReference>();
+  for (const [index, reference] of references.entries()) {
+    const item = expected[index]!;
+    assert.equal(reference.index, item.index, 'Reference gallery index differs');
+    assert.equal(reference.ownerId, item.owner.statusId, 'Reference owner differs');
+    assert.equal(reference.attachmentOrdinal, item.attachmentOrdinal, 'Reference ordinal differs');
+    assert(reference.bytes.length > 0 && reference.bytes.length <= 64 * 1024 * 1024);
+    assert.equal(stem(reference.sourceUrl), item.displayStem, 'Reference source identity differs');
+    assert.equal(
+      reference.sourceUrl,
+      item.expected.originalUrl,
+      'Reference original URL differs from frozen input'
+    );
+    assert.equal(
+      reference.bytes.length,
+      item.expected.bytes,
+      'Reference byte size differs from frozen input'
+    );
+    assert.equal(
+      createHash('sha256').update(reference.bytes).digest('hex'),
+      item.expected.sha256,
+      'Reference bytes differ from frozen input'
+    );
+    const expectedStem = `${item.owner.handle}_${item.owner.statusId}_${item.attachmentOrdinal}`;
+    assert.equal(reference.filename.slice(0, reference.filename.lastIndexOf('.')), expectedStem);
+    assert.equal(
+      reference.filename,
+      item.expected.filename,
+      'Reference filename differs from frozen input'
+    );
+    assert(!byName.has(reference.filename.toLowerCase()), 'Duplicate ZIP filename stem');
+    byName.set(reference.filename.toLowerCase(), reference);
+  }
+  const selected = references[selectedIndex]!;
+  assert.equal(single.filename, selected.filename, 'Single filename changed from selected source');
+  assert(
+    single.bytes.equals(selected.bytes),
+    'Single saved bytes differ from independent original'
+  );
+  const archive = inspectLiveStoredZip(zip.bytes, expected.length, 40);
+  const found = new Set<string>();
+  const zipEntries = archive.entries.map((entry) => {
+    const key = entry.filename.toLowerCase();
+    const reference = byName.get(key);
+    assert(reference && !found.has(key), 'ZIP has an unknown or duplicate member');
+    found.add(key);
+    assert.equal(entry.filename, reference.filename, 'ZIP entry filename differs from source plan');
+    assert.equal(entry.bytes, reference.bytes.length, 'ZIP member size differs from original');
+    assert.equal(
+      entry.sha256,
+      createHash('sha256').update(reference.bytes).digest('hex'),
+      'ZIP member bytes differ from original'
+    );
+    return {
+      index: reference.index,
+      ownerId: reference.ownerId,
+      ordinal: reference.attachmentOrdinal,
+      filename: entry.filename,
+      sha256: entry.sha256,
+    };
+  });
+  assert.equal(found.size, expected.length, 'ZIP is missing an owner-local media item');
+  return {
+    selected: {
+      index: selected.index,
+      ownerId: selected.ownerId,
+      ordinal: selected.attachmentOrdinal,
+      filename: selected.filename,
+      sha256: createHash('sha256').update(selected.bytes).digest('hex'),
+    },
+    zipEntries,
+  };
+}
+
+/** Toolbar arrows move from displayed focus, which can differ from last requested index. */
+export function planPhotoAdjacentMove(
+  currentIndex: number,
+  focusedIndex: number | null,
+  targetIndex: number,
+  total: number
+): { displayedIndex: number; direction: 'Next' | 'Previous'; nextIndex: number } | null {
+  assert(Number.isSafeInteger(total) && total > 1);
+  assert(Number.isSafeInteger(currentIndex) && currentIndex >= 0 && currentIndex < total);
+  assert(Number.isSafeInteger(targetIndex) && targetIndex >= 0 && targetIndex < total);
+  const displayedIndex =
+    focusedIndex !== null &&
+    Number.isSafeInteger(focusedIndex) &&
+    focusedIndex >= 0 &&
+    focusedIndex < total
+      ? focusedIndex
+      : currentIndex;
+  if (displayedIndex === targetIndex && currentIndex === targetIndex) {
+    return null;
+  }
+  const direction =
+    displayedIndex < targetIndex || (displayedIndex === targetIndex && targetIndex < total - 1)
+      ? 'Next'
+      : 'Previous';
+  const nextIndex = displayedIndex + (direction === 'Next' ? 1 : -1);
+  assert(nextIndex >= 0 && nextIndex < total, 'Photo navigation has no adjacent destination');
+  return { displayedIndex, direction, nextIndex };
+}
+
+async function readPhotoNavigationSnapshot(page: Page) {
+  return page.evaluate(() => {
+    const gallery = document.querySelector('[data-xeg-gallery-container]');
+    const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+    const port = gallery?.querySelector('[data-gallery-element="items"]');
+    const parseIndex = (raw: string | null | undefined) =>
+      raw !== null && raw !== undefined && /^(0|[1-9]\d*)$/u.test(raw) ? Number(raw) : null;
+    const button = (direction: 'Next' | 'Previous') => {
+      const element = toolbar?.querySelector(`button[aria-label="${direction}"]`);
+      const rect = element?.getBoundingClientRect();
+      return {
+        disabled: element instanceof HTMLButtonElement ? element.disabled : null,
+        ariaDisabled: element?.getAttribute('aria-disabled') ?? null,
+        rect: rect ? { x: rect.x, y: rect.y, width: rect.width, height: rect.height } : null,
+      };
+    };
+    return {
+      atEpochMs: Date.now(),
+      currentIndex: parseIndex(toolbar?.getAttribute('data-current-index')),
+      focusedIndex: parseIndex(toolbar?.getAttribute('data-focused-index')),
+      counterPosition: parseIndex(
+        gallery
+          ?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]')
+          ?.getAttribute('data-position')
+      ),
+      previous: button('Previous'),
+      next: button('Next'),
+      scroll: port
+        ? { top: port.scrollTop, height: port.scrollHeight, clientHeight: port.clientHeight }
+        : null,
+    };
+  });
+}
+
+type PhotoNavigationSnapshot = Awaited<ReturnType<typeof readPhotoNavigationSnapshot>>;
+type PhotoNavigationDiagnostics = {
+  progress: Array<{
+    phase: 'before' | 'after' | 'poll';
+    target: number;
+    expectedNext: number;
+    snapshot: PhotoNavigationSnapshot;
+  }>;
+  droppedProgress: number;
+  failure?: string;
+  selectionFailure?: { index: number; snapshot: SelectedPhotoSnapshot | null; error: string };
+};
+
+async function navigatePhotoToPosition(
+  page: Page,
+  target: number,
+  total: number,
+  diagnostics?: PhotoNavigationDiagnostics
+) {
+  const moves: Array<{ from: number; to: number; direction: 'Next' | 'Previous' }> = [];
+  const record = (
+    phase: 'before' | 'after' | 'poll',
+    expectedNext: number,
+    snapshot: PhotoNavigationSnapshot
+  ) => {
+    if (!diagnostics) {
+      return;
+    }
+    if (diagnostics.progress.length >= 128) {
+      diagnostics.progress.shift();
+      diagnostics.droppedProgress += 1;
+    }
+    diagnostics.progress.push({ phase, target, expectedNext, snapshot });
+  };
+  for (let attempt = 0; attempt < total * 3; attempt++) {
+    const before = await readPhotoNavigationSnapshot(page);
+    assert(before.currentIndex !== null, 'Photo toolbar has no current index');
+    const plan = planPhotoAdjacentMove(before.currentIndex, before.focusedIndex, target, total);
+    if (!plan) {
+      return moves;
+    }
+    record('before', plan.nextIndex, before);
+    try {
+      await page
+        .locator(
+          `[data-xeg-gallery-container] [data-gallery-element="toolbar"] button[aria-label="${plan.direction}"]`
+        )
+        .click({ timeout: 10_000 });
+      let after = await readPhotoNavigationSnapshot(page);
+      record('after', plan.nextIndex, after);
+      const deadline = Date.now() + 10_000;
+      while (after.currentIndex !== plan.nextIndex && Date.now() < deadline) {
+        await new Promise((done) => setTimeout(done, 100));
+        after = await readPhotoNavigationSnapshot(page);
+        record('poll', plan.nextIndex, after);
+      }
+      assert.equal(
+        after.currentIndex,
+        plan.nextIndex,
+        `Photo ${plan.direction} did not reach displayed-adjacent index`
+      );
+      moves.push({ from: plan.displayedIndex, to: plan.nextIndex, direction: plan.direction });
+    } catch (error) {
+      if (diagnostics) {
+        diagnostics.failure = error instanceof Error ? error.message.slice(0, 240) : String(error);
+      }
+      throw error;
+    }
+  }
+  const failure = `Photo navigation exceeded ${total * 3} bounded moves to ${target}`;
+  if (diagnostics) {
+    diagnostics.failure = failure;
+  }
+  throw new Error(failure);
+}
+
+async function armPhotoScrollTrace(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const owner = window as Window & {
+      __xegPhotoBoundaryTrace?: {
+        events: Array<Record<string, string | number | boolean | null>>;
+        dropped: number;
+        listener: (event: Event) => void;
+      };
+    };
+    if (
+      owner.__xegPhotoBoundaryTrace ||
+      document.documentElement.hasAttribute('data-xeg-scroll-trace')
+    ) {
+      throw new Error('Photo scroll trace already owned');
+    }
+    const state = {
+      events: [] as Array<Record<string, string | number | boolean | null>>,
+      dropped: 0,
+      listener: (_event: Event) => {},
+    };
+    state.listener = (event: Event) => {
+      if (
+        !(event instanceof CustomEvent) ||
+        typeof event.detail !== 'string' ||
+        event.detail.length > 2048
+      ) {
+        state.dropped += 1;
+        return;
+      }
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(event.detail);
+      } catch {
+        state.dropped += 1;
+        return;
+      }
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        state.dropped += 1;
+        return;
+      }
+      const input = parsed as Record<string, unknown>;
+      const entry: Record<string, string | number | boolean | null> = { atEpochMs: Date.now() };
+      for (const key of [
+        'event',
+        'at',
+        'decision',
+        'reason',
+        'visible',
+        'userAt',
+        'programmaticAt',
+        'index',
+        'currentIndex',
+        'focusedIndex',
+      ]) {
+        const value = input[key];
+        if (
+          value === null ||
+          typeof value === 'number' ||
+          typeof value === 'boolean' ||
+          (typeof value === 'string' && value.length <= 80)
+        ) {
+          entry[key] = value;
+        }
+      }
+      if (state.events.length >= 64) {
+        state.dropped += 1;
+        return;
+      }
+      state.events.push(entry);
+    };
+    owner.__xegPhotoBoundaryTrace = state;
+    window.addEventListener('xeg:gallery-scroll-trace', state.listener);
+    document.documentElement.setAttribute('data-xeg-scroll-trace', '');
+  });
+}
+
+async function stopPhotoScrollTrace(page: Page) {
+  return page.evaluate(() => {
+    const owner = window as Window & {
+      __xegPhotoBoundaryTrace?: {
+        events: Array<Record<string, string | number | boolean | null>>;
+        dropped: number;
+        listener: (event: Event) => void;
+      };
+    };
+    const state = owner.__xegPhotoBoundaryTrace;
+    if (!state) {
+      throw new Error('Photo scroll trace owner is missing');
+    }
+    window.removeEventListener('xeg:gallery-scroll-trace', state.listener);
+    document.documentElement.removeAttribute('data-xeg-scroll-trace');
+    delete owner.__xegPhotoBoundaryTrace;
+    return { events: state.events, dropped: state.dropped };
+  });
+}
+
+export async function observePhotoGallery(page: Page, expectedCount: number) {
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  const snapshot = () =>
+    gallery.evaluate((element) => {
+      const toolbar = element.querySelector('[data-gallery-element="toolbar"]');
+      const counter = toolbar?.querySelector(
+        '#xeg-toolbar-counter[data-gallery-element="position"]'
+      );
+      const total = Number(counter?.getAttribute('data-total'));
+      const currentIndex = Number(toolbar?.getAttribute('data-current-index'));
+      const entries = [...element.querySelectorAll('[data-gallery-element="item"]')].map(
+        (item) => ({
+          index: Number(item.getAttribute('data-index')),
+          mediaId: item.getAttribute('data-media-id') ?? '',
+          displayUrl: item.getAttribute('data-media-display-url') ?? '',
+        })
+      );
+      return { total, currentIndex, entries };
+    });
+  const first = await snapshot();
+  assert.equal(first.total, expectedCount, 'Gallery total differs from declared owner counts');
+  assert(
+    Number.isSafeInteger(first.currentIndex) &&
+      first.currentIndex >= 0 &&
+      first.currentIndex < expectedCount
+  );
+  const observed = new Map(first.entries.map((entry) => [entry.index, entry]));
+  const navigate = async (index: number) => {
+    await navigatePhotoToPosition(page, index, expectedCount);
+    const selected = (await snapshot()).entries.filter((entry) => entry.index === index);
+    assert.equal(selected.length, 1, `Selected gallery position ${index} has no unique media`);
+    observed.set(index, selected[0]!);
+  };
+  if (observed.size !== expectedCount) {
+    for (let index = 0; index < expectedCount; index++) {
+      await navigate(index);
+    }
+  }
+  return {
+    total: first.total,
+    initialIndex: first.currentIndex,
+    mountedCount: first.entries.length,
+    entries: [...observed.values()].sort((a, b) => a.index - b.index),
+    truncated: observed.size !== expectedCount,
+  };
+}
+
+async function waitForVerifiedPhoto(
+  page: Page,
+  item: VerifiedPhoto,
+  total: number,
+  diagnostics?: PhotoNavigationDiagnostics
+): Promise<SelectedPhotoSnapshot> {
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  let selected: SelectedPhotoSnapshot | null = null;
+  let lastFailure: unknown = new Error(`Selected photo ${item.index} did not settle`);
+  const deadline = Date.now() + 10_000;
+  do {
+    selected = await gallery.evaluate(inspectSelectedPhotoDocument);
+    try {
+      verifySelectedPhoto(item, total, selected);
+      assert(selected);
+      return selected;
+    } catch (error) {
+      lastFailure = error;
+    }
+    await new Promise((done) => setTimeout(done, 100));
+  } while (Date.now() < deadline);
+  if (diagnostics) {
+    diagnostics.selectionFailure = {
+      index: item.index,
+      snapshot: selected,
+      error: lastFailure instanceof Error ? lastFailure.message.slice(0, 240) : String(lastFailure),
+    };
+  }
+  throw lastFailure;
+}
+
+export async function verifyBoundaryPhotoSelections(
+  page: Page,
+  expected: readonly VerifiedPhoto[],
+  diagnostics?: PhotoNavigationDiagnostics
+) {
+  assert(expected.length === 20 || expected.length === 40);
+  const visits: Array<SelectedPhotoSnapshot & { ownerId: string; ordinal: number }> = [];
+  const moves: Array<{ from: number; to: number; direction: 'Next' | 'Previous' }> = [];
+  for (const index of requiredPhotoPositions(expected.length as 20 | 40)) {
+    moves.push(...(await navigatePhotoToPosition(page, index, expected.length, diagnostics)));
+    const item = expected[index]!;
+    const selected = await waitForVerifiedPhoto(page, item, expected.length, diagnostics);
+    visits.push({ ...selected, ownerId: item.owner.statusId, ordinal: item.attachmentOrdinal });
+  }
+  if (expected.length === 40) {
+    assert(
+      moves.some((move) => move.from === 19 && move.to === 20 && move.direction === 'Next'),
+      'Requested-owner transition 19 to 20 was not navigated'
+    );
+  }
+  return { visits, moves };
+}
+
+export type PhotoManagerApiObserver = (
+  page: Page,
+  requestedId: string,
+  capture: (response: { url: string; finalUrl: string; status: number; bodyText: string }) => void
+) => Promise<{
+  snapshot(): Record<string, unknown> & { errors: readonly string[] };
+  stop(): Promise<void>;
+}>;
+
+/** Freeze metadata evidence only after the owned callback queue has drained. */
+export async function finishManagerPhotoApiCapture(
+  trace: Awaited<ReturnType<PhotoManagerApiObserver>>,
+  deadline: number,
+  reconcile: () => Promise<void>
+): Promise<ReturnType<typeof trace.snapshot>> {
+  while (Date.now() < deadline) {
+    const snapshot = trace.snapshot();
+    if (
+      snapshot.errors.length > 0 ||
+      (Array.isArray(snapshot.responses) && snapshot.responses.length > 0)
+    ) {
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  await trace.stop();
+  await reconcile();
+  const snapshot = trace.snapshot();
+  assert.equal(snapshot.errors.length, 0, 'Installed GM API trace failed');
+  assert(
+    Array.isArray(snapshot.responses) && snapshot.responses.length > 0,
+    'No source-bound GM API callback was observed'
+  );
+  return snapshot;
+}
+
+/** A photo-only installed-distribution route; separate from full actual-site acceptance. */
+export async function runLivePhotoCollection({
+  context,
+  extensionId,
+  contract,
+  downloads,
+  output,
+  managerObserver = null,
+  managerApiObserver = null,
+  fixture = null,
+}: {
+  context: BrowserContext;
+  extensionId: string;
+  contract: PhotoCollectionContract;
+  downloads: string;
+  output: string;
+  managerApiObserver?: PhotoManagerApiObserver | null;
+  managerObserver?: {
+    snapshot(): number;
+    beginsSince(since: number): Array<{ guid: string; url: string; suggestedFilename: string }>;
+    flush(): Promise<void>;
+    waitForCompletion(
+      since: number,
+      ...expectedNames: string[]
+    ): Promise<{
+      guid: string;
+      url: string;
+      suggestedFilename: string;
+      receivedBytes: number;
+      filePath?: string | null;
+    }>;
+  } | null;
+  fixture?: {
+    originals: ReadonlyMap<string, Buffer>;
+    receiptFile: string;
+    retainedPrefix: string;
+    scope: string;
+    observation?: 'dom';
+    providerEvidence?: { snapshot(): readonly unknown[]; bodies: ReadonlyMap<string, Buffer> };
+    nativeDocuments?: ReadonlyMap<string, string>;
+    nativeSnapshot?: () => DomNativeSnapshot;
+    transportProbeSnapshot?: () => unknown;
+  } | null;
+}) {
+  assert(
+    !contract.transportProbe || (fixture && !managerObserver),
+    'Probe needs owned extension fixture'
+  );
+  assert(
+    !contract.sourceKnownOnly || fixture?.nativeDocuments,
+    'Source-known mode needs native documents'
+  );
+  assert(
+    !managerApiObserver || managerObserver,
+    'GM API observation requires an owned manager installation'
+  );
+  assert(
+    !fixture?.providerEvidence || managerObserver,
+    'Server API evidence is only admitted for owned manager fixtures'
+  );
+  const receipt: Record<string, unknown> = {
+    status: 'failed',
+    startedAt: new Date().toISOString(),
+    scope:
+      fixture?.scope ??
+      (managerObserver
+        ? 'installed manager userscript public photo collection and native single/ZIP bytes only'
+        : 'installed extension public photo collection and native single/ZIP bytes only'),
+    requested: contract.requested.statusId,
+    directQuote: contract.directQuote?.statusId ?? null,
+    visits: [],
+  };
+  const visits: Record<string, unknown>[] = [];
+  receipt.visits = visits;
+  const extensionPage = await context.newPage();
+  let retainedTotal = 0;
+  const failedVisits: Array<{ ownerId: string; error: string }> = [];
+  try {
+    await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
+    for (const owner of contract.transportProbe
+      ? [contract.directQuote]
+      : [contract.directQuote, contract.requested]) {
+      if (!owner) {
+        continue;
+      }
+      const target =
+        owner.statusId === contract.requested.statusId
+          ? contract
+          : { requested: owner, directQuote: null, expected: contract.expected.slice(0, 20) };
+      const serverEventStart = fixture?.providerEvidence?.snapshot().length ?? 0;
+      const browserVisitSince = managerObserver?.snapshot() ?? 0;
+      const page = await context.newPage();
+      let transportNetwork: Awaited<ReturnType<typeof observePhotoTransportNetwork>> | null = null;
+      let photoTraceArmed = false;
+      let boundaryDiagnostics: PhotoNavigationDiagnostics | undefined;
+      const visit: Record<string, unknown> = {
+        statusId: owner.statusId,
+        status: 'failed',
+        startedAt: new Date().toISOString(),
+      };
+      visits.push(visit);
+      const completedBrowserDownloads = new Set<string>();
+      let managerApiTrace: Awaited<ReturnType<PhotoManagerApiObserver>> | null = null;
+      const productErrors: string[] = [];
+      const pageErrors: string[] = [];
+      const sourceRequestFailures: Array<Record<string, unknown>> = [];
+      const sourceHttpNonSuccess: Array<Record<string, unknown>> = [];
+      visit.sourceRequestFailures = sourceRequestFailures;
+      visit.sourceHttpNonSuccess = sourceHttpNonSuccess;
+      const isExpectedSource = (source: URL) =>
+        source.hostname === 'pbs.twimg.com' &&
+        source.pathname.startsWith('/media/') &&
+        target.expected.some((item) => item.sourceKey === stem(source.href));
+      const onRequestFailed = (request: Request) => {
+        const source = new URL(request.url());
+        if (!isExpectedSource(source)) {
+          return;
+        }
+        if (sourceRequestFailures.length >= 40) {
+          visit.sourceRequestFailureOverflow = true;
+          return;
+        }
+        sourceRequestFailures.push({
+          path: source.pathname.slice(0, 160),
+          format: source.searchParams.get('format')?.slice(0, 20) ?? null,
+          name: source.searchParams.get('name')?.slice(0, 20) ?? null,
+          method: request.method(),
+          resourceType: request.resourceType(),
+          error: request.failure()?.errorText.slice(0, 240) ?? null,
+        });
+      };
+      context.on('requestfailed', onRequestFailed);
+      visit.productErrors = productErrors;
+      visit.pageErrors = pageErrors;
+      page.on('console', (message) => {
+        if (
+          message.type() === 'error' &&
+          (message.text().startsWith('[XEG]') ||
+            message.location().url.startsWith(`chrome-extension://${extensionId}/`))
+        ) {
+          if (productErrors.length < 20) {
+            productErrors.push(message.text().slice(0, 240));
+          } else {
+            visit.productErrorOverflow = true;
+          }
+        }
+      });
+      page.on('pageerror', (error) => {
+        if (pageErrors.length < 20) {
+          pageErrors.push(error.message.slice(0, 240));
+        } else {
+          visit.pageErrorOverflow = true;
+        }
+      });
+      const retain = async (kind: 'zip' | 'single', bytes: Buffer) => {
+        retainedTotal += bytes.length;
+        assert(
+          retainedTotal <= 64 * 1024 * 1024,
+          'Owned photo evidence exceeds flat-stage transfer budget'
+        );
+        const name = `${fixture?.retainedPrefix ?? 'photo-collection'}-${owner.statusId}-${kind}.bin`;
+        const path = join(output, name);
+        await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
+        const retained = await readFile(path);
+        assert(retained.equals(bytes), 'Retained native file copy differs');
+        return {
+          file: name,
+          bytes: bytes.length,
+          sha256: createHash('sha256').update(bytes).digest('hex'),
+        };
+      };
+      const observations: PhotoProviderTrace[] = [];
+      const providerStatuses: Array<{ requestedId: string | null; status: number }> = [];
+      let providerCaptureClosed = false;
+      const pending = new Set<Promise<void>>();
+      const captureErrors: unknown[] = [];
+      let overflow = false;
+      let admittedProviderResponses = 0;
+      const providerChannels: Array<Record<string, unknown>> = [];
+      visit.providerChannels = providerChannels;
+      visit.apiObservationChannel = 'owned-browser-context (frame and service-worker responses)';
+      const onResponse = (response: Response) => {
+        const source = new URL(response.url());
+        if (isExpectedSource(source) && response.status() >= 400) {
+          if (sourceHttpNonSuccess.length >= 40) {
+            visit.sourceHttpObservationOverflow = true;
+          } else {
+            sourceHttpNonSuccess.push({
+              path: source.pathname.slice(0, 160),
+              format: source.searchParams.get('format')?.slice(0, 20) ?? null,
+              name: source.searchParams.get('name')?.slice(0, 20) ?? null,
+              status: response.status(),
+            });
+          }
+        }
+        if (
+          providerCaptureClosed ||
+          !photoProviderRequestMatches(source, target.requested.statusId)
+        ) {
+          return;
+        }
+        const requestedId = target.requested.statusId;
+        if (admittedProviderResponses >= 12) {
+          overflow = true;
+          return;
+        }
+        admittedProviderResponses += 1;
+        const request = response.request();
+        const worker = request.serviceWorker();
+        let producerOrigin: string | null = null;
+        try {
+          const producer = new URL(worker ? worker.url() : request.frame().url());
+          producerOrigin =
+            producer.protocol === 'chrome-extension:'
+              ? `chrome-extension://${producer.host}`
+              : producer.origin;
+        } catch {
+          /* Keep unavailable producer origin explicit. */
+        }
+        providerChannels.push({
+          requestedId,
+          observedAt: new Date().toISOString(),
+          status: response.status(),
+          kind: worker ? 'service-worker' : 'frame',
+          origin: producerOrigin,
+        });
+        const capture = (async () => {
+          const length = Number(response.headers()['content-length']);
+          assert(
+            !Number.isFinite(length) || length <= 2_000_000,
+            'Provider response exceeds bounded trace'
+          );
+          const bytes = await response.body();
+          assert(bytes.length <= 2_000_000, 'Provider response exceeds bounded trace');
+          const variables: unknown = JSON.parse(
+            new URL(response.url()).searchParams.get('variables') ?? '{}'
+          );
+          const requestedId =
+            variables && typeof variables === 'object' && 'tweetId' in variables
+              ? String(variables.tweetId)
+              : null;
+          providerStatuses.push({ requestedId, status: response.status() });
+          const observation = summarizeSuccessfulPhotoProviderResponse(
+            response.url(),
+            response.status(),
+            bytes.toString('utf8')
+          );
+          if (observation) {
+            observations.push(observation);
+          }
+        })().catch((error: unknown) => {
+          captureErrors.push(error);
+        });
+        pending.add(capture);
+        void capture.finally(() => pending.delete(capture));
+      };
+      context.on('response', onResponse);
+      try {
+        if (contract.transportProbe) {
+          transportNetwork = await observePhotoTransportNetwork(
+            await context.newCDPSession(page),
+            target.expected
+          );
+        }
+        const url = `https://x.com/${owner.handle}/status/${owner.statusId}`;
+        const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+        assert.equal(response?.status(), 200, 'Public post did not return HTTP 200');
+        if (contract.sourceKnownOnly) {
+          assert(response, 'Source-known native document has no client response');
+          const expectedHtml = fixture?.nativeDocuments?.get(url);
+          assert(expectedHtml, 'Source-known document is not declared');
+          const expectedBytes = Buffer.from(expectedHtml);
+          assert(expectedBytes.length <= 256 * 1024, 'Source-known document exceeds native bound');
+          const actualBytes = await response.body();
+          await response.finished();
+          assert(actualBytes.equals(expectedBytes), 'Native document client bytes differ');
+          visit.nativeDocument = {
+            host: 'x.com',
+            path: new URL(url).pathname,
+            method: response.request().method(),
+            status: response.status(),
+            bytes: actualBytes.length,
+            sha256: createHash('sha256').update(actualBytes).digest('hex'),
+          };
+        }
+        await page
+          .locator('html[data-xeg-gallery-ready="true"]')
+          .waitFor({ state: 'attached', timeout: 20_000 });
+        if (!fixture) {
+          const cookies = await context.cookies('https://x.com');
+          visit.apiSessionPrerequisites = {
+            csrfCookiePresent: cookies.some(
+              (cookie) => cookie.name === 'ct0' && cookie.value.length > 0
+            ),
+            sessionCookiePresent: cookies.some(
+              (cookie) => cookie.name === 'auth_token' && cookie.value.length > 0
+            ),
+          };
+        }
+        if (managerApiObserver) {
+          managerApiTrace = await managerApiObserver(
+            page,
+            target.requested.statusId,
+            (captured) => {
+              assert(
+                photoProviderRequestMatches(new URL(captured.url), target.requested.statusId),
+                'GM API callback owner/source differs'
+              );
+              assert.equal(captured.finalUrl, captured.url, 'GM API callback redirected');
+              if (admittedProviderResponses >= 12) {
+                overflow = true;
+                return;
+              }
+              admittedProviderResponses += 1;
+              providerStatuses.push({
+                requestedId: target.requested.statusId,
+                status: captured.status,
+              });
+              providerChannels.push({
+                requestedId: target.requested.statusId,
+                observedAt: new Date().toISOString(),
+                status: captured.status,
+                kind: 'source-bound-installed-gm-onload',
+              });
+              visit.apiObservationChannel =
+                'source-bound installed GM onload callback (client response observed)';
+              try {
+                assert(
+                  Buffer.byteLength(captured.bodyText, 'utf8') <= 2_000_000,
+                  'GM provider body exceeded trace bound'
+                );
+                const observation = summarizeSuccessfulPhotoProviderResponse(
+                  captured.url,
+                  captured.status,
+                  captured.bodyText
+                );
+                if (observation) {
+                  observations.push(observation);
+                }
+              } catch {
+                captureErrors.push(
+                  new Error('Observed GM provider response could not be summarized as bounded JSON')
+                );
+              }
+            }
+          );
+        }
+        const domObservation = fixture?.observation === 'dom';
+        if (domObservation && contract.sourceKnownScope === 'dom20') {
+          boundaryDiagnostics = { progress: [], droppedProgress: 0 };
+          visit.boundaryDiagnostics = boundaryDiagnostics;
+          await armPhotoScrollTrace(page);
+          photoTraceArmed = true;
+        }
+        const domTiles = domObservation
+          ? await page
+              .locator('article[data-testid="tweet"] a[href*="/photo/"]:has(img)')
+              .evaluateAll((anchors) =>
+                anchors.map((anchor) => ({
+                  href: (anchor as HTMLAnchorElement).href,
+                  displayUrl: anchor.querySelector('img')?.getAttribute('src') ?? '',
+                }))
+              )
+          : null;
+        if (domObservation) {
+          assert.equal(domTiles?.length, 20, 'DOM fixture did not expose twenty owned tiles');
+          await page.locator('article[data-testid="tweet"] a[href$="/photo/20"] img').click();
+          await page
+            .locator('[data-xeg-gallery-container]')
+            .waitFor({ state: 'attached', timeout: 20_000 });
+        } else {
+          await openCurrentStatusImage(page, url, visit);
+        }
+        let fixtureApiApplied = false;
+        const refreshFixtureApi = () => {
+          const evidence = fixture?.providerEvidence;
+          if (!evidence) {
+            return;
+          }
+          const body = evidence.bodies.get(target.requested.statusId);
+          assert(body, 'Declared fixture API body is absent');
+          const status = domObservation ? 403 : 200;
+          const records = verifyFixtureServerApiResponses(
+            evidence.snapshot().slice(serverEventStart),
+            target.requested.statusId,
+            body,
+            status
+          );
+          if (records.length === 0) {
+            return;
+          }
+          assert(
+            !providerStatuses.some(
+              (item) => item.requestedId === target.requested.statusId && item.status !== status
+            ),
+            'Client and fixture server statuses conflict'
+          );
+          const trace = summarizeTweetResultResponse(
+            `https://x.com/i/api/graphql/owned-fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: target.requested.statusId }))}`,
+            status,
+            JSON.parse(body.toString('utf8')),
+            40
+          );
+          const clientTraces = observations.filter(
+            (item) => item.requestedTweetId === target.requested.statusId
+          );
+          for (const client of clientTraces) {
+            assert.deepEqual(
+              client,
+              trace,
+              'Client and source-known fixture payload summaries conflict'
+            );
+          }
+          visit.fixtureApiServerEvidence = {
+            channel: 'owned-loopback-server-sent',
+            clientPayloadObserved: false,
+            responses: records,
+          };
+          if (fixtureApiApplied) {
+            return;
+          }
+          if (clientTraces.length === 0) {
+            visit.apiObservationChannel =
+              'owned-loopback-server-sent (source-known fixture input; client payload unobserved)';
+            if (trace) {
+              observations.push(trace);
+            }
+          }
+          providerStatuses.push({ requestedId: target.requested.statusId, status });
+          fixtureApiApplied = true;
+        };
+        refreshFixtureApi();
+        const providerDeadline = Date.now() + 10_000;
+        while (
+          !(domObservation
+            ? providerStatuses.some(
+                (entry) => entry.requestedId === target.requested.statusId && entry.status === 403
+              )
+            : observations.some(
+                (entry) =>
+                  entry.requestedTweetId === target.requested.statusId &&
+                  entry.httpStatus === 200 &&
+                  entry.result?.id === target.requested.statusId
+              )) &&
+          Date.now() < providerDeadline
+        ) {
+          await new Promise((done) => setTimeout(done, 100));
+          refreshFixtureApi();
+        }
+        const reconcile = async () => {
+          providerCaptureClosed = true;
+          await Promise.all([...pending]);
+          refreshFixtureApi();
+          visit.apiObservationClosedAt = new Date().toISOString();
+        };
+        if (managerApiTrace) {
+          visit.managerApiClientTrace = await finishManagerPhotoApiCapture(
+            managerApiTrace,
+            providerDeadline,
+            reconcile
+          );
+        } else {
+          await reconcile();
+        }
+        assert.equal(captureErrors.length, 0, 'Provider trace capture failed');
+        assert(!overflow, 'Provider trace exceeded observation budget');
+        if (!domObservation) {
+          assert(
+            providerStatuses.some(
+              (entry) => entry.requestedId === target.requested.statusId && entry.status === 200
+            ),
+            `Requested-owner API did not return HTTP 200; observed statuses: ${
+              providerStatuses
+                .filter((entry) => entry.requestedId === target.requested.statusId)
+                .map((entry) => entry.status)
+                .join(',') || 'none'
+            }`
+          );
+        }
+        if (domObservation) {
+          assert(
+            providerStatuses.some(
+              (entry) => entry.requestedId === target.requested.statusId && entry.status === 403
+            ),
+            'Fresh exact-owner API 403 was not observed'
+          );
+          assert(
+            !providerStatuses.some(
+              (entry) => entry.requestedId === target.requested.statusId && entry.status === 200
+            ),
+            'Successful API response would invalidate the DOM-only fixture'
+          );
+          visit.apiFailure = providerStatuses;
+        }
+        const gallery = await observePhotoGallery(
+          page,
+          target.requested.count + (target.directQuote?.count ?? 0)
+        );
+        const verified = domObservation
+          ? verifyDomPhotoCollection(target, domTiles!, gallery)
+          : verifyPhotoCollection(target, observations, gallery);
+        const clickedSource = domObservation
+          ? verified[19]?.displayStem
+          : (visit.readiness as { target?: { imageSource?: { path?: string } } } | undefined)
+              ?.target?.imageSource?.path;
+        const clickedIndex = domObservation
+          ? 19
+          : Number(
+              (visit.displayedSelection as { currentIndex?: unknown } | undefined)?.currentIndex
+            );
+        assert(
+          Number.isSafeInteger(clickedIndex) && clickedIndex >= 0 && clickedIndex < verified.length
+        );
+        assert(
+          clickedSource &&
+            (domObservation ? clickedSource : stem(`https://pbs.twimg.com${clickedSource}`)) ===
+              verified[clickedIndex]?.displayStem,
+          'Clicked source did not select its pinned gallery item'
+        );
+        assert.equal(
+          gallery.initialIndex,
+          clickedIndex,
+          'Clicked photo selected another gallery index'
+        );
+        visit.clicked = {
+          index: clickedIndex,
+          ownerId: verified[clickedIndex]!.owner.statusId,
+          mediaId: verified[clickedIndex]!.mediaId,
+          providerMediaId: verified[clickedIndex]!.providerMediaId,
+          ordinal: verified[clickedIndex]!.attachmentOrdinal,
+        };
+        visit.collection = {
+          total: gallery.total,
+          mountedCount: gallery.mountedCount,
+          identities: verified.map((item) => ({
+            index: item.index,
+            ownerId: item.owner.statusId,
+            mediaId: item.mediaId,
+            providerMediaId: item.providerMediaId,
+            ordinal: item.attachmentOrdinal,
+            sourceStem: item.displayStem,
+          })),
+        };
+        visit.selectedPositions = await verifyBoundaryPhotoSelections(
+          page,
+          verified,
+          boundaryDiagnostics
+        );
+        if (domObservation) {
+          const details = page.locator(
+            '[data-xeg-gallery-container] [data-gallery-element="source-details"]'
+          );
+          await details.waitFor({ state: 'visible', timeout: 10_000 });
+          const summaryParts = (await details.locator('summary span').allTextContents()).map(
+            (part) => part.trim()
+          );
+          assertDomPhotoSourceDetails(summaryParts, 'verified');
+          const partialBody = (await details.locator('p').first().textContent())?.trim() ?? '';
+          assert.equal(
+            partialBody,
+            'Only currently available media was collected. The post may contain more; bulk download includes only collected items.'
+          );
+          visit.unknownTotal = { summaryParts, partialBody };
+        }
+        const beforeDomSingle = domObservation ? fixture?.nativeSnapshot?.() : null;
+        if (beforeDomSingle) {
+          const eagerWebp = beforeDomSingle.events.filter(
+            (event) =>
+              /^\/media\/XegDom\d{2}\?format=webp&name=orig$/u.test(event.sourceUrl ?? '') &&
+              event.method === 'HEAD'
+          );
+          assert(
+            eagerWebp.length > 0 && new Set(eagerWebp.map((event) => event.sourceUrl)).size <= 4,
+            'DOM eager probe count exceeded its initial budget'
+          );
+          verifyDomNativeProbes({ events: [] }, beforeDomSingle, 19, false);
+          assertDeferredDomOriginalAbsent(beforeDomSingle.events, 12);
+          visit.initialDomProbes = beforeDomSingle.events.filter((event) =>
+            event.sourceUrl?.startsWith('/media/XegDom')
+          );
+        }
+        const toolbar = page.locator(
+          '[data-xeg-gallery-container] [data-gallery-element="toolbar"]'
+        );
+        const references: PhotoOriginalReference[] = [];
+        let referenceTotal = 0;
+        for (const item of verified) {
+          const filename = item.expected.filename;
+          const format = new URL(item.expected.originalUrl).searchParams.get('format');
+          assert(format);
+          const original = fixture
+            ? { bytes: fixture.originals.get(item.expected.originalUrl) }
+            : await fetchBoundedLiveOriginal(item.expected.originalUrl, format);
+          assert(original.bytes, 'Synthetic fixture original is absent');
+          referenceTotal += original.bytes.length;
+          assert(
+            referenceTotal <= 128 * 1024 * 1024,
+            'Independent photo references exceeded budget'
+          );
+          references.push({
+            index: item.index,
+            ownerId: item.owner.statusId,
+            attachmentOrdinal: item.attachmentOrdinal,
+            sourceUrl: item.expected.originalUrl,
+            filename,
+            bytes: original.bytes,
+          });
+        }
+        visit.references = references.map((entry) => ({
+          index: entry.index,
+          ownerId: entry.ownerId,
+          ordinal: entry.attachmentOrdinal,
+          sourceUrl: entry.sourceUrl,
+          filename: entry.filename,
+          bytes: entry.bytes.length,
+          sha256: createHash('sha256').update(entry.bytes).digest('hex'),
+        }));
+        const selectedIndex = domObservation ? 12 : target.directQuote ? 20 : 19;
+        const saveSelected = async () => {
+          const selected = verified[selectedIndex]!;
+          visit.singleNavigationMoves = await navigatePhotoToPosition(
+            page,
+            selectedIndex,
+            verified.length,
+            boundaryDiagnostics
+          );
+          visit.singleSelection = await waitForVerifiedPhoto(
+            page,
+            selected,
+            verified.length,
+            boundaryDiagnostics
+          );
+          const selectedId = await page
+            .locator(
+              `[data-xeg-gallery-container] [data-gallery-element="item"][data-index="${selectedIndex}"]`
+            )
+            .getAttribute('data-media-id');
+          assert.equal(selectedId, selected.mediaId, 'Selected media changed before single save');
+          const sourceDetails = domObservation
+            ? page.locator('[data-xeg-gallery-container] [data-gallery-element="source-details"]')
+            : null;
+          const qualityBefore = sourceDetails
+            ? (await sourceDetails.locator('p').last().textContent())?.trim()
+            : null;
+          if (sourceDetails) {
+            assert.equal(await sourceDetails.getAttribute('data-media-id'), selected.mediaId);
+            const parts = (await sourceDetails.locator('summary span').allTextContents()).map(
+              (part) => part.trim()
+            );
+            assertDomPhotoSourceDetails(parts, 'pending');
+            assert.equal(
+              qualityBefore,
+              'This image has not been checked yet. Saving it or the ZIP will check the original source first.'
+            );
+            visit.deferredSourceDetail = qualityBefore;
+          }
+          const beforeSingle = new Set(
+            (await queryDownloads(extensionPage, extensionId)).map((item) => item.id)
+          );
+          visit.singleSaveAttempt = {
+            index: selectedIndex,
+            mediaId: selected.mediaId,
+            ownerId: selected.owner.statusId,
+            ordinal: selected.attachmentOrdinal,
+          };
+          const cdpSingleSince = managerObserver?.snapshot() ?? 0;
+          await toolbar.locator('button[aria-label="Download"]').click();
+          const singleProgress: Array<{
+            id: number;
+            state: string;
+            bytesReceived: number;
+            totalBytes: number;
+          }> = [];
+          const singleItem = await waitForOwnedDownload(
+            extensionPage,
+            extensionId,
+            beforeSingle,
+            64 * 1024 * 1024,
+            singleProgress
+          );
+          if (!managerObserver) {
+            const nativeSource = await extensionPage.evaluate(
+              async ({ id, extensionId }) => {
+                if (chrome.runtime.id !== extensionId) {
+                  return null;
+                }
+                const matches = await chrome.downloads.search({ id });
+                const item = matches.length === 1 ? matches[0] : null;
+                return item?.id === id && item.byExtensionId === extensionId
+                  ? { url: item.url ?? null, finalUrl: item.finalUrl ?? null }
+                  : null;
+              },
+              { id: singleItem.id, extensionId }
+            );
+            assertExactPhotoNativeSource(nativeSource, references[selectedIndex]!.sourceUrl);
+            visit.extensionSingleSource = nativeSource;
+          } else {
+            const nativeSource = await extensionPage.evaluate(
+              async ({ id, managerId }) => {
+                const matches = await chrome.downloads.search({ id });
+                const item = matches.length === 1 ? matches[0] : null;
+                return item?.id === id && item.byExtensionId === managerId
+                  ? { url: item.url ?? null, finalUrl: item.finalUrl ?? null }
+                  : null;
+              },
+              { id: singleItem.id, managerId: extensionId }
+            );
+            assert(nativeSource?.url, 'Manager single native source is unavailable');
+            assert(
+              nativeSource.url === references[selectedIndex]!.sourceUrl ||
+                nativeSource.url.startsWith('blob:https://x.com/'),
+              'Manager single native URL is not the selected original or owned Blob'
+            );
+            if (nativeSource.url === references[selectedIndex]!.sourceUrl) {
+              assertExactPhotoNativeSource(nativeSource, references[selectedIndex]!.sourceUrl);
+            } else {
+              assert(
+                nativeSource.finalUrl === null || nativeSource.finalUrl === nativeSource.url,
+                'Owned manager Blob redirected to another source'
+              );
+            }
+            visit.managerSingleSource = nativeSource;
+          }
+          const singleBytes = await readOwnedFile(singleItem, downloads, 64 * 1024 * 1024);
+          assert.equal(
+            basename(singleItem.filename),
+            selected.expected.filename,
+            'Single filename differs from pinned owner-local identity'
+          );
+          assert.equal(
+            singleBytes.length,
+            selected.expected.bytes,
+            'Single size differs from pinned original'
+          );
+          assert(
+            singleBytes.equals(references[selectedIndex]!.bytes),
+            'Single bytes differ from independent original'
+          );
+          assert.equal(
+            createHash('sha256').update(singleBytes).digest('hex'),
+            selected.expected.sha256,
+            'Single hash differs from frozen original'
+          );
+          visit.retainedSingle = await retain('single', singleBytes);
+          visit.singleSaved = {
+            nativeId: singleItem.id,
+            index: selectedIndex,
+            ownerId: selected.owner.statusId,
+            ordinal: selected.attachmentOrdinal,
+            filename: selected.expected.filename,
+            bytes: singleBytes.length,
+            sha256: selected.expected.sha256,
+          };
+          if (sourceDetails) {
+            await page.waitForFunction(
+              (previous) => {
+                const details = document.querySelector(
+                  '[data-xeg-gallery-container] [data-gallery-element="source-details"]'
+                );
+                const detail = details?.querySelector('p:last-of-type')?.textContent?.trim();
+                return Boolean(detail && detail !== previous);
+              },
+              qualityBefore,
+              { timeout: 10_000 }
+            );
+            const qualityAfter = (await sourceDetails.locator('p').last().textContent())?.trim();
+            assert.equal(qualityAfter, 'Save source: verified original image from X’s CDN.');
+            assert.equal(await sourceDetails.getAttribute('data-media-id'), selected.mediaId);
+            const parts = (await sourceDetails.locator('summary span').allTextContents()).map(
+              (part) => part.trim()
+            );
+            assertDomPhotoSourceDetails(parts, 'verified');
+            visit.verifiedSourceDetail = qualityAfter;
+          }
+          await managerObserver?.flush();
+          const cdpSingleBegins = managerObserver?.beginsSince(cdpSingleSince) ?? [];
+          assert(
+            cdpSingleBegins.length <= 1,
+            'One manager single save created multiple CDP downloads'
+          );
+          const cdpSingle = cdpSingleBegins.length
+            ? await managerObserver!.waitForCompletion(
+                cdpSingleSince,
+                basename(singleItem.filename)
+              )
+            : null;
+          if (cdpSingle) {
+            completedBrowserDownloads.add(cdpSingle.guid);
+            assert.equal(
+              cdpSingle.receivedBytes,
+              singleBytes.length,
+              'Manager single CDP completion size differs'
+            );
+          }
+          return { singleItem, singleBytes, singleProgress, cdpSingle };
+        };
+        visit.phase = 'single-save';
+        const earlySingle = await saveSelected();
+        if (beforeDomSingle && fixture?.nativeSnapshot) {
+          const afterDomSingle = fixture.nativeSnapshot();
+          verifyDomNativeProbes(beforeDomSingle, afterDomSingle, 12, true);
+          visit.singleDomProbes = afterDomSingle.events.slice(beforeDomSingle.events.length);
+        }
+        if (contract.transportProbe) {
+          const beforeZipPermissions = await queryPhotoNetworkPermissions(page);
+          const beforeZipTransport = fixture?.transportProbeSnapshot?.() ?? null;
+          visit.phase = 'zip-transport-probe';
+          const zipClickStartedAtEpochMs = Date.now();
+          await toolbar
+            .locator(`button[aria-label="Download ${verified.length} shown files as ZIP"]`)
+            .click();
+          const zipClickResolvedAtEpochMs = Date.now();
+          await page.waitForTimeout(5_000);
+          visit.transportProbe = {
+            requested: owner.statusId,
+            zipClicked: true,
+            zipClickStartedAtEpochMs,
+            zipClickResolvedAtEpochMs,
+            beforeZipPermissions,
+            beforeZipTransport,
+            downloadStatus: await toolbar.locator('[data-download-status]').textContent(),
+            afterWindowPermissions: await queryPhotoNetworkPermissions(page),
+            afterWindowTransport: fixture?.transportProbeSnapshot?.() ?? null,
+          };
+          visit.transportProbeNativePending = await settlePhotoTransportProbeDownloads(
+            () => queryDownloads(extensionPage, extensionId),
+            (ids) =>
+              extensionPage.evaluate(async (owned: number[]) => {
+                for (const id of owned) {
+                  await chrome.downloads.cancel(id);
+                }
+              }, ids)
+          );
+          visit.status = 'diagnostic';
+          continue;
+        }
+        const beforeZip = managerObserver
+          ? null
+          : new Set((await queryDownloads(extensionPage, extensionId)).map((item) => item.id));
+        visit.phase = 'zip-save';
+        const cdpZipSince = managerObserver?.snapshot() ?? 0;
+        await toolbar
+          .locator(`button[aria-label="Download ${verified.length} shown files as ZIP"]`)
+          .click();
+        const zipProgress: Array<{
+          id: number;
+          state: string;
+          bytesReceived: number;
+          totalBytes: number;
+        }> = [];
+        const cdpZip = managerObserver
+          ? await managerObserver.waitForCompletion(cdpZipSince)
+          : null;
+        if (cdpZip) {
+          completedBrowserDownloads.add(cdpZip.guid);
+        }
+        const zipItem = beforeZip
+          ? await waitForOwnedDownload(
+              extensionPage,
+              extensionId,
+              beforeZip,
+              128 * 1024 * 1024,
+              zipProgress
+            )
+          : null;
+        const zipPath = cdpZip
+          ? (cdpZip.filePath ?? join(downloads, cdpZip.suggestedFilename))
+          : zipItem?.filename;
+        assert(zipPath, 'Native ZIP file path is unavailable');
+        const zipBytes = zipItem
+          ? await readOwnedFile(zipItem, downloads, 128 * 1024 * 1024)
+          : (await readOwnedNativeBytes(downloads, zipPath, 128 * 1024 * 1024)).bytes;
+        visit.retainedZip = await retain('zip', zipBytes);
+        if (cdpZip) {
+          assert.equal(
+            cdpZip.receivedBytes,
+            zipBytes.length,
+            'Manager ZIP CDP completion size differs'
+          );
+          assert(
+            cdpZip.url.startsWith('blob:https://x.com/'),
+            'Manager ZIP did not use an owned page Blob'
+          );
+        }
+        const archive = inspectLiveStoredZip(zipBytes, verified.length, 40);
+        if (domObservation && fixture?.nativeSnapshot) {
+          const afterDomZip = fixture.nativeSnapshot();
+          for (let ordinal = 0; ordinal < 20; ordinal++) {
+            verifyDomNativeProbes({ events: [] }, afterDomZip, ordinal, true);
+          }
+          visit.zipDomProbePeak = afterDomZip.domProbePeak;
+        }
+        for (const item of verified) {
+          assert.equal(
+            archive.entries.filter((entry) => entry.filename === item.expected.filename).length,
+            1,
+            'ZIP lacks one pinned owner-local filename'
+          );
+        }
+        if (domObservation) {
+          const outcome = page.locator(
+            '[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]'
+          );
+          await outcome.waitFor({ state: 'visible', timeout: 10_000 });
+          await page.waitForFunction(
+            () =>
+              document
+                .querySelector('[data-gallery-element="bulk-download-outcome"] strong')
+                ?.textContent?.trim() === 'ZIP handed off to browser',
+            undefined,
+            { timeout: 10_000 }
+          );
+          const title = (await outcome.locator('strong').textContent())?.trim() ?? '';
+          const paragraphs = (await outcome.locator('p').allTextContents()).map((text) =>
+            text.trim()
+          );
+          const partialBody = (visit.unknownTotal as { partialBody: string }).partialBody;
+          assertDomPhotoZipOutcome(title, paragraphs, partialBody);
+          assert.equal(
+            await outcome
+              .getByRole('button', { name: /Download [0-9]+ missing items as a separate ZIP/u })
+              .count(),
+            0
+          );
+          visit.unknownTotalZip = { title, paragraphs };
+        }
+        const { singleItem, singleBytes, singleProgress, cdpSingle } = earlySingle;
+        assert(
+          singleBytes.length + referenceTotal + zipBytes.length <= 128 * 1024 * 1024,
+          'Photo proof exceeded retained byte budget'
+        );
+        const proof = verifyPhotoCollectionDownloads(
+          verified,
+          references,
+          selectedIndex,
+          {
+            nativeId: singleItem.id,
+            state: 'complete',
+            ownedPath: singleItem.filename,
+            filename: basename(singleItem.filename),
+            bytesReceived: singleItem.bytesReceived,
+            bytes: singleBytes,
+          },
+          {
+            nativeId: zipItem?.id ?? cdpZip!.guid,
+            state: 'complete',
+            ownedPath: zipPath,
+            filename: basename(zipPath),
+            bytesReceived: zipItem?.bytesReceived ?? cdpZip!.receivedBytes,
+            bytes: zipBytes,
+          }
+        );
+        visit.downloads = {
+          proof,
+          zipNativeId: zipItem?.id ?? cdpZip!.guid,
+          singleNativeId: singleItem.id,
+          managerZipGuid: cdpZip?.guid ?? null,
+          managerSingleGuid: cdpSingle?.guid ?? null,
+          retainedZip: visit.retainedZip,
+          retainedSingle: visit.retainedSingle,
+          zipProgress,
+          singleProgress,
+        };
+        assert(
+          productErrors.length === 0 &&
+            pageErrors.length === 0 &&
+            !visit.productErrorOverflow &&
+            !visit.pageErrorOverflow &&
+            !visit.sourceRequestFailureOverflow &&
+            !visit.sourceHttpObservationOverflow,
+          'Photo collection introduced product/page errors or lost source diagnostics'
+        );
+        await page.keyboard.press('Escape');
+        await page
+          .locator('[data-xeg-gallery-container]')
+          .waitFor({ state: 'detached', timeout: 10_000 });
+        visit.status = 'observed';
+      } catch (error) {
+        visit.operationError =
+          error instanceof Error ? error.message.slice(0, 1000) : String(error).slice(0, 1000);
+        if (contract.sourceKnownScope === 'dom20' && fixture?.observation === 'dom') {
+          const screenshot = 'installed-dom-photo-failure.png';
+          try {
+            await page.screenshot({ path: join(output, screenshot), timeout: 10_000 });
+            visit.failureScreenshot = screenshot;
+          } catch {
+            visit.failureScreenshotError = true;
+          }
+        }
+        visit.ownedDownloadsAtFailure = await queryDownloads(extensionPage, extensionId)
+          .then((items) =>
+            items.slice(-20).map(({ id, state, bytesReceived, totalBytes, exists, error }) => ({
+              id,
+              state,
+              bytesReceived,
+              totalBytes,
+              exists,
+              error,
+            }))
+          )
+          .catch(() => null);
+        visit.selectionAtFailure = await page
+          .evaluate(() => {
+            const gallery = document.querySelector('[data-xeg-gallery-container]');
+            const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+            const counter = gallery?.querySelector('#xeg-toolbar-counter');
+            const index = toolbar?.getAttribute('data-current-index');
+            const item = gallery?.querySelector(
+              `[data-gallery-element="item"][data-index="${index}"]`
+            );
+            const image = item?.querySelector('img');
+            let source: Record<string, unknown> | null = null;
+            if (image instanceof HTMLImageElement) {
+              try {
+                const url = new URL(image.currentSrc || image.src);
+                source = {
+                  protocol: url.protocol,
+                  host: url.hostname,
+                  path:
+                    url.protocol === 'https:' && url.hostname === 'pbs.twimg.com'
+                      ? url.pathname.slice(0, 160)
+                      : null,
+                  format: url.searchParams.get('format')?.slice(0, 20) ?? null,
+                  name: url.searchParams.get('name')?.slice(0, 20) ?? null,
+                };
+              } catch {
+                source = { invalid: true };
+              }
+            }
+            return {
+              downloadStatus:
+                toolbar
+                  ?.querySelector('[data-download-status]')
+                  ?.getAttribute('data-download-status') ?? null,
+              downloadStatusText:
+                toolbar
+                  ?.querySelector('[data-download-status]')
+                  ?.textContent?.trim()
+                  .slice(0, 300) ?? null,
+              downloadButtonBusy:
+                toolbar
+                  ?.querySelector('button[aria-label="Download"]')
+                  ?.getAttribute('aria-busy') ?? null,
+              total: counter?.getAttribute('data-total') ?? null,
+              position: counter?.getAttribute('data-position') ?? null,
+              currentIndex: index ?? null,
+              focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+              counterCurrentIndex: counter?.getAttribute('data-current-index') ?? null,
+              counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+              mediaId: item?.getAttribute('data-media-id') ?? null,
+              recoverySummary: [
+                ...(gallery?.querySelectorAll(
+                  '[data-gallery-element="source-details"] summary span'
+                ) ?? []),
+              ]
+                .slice(0, 3)
+                .map((part) => part.textContent?.trim().slice(0, 240) ?? ''),
+              loaded: item?.getAttribute('data-media-loaded') ?? null,
+              active: item?.getAttribute('data-media-active') ?? null,
+              focused: item?.getAttribute('data-media-focused') ?? null,
+              complete: image instanceof HTMLImageElement ? image.complete : null,
+              naturalWidth: image instanceof HTMLImageElement ? image.naturalWidth : null,
+              source,
+            };
+          })
+          .catch(() => null);
+        failedVisits.push({ ownerId: owner.statusId, error: String(visit.operationError) });
+        if (!fixture) {
+          throw error;
+        }
+      } finally {
+        try {
+          if (managerApiTrace) {
+            try {
+              await managerApiTrace.stop();
+            } finally {
+              visit.managerApiClientTrace = managerApiTrace.snapshot();
+            }
+          }
+        } finally {
+          context.off('requestfailed', onRequestFailed);
+          context.off('response', onResponse);
+          if (transportNetwork) {
+            try {
+              await transportNetwork.stop();
+            } catch {
+              visit.status = 'failed';
+              visit.transportProbeNetworkDetachError = true;
+              visit.operationError = 'Transport probe network observer did not detach';
+            } finally {
+              visit.transportProbeNetwork = transportNetwork.snapshot();
+            }
+          }
+          if (photoTraceArmed) {
+            try {
+              visit.scrollTrace = await stopPhotoScrollTrace(page);
+            } catch {
+              visit.status = 'failed';
+              visit.scrollTraceCleanupError = true;
+              visit.operationError = 'Photo scroll trace did not detach';
+            }
+          }
+          await page.close();
+          visit.pageClosed = true;
+          visit.finishedAt = new Date().toISOString();
+          if (contract.transportProbe) {
+            try {
+              await settlePhotoTransportProbeDownloads(
+                () => queryDownloads(extensionPage, extensionId),
+                null
+              );
+              visit.transportProbeTerminalAfterPageClose = true;
+            } catch (error) {
+              visit.status = 'failed';
+              visit.operationError = error instanceof Error ? error.message : String(error);
+            }
+          }
+        }
+      }
+      if (fixture && visit.status !== 'observed') {
+        if (managerObserver) {
+          await managerObserver.flush();
+          const uncertain = managerObserver
+            .beginsSince(browserVisitSince)
+            .filter((download) => !completedBrowserDownloads.has(download.guid));
+          assert.equal(
+            uncertain.length,
+            0,
+            'Browser-owned download terminal state is unverified after failed visit'
+          );
+        }
+        const owned = await queryDownloads(extensionPage, extensionId);
+        assert(
+          !owned.some((item) => item.state === 'in_progress'),
+          'Owned native transfer is still pending after failed visit'
+        );
+      }
+    }
+    const failed = failedVisits.length > 0 || visits.some((visit) => visit.status === 'failed');
+    receipt.status = failed ? 'failed' : contract.transportProbe ? 'diagnostic' : 'observed';
+    if (failed) {
+      receipt.error = visits
+        .filter((visit) => visit.status === 'failed')
+        .map((visit) => ({ ownerId: visit.statusId, error: visit.operationError }));
+    }
+  } catch (error) {
+    receipt.error = error instanceof Error ? error.message : String(error);
+  } finally {
+    try {
+      await extensionPage.close();
+      receipt.extensionPageClosed = true;
+      receipt.finishedAt = new Date().toISOString();
+    } catch (error) {
+      receipt.status = 'failed';
+      receipt.extensionPageCloseError = error instanceof Error ? error.message : String(error);
+    }
+    await writeFile(
+      join(output, fixture?.receiptFile ?? 'live-photo-collection.json'),
+      JSON.stringify(receipt, null, 2),
+      {
+        flag: 'wx',
+        mode: 0o600,
+      }
+    );
+  }
+  return receipt;
+}

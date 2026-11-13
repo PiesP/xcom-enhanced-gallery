@@ -1237,7 +1237,7 @@ export async function taskOwnedDownloadsDocument(
     }));
 }
 
-async function queryDownloads(
+export async function queryDownloads(
   extensionPage: Page,
   expectedExtensionId: string
 ): Promise<DownloadItem[]> {
@@ -1326,7 +1326,7 @@ export async function waitForOwnedDownload(
   throw new Error('Timed out waiting for one new extension-owned download with byExtensionId');
 }
 
-async function readOwnedFile(
+export async function readOwnedFile(
   item: DownloadItem,
   downloads: string,
   limit: number
@@ -1367,13 +1367,17 @@ async function readOwnedFile(
 }
 
 /** Extract only bounded stored local entries; the existing verifier checks central order and CRCs. */
-export function inspectLiveStoredZip(bytes: Buffer, expectedCount: number) {
+export function inspectLiveStoredZip(bytes: Buffer, expectedCount: number, maxMedia = MAX_MEDIA) {
   assert(
     bytes.length > 22 && bytes.length <= MAX_RETAINED_BYTES,
     'ZIP is outside retained-file bounds'
   );
   assert(
-    expectedCount >= 2 && expectedCount <= MAX_MEDIA,
+    Number.isSafeInteger(maxMedia) &&
+      maxMedia >= MAX_MEDIA &&
+      maxMedia <= 40 &&
+      expectedCount >= 2 &&
+      expectedCount <= maxMedia,
     'Expected ZIP item count is out of bounds'
   );
   const entries: Array<{ filename: string; bytes: Buffer }> = [];

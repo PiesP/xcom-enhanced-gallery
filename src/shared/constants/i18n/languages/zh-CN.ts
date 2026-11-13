@@ -165,13 +165,18 @@ export const zhCn: LanguageStrings = {
     gal: {
       sourceDetails: {
         title: '媒体和保存详情',
-        shown: '显示 {count} 项 · 仅从此媒体块恢复',
+        shown: '已收集 {count} 项 · 帖子中可能还有更多',
+        knownSubset: '已收集 {count} 个受支持项目 · 部分媒体无法保存',
         cdnOriginal: '保存来源：X 的 CDN 上已验证的原始图片。',
         bestMp4: '保存来源：X 提供的最佳 MP4。',
         observed: '视频保存画质未经验证',
         observedDetail: '保存使用观察到的视频来源；播放可能使用另一版本。',
         unavailable: '无法保存原始图片',
         unavailableDetail: '未找到已验证的原始图片。无法保存此项，也不会改用低画质版本。',
+        pending: '保存时将检查原始图片',
+        pendingDetail: '此图片尚未检查。单独保存或保存 ZIP 前会先验证原始来源。',
+        retryable: '未能确认原始图片',
+        retryableDetail: '来源检查未能确认原图是否存在。可以重试保存；不会使用低画质替代。',
       },
       entryFailureNext: '在 X 的帖子中查看此媒体。',
       downloadFailureNext: '在浏览器下载列表中检查保存状态，或返回 X 上的帖子。',
@@ -182,11 +187,15 @@ export const zhCn: LanguageStrings = {
       },
       observedQuality: {
         title: '恢复来源的质量',
-        body: '无法确认部分项目的来源质量。未确认原始来源的图像无法保存；恢复的视频使用页面显示的来源保存。',
+        body: '无法确认部分项目的来源质量。图片保存前需要验证原始来源；恢复的视频使用页面显示的来源保存。',
       },
       partialRecovery: {
         title: '仅恢复可见媒体',
-        body: '仅恢复了此卡片中的媒体。批量下载仅包含显示的项目。',
+        body: '仅收集了当前可用的媒体。帖子中可能还有更多；批量下载仅包含已收集的项目。',
+      },
+      knownSubset: {
+        title: '部分媒体无法保存',
+        body: '来源中包含不受支持的媒体。图库和 ZIP 仅包含已收集的受支持项目。',
       },
       emptyT: '无可用媒体',
       emptyD: '没有可显示的图片或视频。',

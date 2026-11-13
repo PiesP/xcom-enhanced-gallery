@@ -69,6 +69,104 @@ for another, and none is a required CI lane.
    `inputs/live-acceptance.json` selector opts the installed extension into
    actual-site image navigation, downloads, settings, and status-navigation checks.
 
+The focused `inputs/live-photo-collection.json` route is separate from the
+2-4-item full actual-site selector. It declares one 20-photo owner or a requested
+20-photo post and its direct 20-photo quote. Its installed distribution receipt
+first records a separate source-known 20/40 fixture with unique marked JPEG
+originals and native single/ZIP files. Each visit saves its selected single before
+preparing the ZIP, preserving independently verified single evidence if ZIP
+preparation fails. A source-known owner failure is retained while the next owner
+is inspected only when no owned native download remains pending. Manager-backed
+visits additionally require recorded completion for every observed browser download;
+a missing or canceled terminal observation stops continuation. Public observation
+remains fail-fast. In the full fixture mode, DOM evidence proceeds only after both API visit pages and
+their observer close, with idle, non-overflowed owned transport. Any failed API
+or DOM proof keeps the overall result failed. Both synthetic owners share one trailing-underscore
+handle and user ID, with distinct post IDs and owner-local ordinals. The fixture then
+retires those routes and opens a fresh, separate 20-tile DOM owner whose API returns
+403. It checks the late clicked item, ordinal 12 still pending before a single save,
+exact-source WebP 404 to JPEG 200 resolution, and all 20 ZIP originals while retaining
+the unknown-post-total disclosure. Preview bytes differ from originals and each
+owner's payload; no 60-item gallery is formed. Existing byte and request caps remain.
+The fixture receipts are `installed-large-photo-fixture.json`,
+`installed-large-photo-collection.json`, and `installed-dom-photo-collection.json`;
+their pass does not qualify the selected public posts. Declared rendered images,
+including original-URL image loads, use the fixture interceptor with exact pinned
+bytes. Original probes, fetches and native downloads still use the owned HTTPS
+server; the fixture grants no renderer loopback permission. Fresh public contexts
+retain no fixture routes or host mapping. Client GraphQL observation uses the owned browser context for visible frame/worker
+responses, with exact endpoint/owner filters and origin/timestamps. Manager GM
+HTTP can bypass that channel. Only the source-known installed manager fixture
+may instead bind a fresh, finished owned HTTPS server response to the exact
+declared owner/status/body length and SHA. Its receipt is marked
+`owned-loopback-server-sent`, with `clientPayloadObserved: false`; the frozen
+body remains fixture input, not a claim that the client received or used it.
+Conflicting client observations fail. Existing product owner IDs, sources,
+full collections, native files and ZIP bytes remain independently required.
+
+For a bounded installed Chrome extension fixture run, `sourceKnownOnly: true`
+requires an empty live-URL list and stops before public observation. Its exact
+synthetic document responses use the same owned HTTPS listener as original media;
+the receipt verifies document client bytes/hash and finished server responses.
+This preserves browser address-space behavior without granting permissions or
+changing product network routing. The full mode reports
+`source-known-fixture-only` and `publicAcceptance: "not-run"`.
+
+After matching API fixture evidence is retained, adding
+`sourceKnownScope: "dom20"` runs only the independent DOM owner. It admits only
+that owner's document/media routes, records API proof as `NOT_RUN`, and reports
+`source-known-dom20-fixture-only` with `fixtureScope: "dom20"`. It cannot qualify
+API 20/40 or public acceptance. Navigation uses real toolbar clicks planned from
+the displayed focus; final identity, current/focused index, counter and rendered
+source assertions still apply. Bounded movement/scroll observations and a failure
+screen help distinguish verifier assumptions from installed geometry behavior.
+For the selected manager photo route, an additional owned CDP observer binds the
+exact installed product body in its executed manager wrapper and the sole GM
+JSON-response callback. Its conditional breakpoint admits only the declared
+post's exact GET metadata endpoint; binary downloads are excluded. At most 12
+callbacks and 2,000,000 encoded bytes per response are processed. The callback
+queue drains and the observer detaches before metadata is frozen and client/server
+summaries are reconciled; a completed server response alone cannot end that wait. Raw response
+text stays transient in the driver; receipts retain only a source binding,
+status, byte count/hash and minimized media summary. Headers and cookie values
+are not recorded. The fixture's known A/B 200 and C 403 responses qualify the
+same client observer before public visits. A missing callback, source mismatch,
+overflow or debugger-cleanup failure keeps the route unverified. This diagnostic
+can affect timing and supplies no performance result.
+Public A/B observations never use fixture server evidence. Only cookie-presence
+booleans are recorded for their owned fresh profile; authentication is not
+imported. Missing client responses remain unverified.
+An observed non-200 response, including an empty HTTP 403, is retained as an
+HTTP outcome rather than a JSON-decoding failure. Public API qualification still
+requires the requested owner's HTTP 200 and complete source-bound identities;
+visible DOM tiles alone cannot satisfy that requirement.
+The selected manager fixture adds three singles and three ZIPs to the existing
+fixture: browser event admission is bounded to 18 instead of the default 12, and
+failed native-file retention to 14 instead of 8. The 4 MiB per-file and 16 MiB
+total failure-retention byte bounds remain unchanged; unexpected extra entries
+keep the failed profile preserved. These are evidence-count bounds, separate
+from product download concurrency and binary ownership budgets.
+Source failures retain bounded current-selection and expected-source diagnostics.
+Fast native HEAD response
+peaks are observations; separately held asynchronous source probes test the four-worker
+algorithmic bound. The DOM display URLs use query-WebP spelling with synthetic JPEG
+preview bytes and do not qualify real WebP display encoding. The later live receipt
+retains all 20/40 provider and gallery identities (including owner-local
+ordinals), actual completed native IDs, independent original hashes, and every
+ZIP member's verified CRC/name/hash. The userscript route additionally requires
+the maintained manager installation and browser ZIP completion GUID in a fresh
+owned profile; its binary evidence is flattened through the existing transport.
+The gallery count is checked separately
+from mounted items; article-local media visibility alone is not accepted as a
+complete attachment set. It navigates to owner-local positions 1, 4, 5, 10, 12,
+13 and 20 for both owners, including the combined gallery's 20-to-21 transition, then
+checks the active media ID and rendered image source at each position. The
+photo-only result supplies no video, settings,
+post-close navigation, authenticated-X, or publication acceptance. See
+`inputs/README.md` for the exact selector and URL order. The external controller
+must admit the selected installed route before VM execution; this repository's
+selector cannot override its routing policy.
+
 The native regression suite under `validation/windows/` runs with
 `vp run test:e2e:native` after the project dependencies and Playwright Chromium
 are installed. Run `vp run verify` first to build the production artifacts:

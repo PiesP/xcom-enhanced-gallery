@@ -18,6 +18,11 @@ import type { BulkDownloadResult } from '@shared/services/download/types';
 import { getLanguageService } from '@shared/services/language-service';
 import { getGalleryMediaActions } from '@shared/services/media-service';
 import {
+  getDomImageOriginalProbeUrl,
+  resolveDomImagesForDownload,
+} from '@shared/services/media-extraction/extractors/dom-image-original';
+import {
+  applyObservedDownloadSources,
   gallerySignals,
   getDisplayedMediaIndex,
   setError,
@@ -35,6 +40,7 @@ import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 interface RecoveryJob {
   readonly entries: readonly FailedEntryRecovery[];
   readonly originalFilename: string;
+  readonly reservedFilenames: readonly string[];
   readonly sessionRevision: number;
   readonly attempt: number;
 }
@@ -47,6 +53,7 @@ function withoutRecoveryOffer(outcome: BulkDownloadOutcome): BulkDownloadOutcome
 
 /** Keep only identity and save metadata; a retry borrows bytes from normal owners. */
 function snapshotMedia(media: MediaInfo): MediaInfo {
+  const sourceResolution = media.metadata?.originalSourceResolution;
   return {
     id: media.id,
     type: media.type,
@@ -60,6 +67,9 @@ function snapshotMedia(media: MediaInfo): MediaInfo {
     quotedUsername: media.quotedUsername,
     quotedTweetId: media.quotedTweetId,
     sourceLocation: media.sourceLocation,
+    attachmentOrdinal: media.attachmentOrdinal,
+    attachmentSourceKey: media.attachmentSourceKey,
+    ...(sourceResolution ? { metadata: { originalSourceResolution: sourceResolution } } : {}),
   };
 }
 
@@ -72,7 +82,8 @@ function nextRecoveryJob(
   }[],
   originalFilename: string,
   sessionRevision: number,
-  attempt: number
+  attempt: number,
+  priorReservedFilenames: readonly string[] = []
 ): RecoveryJob | null {
   const knownPreSaveFailure =
     !result.success &&
@@ -81,7 +92,7 @@ function nextRecoveryJob(
     result.filesSuccessful === 0 &&
     result.filesProcessed === attempted.length &&
     result.failedEntries?.length === attempted.length &&
-    attempted.every((entry) => !!entry.filename);
+    attempted.every((entry) => !!entry.filename || !!getDomImageOriginalProbeUrl(entry.media));
   if (
     (!(result.success && result.status === 'partial') && !knownPreSaveFailure) ||
     !result.failedEntries?.length
@@ -90,26 +101,41 @@ function nextRecoveryJob(
   }
   const entries: FailedEntryRecovery[] = [];
   const seen = new Set<number>();
+  const committedNames = result.success ? (result.successfulFilenames ?? []) : [];
   for (const failure of result.failedEntries) {
     const source = attempted[failure.index];
-    // A saved partial ZIP can omit unverified originals alongside eligible failures.
-    // Only the new all-failed pre-save path requires every attempted entry to match.
-    if (!knownPreSaveFailure && source?.media.downloadSource?.quality === 'unverified-original') {
-      continue;
-    }
     if (
       !Number.isSafeInteger(failure.index) ||
       seen.has(failure.index) ||
       !source ||
-      !source.media.id ||
-      source.media.downloadSource?.quality === 'unverified-original' ||
+      !source.media.id
+    ) {
+      return null;
+    }
+    seen.add(failure.index);
+    if (source.media.downloadSource?.quality === 'unverified-original') {
+      // The old ZIP's provisional WebP name is not a final save name.
+      if (failure.url !== '' || !getDomImageOriginalProbeUrl(source.media)) {
+        continue;
+      }
+      // Without committed-name evidence, a late JPEG could collide with a
+      // name in the already saved ZIP. Frozen failures remain independently eligible.
+      if (result.filesSuccessful === 0 || committedNames.length === result.filesSuccessful) {
+        entries.push({
+          index: source.index,
+          media: { ...source.media, filename: undefined },
+          unresolvedOriginal: true,
+        });
+      }
+      continue;
+    }
+    if (
       getMediaDownloadUrl(source.media) !== failure.url ||
       !failure.filename ||
       (source.filename !== undefined && source.filename !== failure.filename)
     ) {
       return null;
     }
-    seen.add(failure.index);
     entries.push({
       index: source.index,
       media: source.media,
@@ -118,7 +144,15 @@ function nextRecoveryJob(
     });
   }
   entries.sort((left, right) => left.index - right.index);
-  return entries.length ? { entries, originalFilename, sessionRevision, attempt } : null;
+  return entries.length
+    ? {
+        entries,
+        originalFilename,
+        sessionRevision,
+        attempt,
+        reservedFilenames: [...priorReservedFilenames, ...committedNames],
+      }
+    : null;
 }
 
 /**
@@ -167,6 +201,11 @@ export function createDownloadHandler() {
     const controller = abortController;
     const signal = controller.signal;
     const bulkTotal = type === 'all' ? gallerySignals.mediaItems.length : 0;
+    const unknownPostTotal =
+      type === 'all' &&
+      (gallerySignals.recoveryScope === 'visible-tile' ||
+        gallerySignals.recoveryScope === 'visible-article');
+    const knownSubset = type === 'all' && gallerySignals.recoveryScope === 'api-supported-subset';
     const sessionRevision = gallerySignals.sessionRevision;
     const operationId = ++operationGeneration;
     const isCurrentOperation = (): boolean =>
@@ -212,9 +251,22 @@ export function createDownloadHandler() {
         const displayedIndex = getDisplayedMediaIndex();
         const currentMedia = displayedIndex === null ? undefined : mediaItems[displayedIndex];
         if (currentMedia) {
+          const resolved =
+            (await resolveDomImagesForDownload([currentMedia], signal))[0] ?? currentMedia;
+          if (!isCurrentOperation()) {
+            return;
+          }
+          if (displayedIndex !== null && resolved !== currentMedia) {
+            const updated = [...mediaItems];
+            updated[displayedIndex] = resolved;
+            applyObservedDownloadSources(mediaItems, updated, sessionRevision);
+          }
           // Single downloads are already demand-driven through the platform
           // adapter. Avoid a duplicate Blob fetch that would delay GM_download.
-          const result = await downloadService.downloadSingle(currentMedia, { signal });
+          const result = await downloadService.downloadSingle(resolved, {
+            signal,
+            domOriginalsResolved: true,
+          });
           if (!isCurrentOperation()) {
             return;
           }
@@ -259,14 +311,20 @@ export function createDownloadHandler() {
           );
         }
       } else {
-        const snapshot = mediaItems.map(snapshotMedia);
-        const result = await downloadService.downloadBulk([...mediaItems], {
+        const resolvedMediaItems = await resolveDomImagesForDownload(mediaItems, signal);
+        if (!isCurrentOperation()) {
+          return;
+        }
+        applyObservedDownloadSources(mediaItems, resolvedMediaItems, sessionRevision);
+        const snapshot = resolvedMediaItems.map(snapshotMedia);
+        const result = await downloadService.downloadBulk(resolvedMediaItems, {
           mediaBlobProvider: Object.assign(
             (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
               mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
             { supports: (item: MediaInfo) => item.type === 'image' }
           ),
           signal,
+          domOriginalsResolved: true,
         });
         if (!isCurrentOperation()) {
           return;
@@ -289,6 +347,8 @@ export function createDownloadHandler() {
         const included = handedOff ? result.filesSuccessful : 0;
         setBulkDownloadOutcome({
           total: bulkTotal,
+          ...(unknownPostTotal ? { unknownPostTotal: true } : {}),
+          ...(knownSubset ? { knownSubset: true } : {}),
           included,
           omitted: Math.max(0, bulkTotal - included),
           handedOff,
@@ -389,6 +449,8 @@ export function createDownloadHandler() {
       if (type === 'all') {
         setBulkDownloadOutcome({
           total: bulkTotal,
+          ...(unknownPostTotal ? { unknownPostTotal: true } : {}),
+          ...(knownSubset ? { knownSubset: true } : {}),
           included: 0,
           omitted: bulkTotal,
           handedOff: false,
@@ -433,9 +495,52 @@ export function createDownloadHandler() {
 
     try {
       let result: BulkDownloadResult;
+      let retryEntries: FailedEntryRecovery[] = [...job.entries];
       try {
+        const resolvedMedia = await resolveDomImagesForDownload(
+          job.entries.map((entry) => entry.media),
+          signal
+        );
+        if (!isCurrent()) {
+          return;
+        }
+        retryEntries = job.entries.map((entry, index) =>
+          entry.unresolvedOriginal
+            ? { ...entry, media: resolvedMedia[index] ?? entry.media }
+            : entry
+        );
+        const liveItems = gallerySignals.mediaItems;
+        const observed = [...liveItems];
+        for (let index = 0; index < job.entries.length; index++) {
+          const entry = job.entries[index];
+          const resolved = resolvedMedia[index];
+          if (!entry?.unresolvedOriginal || !resolved || resolved === entry.media) {
+            continue;
+          }
+          const live = liveItems[entry.index];
+          if (
+            !live ||
+            live.id !== entry.media.id ||
+            live.tweetId !== entry.media.tweetId ||
+            live.attachmentOrdinal !== entry.media.attachmentOrdinal ||
+            live.attachmentSourceKey !== entry.media.attachmentSourceKey ||
+            live.originalUrl !== entry.media.originalUrl
+          ) {
+            continue;
+          }
+          observed[entry.index] = {
+            ...live,
+            originalUrl: resolved.originalUrl,
+            ...(resolved.downloadSource ? { downloadSource: resolved.downloadSource } : {}),
+            metadata: {
+              ...live.metadata,
+              originalSourceResolution: resolved.metadata?.originalSourceResolution,
+            },
+          };
+        }
+        applyObservedDownloadSources(liveItems, observed, job.sessionRevision);
         result = await getDownloadOrchestrator().downloadFailedEntries(
-          job.entries,
+          retryEntries,
           job.originalFilename,
           job.attempt,
           {
@@ -445,6 +550,8 @@ export function createDownloadHandler() {
               { supports: (item: MediaInfo) => item.type === 'image' }
             ),
             signal,
+            domOriginalsResolved: true,
+            reservedZipFilenames: job.reservedFilenames,
           }
         );
       } catch (error) {
@@ -469,15 +576,18 @@ export function createDownloadHandler() {
       }
       recoveryJob = nextRecoveryJob(
         result,
-        job.entries,
+        retryEntries,
         job.originalFilename,
         job.sessionRevision,
-        job.attempt + 1
+        job.attempt + 1,
+        job.reservedFilenames
       );
       const handedOff = result.success;
       const included = handedOff ? result.filesSuccessful : 0;
       setBulkDownloadOutcome({
         total: job.entries.length,
+        ...(previousOutcome?.unknownPostTotal ? { unknownPostTotal: true } : {}),
+        ...(previousOutcome?.knownSubset ? { knownSubset: true } : {}),
         included,
         omitted: job.entries.length - included,
         handedOff,

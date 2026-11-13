@@ -332,6 +332,58 @@ This selector enables bounded real toolbar downloads and settings changes only
 in the task-owned profile; failed receipts are retained outside Git. Remove the
 selector after the attempt. See `../README.md` for evidence and byte limits.
 
+For the separate photo-only 20/40 collection check, use the exclusive ignored
+`live-photo-collection.json` selector after current source-bound observation
+confirms the requested post, its direct quote and each owner's 20 photos. Its
+top-level keys are exactly `scenario`, `requested`, `directQuote`, and
+`expected`; the first three have this shape:
+
+```json
+{
+  "scenario": "photo-collection-20-40",
+  "requested": { "handle": "shinchilla_", "statusId": "2121025509215850557", "count": 20 },
+  "directQuote": { "handle": "shinchilla_", "statusId": "2121007970545017041", "count": 20 },
+  "expected": []
+}
+```
+
+Replace the illustrative empty `expected` array with all 40 independently
+verified originals in B0..B19, A0..A19 order. Each entry has exactly
+`ownerId`, `ordinal`, `sourceKey`, `originalUrl`, `filename`, `bytes`, and
+`sha256`. `originalUrl` must be the exact admitted `pbs.twimg.com/media` URL
+with one `format` value and `name=orig`; `filename` must use that verified
+format and the owner-local ordinal. Numeric media IDs are acquired from the
+live provider trace, not fabricated in this selector. For B-only 20, set
+`requested` to B, `directQuote` to null, and provide B0..B19.
+
+Pass the exact public `--live-url` values in requested-then-quote order with
+`--installation extension` or `--installation userscript` on an owned
+Chrome/Edge profile. The selected profile/controller must explicitly admit
+this installation selector and URL tuple; the historical userscript filename
+selector does not admit it.
+Before the selected public visits, both installed routes exercise a separate
+source-known fixture in their owned profiles: B with 20 photos and A with a
+direct B quote for 40. Each original is a unique marked JPEG served by the
+task-owned HTTPS fixture. The fixture saves one ZIP and one selected single per
+visit, checking native IDs, owned file bytes, every owner-local ZIP name and
+member CRC. Its `installed-large-photo-fixture.json` and
+`installed-large-photo-collection.json` receipts remain separate from
+`live-photo-collection.json`; a fixture pass never qualifies the public posts.
+The verifier visits the quoted post and requested post separately. For the
+userscript it installs the production script through the maintained manager
+UI in a fresh owned profile after the controlled fixture. It checks
+the complete provider owner-local IDs and ordinals against gallery identities,
+then one native ZIP and one single save per visit. Independent bounded original
+GET bodies, native completed IDs or browser GUIDs and owned saved files are compared with ZIP
+membership and CRCs. The direct quote precedes the requested owner's media;
+the quoted post's own quote is not recursively included in the requested result.
+The declared counts are expectations from a current observation, not facts
+proved by article-local HTML or this selector. A missing provider trace,
+truncated identity list, unavailable original, exceeded byte budget or missing
+native file fails the focused receipt. This photo-only run does not satisfy the
+existing video, settings, native-navigation or full actual-site acceptance.
+Remove only the task-owned selector after the attempt and retain failed receipts.
+
 To run only the built userscript settings-persistence fixture, create the ignored
 `settings-persistence.json` file in this directory with this exact content:
 

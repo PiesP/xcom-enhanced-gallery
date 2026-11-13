@@ -102,6 +102,7 @@ memory/
 /validation/windows/inputs/ux-details.json
 /validation/windows/inputs/live-acceptance.json
 /validation/windows/inputs/reported-live-filename.json
+/validation/windows/inputs/live-photo-collection.json
 /validation/windows/inputs/video-save-format.json
 .vitest/
 /validation/windows/inputs/source-image-failures.json

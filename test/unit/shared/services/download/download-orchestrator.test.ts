@@ -1,10 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import type { HttpRequestDetails, HttpRequestResponse } from '@platform/types';
+import { markDomImageOriginalProbeLimit } from '@shared/services/media-extraction/extractors/dom-image-original';
 
 const state = vi.hoisted(() => ({
   downloadBlob: vi.fn(),
+  headRequest: vi.fn(),
 }));
 
 vi.mock('@platform/index', () => ({
+  getHttpRequestAdapter: () => ({ request: state.headRequest }),
   getDownloadAdapter: () => ({
     download: vi.fn(),
     downloadBlob: state.downloadBlob,
@@ -36,11 +40,239 @@ afterEach(() => {
 
 describe('DownloadOrchestrator bulk resource limits', () => {
   beforeEach(() => {
+    state.headRequest.mockReset();
     state.downloadBlob
       .mockReset()
       .mockImplementation(async (_blob, _filename, _signal, released) => {
         released?.();
       });
+  });
+
+  it('resolves a deferred JPEG before ZIP filename planning and preserves both owner entries', async () => {
+    const original = 'https://pbs.twimg.com/media/SHARED?format=webp&name=orig';
+    const deferred = (id: string, tweetId: string, ordinal: number): MediaInfo =>
+      markDomImageOriginalProbeLimit(
+        {
+          id,
+          tweetId,
+          tweetUsername: 'shinchilla_',
+          attachmentOrdinal: ordinal,
+          type: 'image',
+          url: 'https://pbs.twimg.com/media/SHARED?format=webp&name=small',
+          originalUrl: original,
+          downloadSource: { url: original, quality: 'cdn-original', provenance: 'dom' },
+        },
+        original
+      );
+    state.headRequest.mockImplementation((details: HttpRequestDetails) => {
+      const isWebp = new URL(details.url).searchParams.get('format') === 'webp';
+      const response: HttpRequestResponse = {
+        finalUrl: details.url,
+        readyState: 4,
+        status: isWebp ? 404 : 200,
+        statusText: '',
+        responseHeaders: `Content-Type: ${isWebp ? 'text/html' : 'image/jpeg'}`,
+        response: '',
+        responseText: '',
+        readable: true,
+      };
+      queueMicrotask(() => details.onload?.(response));
+      return { abort: vi.fn() };
+    });
+    let saved: Buffer | undefined;
+    state.downloadBlob.mockImplementation(async (blob: Blob, _name, _signal, released) => {
+      saved = Buffer.from(await blob.arrayBuffer());
+      released?.();
+    });
+    const provider = vi.fn(async (item: MediaInfo) =>
+      ownedBlob(new Blob([`bytes-${item.tweetId}`]))
+    );
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const result = await orchestrator.downloadBulk(
+      [deferred('B', '222', 0), deferred('A', '111', 19)],
+      { mediaBlobProvider: provider, retries: 0 }
+    );
+    expect(result).toMatchObject({ success: true, filesSuccessful: 2, filesProcessed: 2 });
+    expect(state.headRequest).toHaveBeenCalledTimes(2);
+    expect(
+      provider.mock.calls.map(([item]) => [item.id, item.tweetId, item.attachmentOrdinal])
+    ).toEqual([
+      ['B', '222', 0],
+      ['A', '111', 19],
+    ]);
+    verifyStoredZip(saved!, [
+      { filename: 'shinchilla__222_0.jpg', bytes: Buffer.from('bytes-222') },
+      { filename: 'shinchilla__111_19.jpg', bytes: Buffer.from('bytes-111') },
+    ]);
+    orchestrator.destroy();
+  });
+
+  it('retries only a twentieth unresolved original into a collision-safe JPEG supplementary ZIP', async () => {
+    const source = 'https://pbs.twimg.com/media/LATE?format=webp&name=orig';
+    const saved = Array.from({ length: 19 }, (_, index): MediaInfo => {
+      const url = `https://pbs.twimg.com/media/SAVED${index}.jpg?name=orig`;
+      return {
+        id: `saved-${index}`,
+        type: 'image',
+        url,
+        tweetId: '222',
+        tweetUsername: 'author',
+        attachmentOrdinal: index,
+        ...(index === 18 ? { filename: 'author_222_19.webp' } : {}),
+        downloadSource: { url, quality: 'cdn-original', provenance: 'api' },
+      };
+    });
+    const deferred = markDomImageOriginalProbeLimit(
+      {
+        id: 'late',
+        type: 'image',
+        url: 'https://pbs.twimg.com/media/LATE?format=webp&name=small',
+        originalUrl: source,
+        tweetId: '222',
+        tweetUsername: 'author',
+        attachmentOrdinal: 19,
+        downloadSource: { url: source, quality: 'cdn-original', provenance: 'dom' },
+      },
+      source
+    );
+    let phase: 'failed' | 'recovered' = 'failed';
+    state.headRequest.mockImplementation((details: HttpRequestDetails) => {
+      const format = new URL(details.url).searchParams.get('format');
+      const status = phase === 'failed' ? 403 : format === 'webp' ? 404 : 200;
+      const response: HttpRequestResponse = {
+        finalUrl: details.url,
+        readyState: 4,
+        status,
+        statusText: '',
+        responseHeaders: `Content-Type: ${status === 200 ? 'image/jpeg' : 'text/html'}`,
+        response: '',
+        responseText: '',
+        readable: true,
+      };
+      queueMicrotask(() => details.onload?.(response));
+      return { abort: vi.fn() };
+    });
+    const savedZips: Buffer[] = [];
+    state.downloadBlob.mockImplementation(async (blob: Blob, _name, _signal, released) => {
+      savedZips.push(Buffer.from(await blob.arrayBuffer()));
+      released?.();
+    });
+    const cache = new Map(
+      saved.map((item, index) => [item.url, ownedBlob(new Blob([`saved-${index}`]))] as const)
+    );
+    const provider = vi.fn(async () => ownedBlob(new Blob(['late-jpeg'])));
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const first = await orchestrator.downloadBulk([...saved, deferred], {
+      cachedBlobs: cache,
+      mediaBlobProvider: provider,
+      retries: 0,
+    });
+    expect(first).toMatchObject({
+      success: true,
+      status: 'partial',
+      filesSuccessful: 19,
+      filesProcessed: 20,
+      sourceUnavailable: true,
+    });
+    expect(first.successfulFilenames).toHaveLength(19);
+    expect(first.failedEntries).toEqual([
+      expect.objectContaining({ index: 19, url: '', filename: 'author_222_19-1.jpg' }),
+    ]);
+    verifyStoredZip(
+      savedZips[0]!,
+      saved.map((_, index) => ({
+        filename: index === 18 ? 'author_222_19.webp' : `author_222_${index}.jpg`,
+        bytes: Buffer.from(`saved-${index}`),
+      }))
+    );
+    phase = 'recovered';
+    const second = await orchestrator.downloadFailedEntries(
+      [{ index: 19, media: deferred, unresolvedOriginal: true }],
+      first.filename!,
+      1,
+      {
+        mediaBlobProvider: provider,
+        reservedZipFilenames: first.successfulFilenames ?? [],
+        retries: 0,
+      }
+    );
+    expect(second).toMatchObject({ success: true, filesSuccessful: 1, filesProcessed: 1 });
+    expect(second.filename).toContain('-missing');
+    expect(second.successfulFilenames).toHaveLength(1);
+    expect(second.successfulFilenames?.[0]).toMatch(/^author_222_19.*\.jpg$/u);
+    expect(second.successfulFilenames?.[0]).not.toBe('author_222_19.jpg');
+    expect(state.headRequest).toHaveBeenCalledTimes(3);
+    expect(provider).toHaveBeenCalledOnce();
+    verifyStoredZip(savedZips[1]!, [
+      { filename: second.successfulFilenames![0]!, bytes: Buffer.from('late-jpeg') },
+    ]);
+    orchestrator.destroy();
+  });
+
+  it('keeps a frozen failed-entry name when an earlier unresolved entry resolves to the same stem', async () => {
+    const original = 'https://pbs.twimg.com/media/LATE?format=webp&name=orig';
+    const late = markDomImageOriginalProbeLimit(
+      {
+        id: 'late',
+        type: 'image',
+        url: 'https://pbs.twimg.com/media/LATE?format=webp&name=small',
+        originalUrl: original,
+        tweetId: '222',
+        tweetUsername: 'author',
+        attachmentOrdinal: 19,
+        downloadSource: { url: original, quality: 'cdn-original', provenance: 'dom' },
+      },
+      original
+    );
+    const fixedUrl = 'https://pbs.twimg.com/media/FIXED.jpg?name=orig';
+    const fixed: MediaInfo = { id: 'fixed', type: 'image', url: fixedUrl };
+    state.headRequest.mockImplementation((details: HttpRequestDetails) => {
+      const isWebp = new URL(details.url).searchParams.get('format') === 'webp';
+      queueMicrotask(() =>
+        details.onload?.({
+          finalUrl: details.url,
+          readyState: 4,
+          status: isWebp ? 404 : 200,
+          statusText: '',
+          responseHeaders: `Content-Type: ${isWebp ? 'text/html' : 'image/jpeg'}`,
+          response: '',
+          responseText: '',
+          readable: true,
+        })
+      );
+      return { abort: vi.fn() };
+    });
+    let saved: Buffer | undefined;
+    state.downloadBlob.mockImplementation(async (blob: Blob, _name, _signal, released) => {
+      saved = Buffer.from(await blob.arrayBuffer());
+      released?.();
+    });
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const result = await orchestrator.downloadFailedEntries(
+      [
+        { index: 19, media: late, unresolvedOriginal: true },
+        { index: 20, media: fixed, url: fixedUrl, filename: 'author_222_19.jpg' },
+      ],
+      'gallery.zip',
+      1,
+      {
+        cachedBlobs: new Map([[fixedUrl, ownedBlob(new Blob(['fixed-bytes']))]]),
+        mediaBlobProvider: vi.fn(async () => ownedBlob(new Blob(['late-bytes']))),
+        retries: 0,
+      }
+    );
+    expect(result).toMatchObject({ success: true, filesSuccessful: 2 });
+    expect(result.successfulFilenames).toContain('author_222_19.jpg');
+    const lateName = result.successfulFilenames?.find((name) => name !== 'author_222_19.jpg');
+    expect(lateName).toMatch(/^author_222_19.*\.jpg$/u);
+    verifyStoredZip(saved!, [
+      { filename: lateName!, bytes: Buffer.from('late-bytes') },
+      { filename: 'author_222_19.jpg', bytes: Buffer.from('fixed-bytes') },
+    ]);
+    orchestrator.destroy();
   });
 
   it('does not invoke a provider, fetch a substitute, or save a ZIP for unverified original photos', async () => {

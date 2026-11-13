@@ -50,6 +50,12 @@ export interface DownloadProgress {
 export type DownloadProgressCallback = (progress: DownloadProgress) => void;
 
 export interface DownloadOptions {
+  /** The gallery already probed deferred DOM originals for this operation. */
+  domOriginalsResolved?: boolean;
+  /** Names already saved in an earlier ZIP; reserve their stems during failed-only recovery. */
+  reservedZipFilenames?: readonly string[];
+  /** Failed-only retry names that must retain their prior assignment. */
+  fixedZipFilenames?: readonly (string | undefined)[];
   /** Shared binary ownership ledger; injectable for bounded acceptance fixtures. */
   liveBudget?: LiveByteBudget;
   concurrency?: number;
@@ -99,6 +105,8 @@ export interface ZipFailedEntry {
 
 export interface ZipResult {
   filesSuccessful: number;
+  /** Exact committed names, populated only after each successful ZIP entry commit. */
+  successfulFilenames: readonly string[];
   failures: Array<{ url: string; error: string }>;
   failedEntries: readonly ZipFailedEntry[];
   /** Parts ready for `new Blob(parts, {type:'application/zip'})` — no monolithic copy */
@@ -124,6 +132,8 @@ export interface BulkDownloadResult {
   error?: string;
   failures?: Array<{ url: string; error: string }>;
   failedEntries?: readonly ZipFailedEntry[];
+  /** Names in a ZIP that the download adapter accepted, never just planned names. */
+  successfulFilenames?: readonly string[];
   code: ErrorCode;
   /** Retain this cause even when resource rejection takes code precedence. */
   sourceUnavailable?: boolean;

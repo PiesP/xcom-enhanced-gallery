@@ -30,6 +30,12 @@ import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import { isLiveFilenameOriginal, type LiveFilenameTarget } from './live-filename-target.ts';
 import {
+  runLivePhotoCollection,
+  type PhotoCollectionContract,
+  type PhotoManagerApiObserver,
+} from './live-photo-collection.ts';
+import { runInstalledLargePhotoFixture } from './installed-large-photo-fixture.ts';
+import {
   inspectHitTestedAction,
   inspectLiveCandidateDocument,
   inspectLiveTargetDocument,
@@ -39,6 +45,9 @@ import {
 import { resolveFilenameCaptureLine } from './filename-correlation.ts';
 import {
   createPreArmPauseGuard,
+  createInstalledUserscriptApiTrace,
+  resolveUserscriptApiOnloadLine,
+  withTimeout as withUserscriptTraceTimeout,
   createInstalledUserscriptFrameTrace,
   type FrameGmCall,
   type FrameMedia,
@@ -93,6 +102,9 @@ const PROFILE_PREFIX = 'xeg-userscript-install-';
 const MOBILE_MANAGER_DENIAL_URL = `https://mobile.x.com/testuser/status/${TWEET_ID}?xeg-manager-denial=1`;
 
 const MAX_DOWNLOADS = 8;
+// The selected B20/A40/DOM20 fixture adds three singles and three ZIPs.
+const PHOTO_FIXTURE_DOWNLOADS = 6;
+const PHOTO_FIXTURE_MAX_NATIVE_ENTRIES = 14;
 const FIRST_MEDIA_URL = `https://pbs.twimg.com/media/${MEDIA_COHORTS.normal[0]}.jpg?format=jpg&name=orig`;
 const execFileAsync = promisify(execFile);
 const NATIVE_PERMISSION_RECEIPT = 'userscript-manager-native-permission.json';
@@ -449,6 +461,8 @@ type UserscriptInstallationResult = {
     imageBytes: number[];
     imageSha256: string[];
     maxDownloads: number;
+    maxObservedDownloads: number;
+    maxFailedNativeEntries: number;
     maxRoutedImageRequests: number;
     maxLoopbackRequests: number;
     maxLoopbackImageBytes: number;
@@ -457,6 +471,7 @@ type UserscriptInstallationResult = {
     productionBudget: string;
   };
   fixture?: FixtureResult;
+  largePhotoFixture?: Awaited<ReturnType<typeof runInstalledLargePhotoFixture>>;
   failedNativeRetention?: Awaited<ReturnType<typeof retainFailedLiveNativeFiles>>;
   error?: string;
 };
@@ -2913,11 +2928,12 @@ async function installUserscript(
 }
 
 /** Browser-level events require no optional permissions from Tampermonkey. */
-export function createBrowserDownloadObserver(cdp: CDPSession) {
+export function createBrowserDownloadObserver(cdp: CDPSession, photoCollectionFixture = false) {
+  const maximumBegins = MAX_DOWNLOADS + 4 + (photoCollectionFixture ? PHOTO_FIXTURE_DOWNLOADS : 0);
   const begun: BrowserDownloadBegin[] = [];
   const progress = new Map<string, BrowserDownloadStatus>();
   const onBegin = (event: BrowserDownloadBegin) => {
-    assert(begun.length < MAX_DOWNLOADS + 4, 'Too many task-profile downloads');
+    assert(begun.length < maximumBegins, 'Too many task-profile downloads');
     begun.push({ guid: event.guid, suggestedFilename: event.suggestedFilename, url: event.url });
   };
   const onProgress = (event: BrowserDownloadProgress) => {
@@ -5463,6 +5479,7 @@ export async function runUserscriptInstallation({
   browserName,
   headless,
   attachmentFilenameProbe = false,
+  photoCollectionFixture = false,
 }: {
   chromium: BrowserType;
   root: string;
@@ -5470,6 +5487,7 @@ export async function runUserscriptInstallation({
   browserName: string;
   headless: boolean;
   attachmentFilenameProbe?: boolean;
+  photoCollectionFixture?: boolean;
 }) {
   assert(
     ['chrome', 'msedge'].includes(browserName),
@@ -5600,6 +5618,11 @@ export async function runUserscriptInstallation({
       imageBytes: images.map((image) => image.length),
       imageSha256: images.map(sha256),
       maxDownloads: MAX_DOWNLOADS,
+      maxObservedDownloads:
+        MAX_DOWNLOADS + 4 + (photoCollectionFixture ? PHOTO_FIXTURE_DOWNLOADS : 0),
+      maxFailedNativeEntries: photoCollectionFixture
+        ? PHOTO_FIXTURE_MAX_NATIVE_ENTRIES
+        : MAX_DOWNLOADS,
       maxRoutedImageRequests: 80,
       maxLoopbackRequests: 64,
       maxLoopbackImageBytes: 64 * 1024,
@@ -5607,7 +5630,7 @@ export async function runUserscriptInstallation({
       maxLoopbackApiServedBytes: 3 * 1024 * 1024,
       productionBudget: 'unchanged',
     };
-    observer = createBrowserDownloadObserver(cdp);
+    observer = createBrowserDownloadObserver(cdp, photoCollectionFixture);
     result.fixture = await runFixture(
       context,
       observer,
@@ -5622,6 +5645,26 @@ export async function runUserscriptInstallation({
       result.sourceSha256,
       attachmentFilenameProbe
     );
+    if (photoCollectionFixture) {
+      result.largePhotoFixture = await runInstalledLargePhotoFixture({
+        context,
+        extensionId: managerId,
+        downloads,
+        output,
+        root,
+        managerObserver: observer,
+        managerApiObserver: createManagerPhotoApiObserver(
+          context,
+          managerId,
+          source.toString('utf8')
+        ),
+        installNative: ({ originals, apiResponses }) =>
+          loopback!.setLargePhotos(originals, apiResponses),
+        installDomNative: ({ dom }) =>
+          loopback!.setLargeDomPhotos(dom.originals, dom.contract.requested.statusId),
+        nativeSnapshot: () => loopback!.snapshot(),
+      });
+    }
     result.status = 'passed';
   } catch (error) {
     caughtPrimaryError = true;
@@ -5669,7 +5712,7 @@ export async function runUserscriptInstallation({
           downloads,
           output,
           observer?.events(),
-          8
+          photoCollectionFixture ? PHOTO_FIXTURE_MAX_NATIVE_ENTRIES : 8
         );
         result.cleanup.failedNativeRetentionVerified = true;
       } catch (error) {
@@ -5755,12 +5798,13 @@ async function liveNativeInventory(page: Page): Promise<LiveNativeItem[]> {
   });
 }
 
-async function retainFailedLiveNativeFiles(
+export async function retainFailedLiveNativeFiles(
   downloads: string,
   output: string,
   nativeAttempts: unknown,
-  maxEntries: 4 | 8 = 4
+  maxEntries: 4 | 8 | 14 = 4
 ) {
+  assert([4, 8, 14].includes(maxEntries), 'Unsupported failed native entry bound');
   const names = await readdir(downloads);
   assert(names.length <= maxEntries, 'Failed profile has too many native entries to retain');
   const retained: Record<string, unknown>[] = [];
@@ -5835,6 +5879,157 @@ export function bindInstalledUserscriptSource(installed: string, executed: strin
     bodySha256: sha256(body),
     bodyBytes: Buffer.byteLength(body, 'utf8'),
     bodyOffsetUtf16,
+  };
+}
+
+/** Observe only the selected owner's GM metadata callback in the exact installed product. */
+export function createManagerPhotoApiObserver(
+  context: BrowserContext,
+  managerId: string,
+  installed: string
+): PhotoManagerApiObserver {
+  assert(/^[a-p]{32}$/u.test(managerId), 'API observer manager identity is invalid');
+  resolveUserscriptApiOnloadLine(installed);
+  return async (page, requestedId, capture) => {
+    assert.equal(page.context(), context, 'API observer page left its owned context');
+    const target = new URL(page.url());
+    assert(
+      target.protocol === 'https:' &&
+        target.hostname === 'x.com' &&
+        !target.username &&
+        !target.password &&
+        !target.port &&
+        !target.search &&
+        !target.hash &&
+        new RegExp(`^/[A-Za-z0-9_]{1,15}/status/${requestedId}$`, 'u').test(target.pathname),
+      'API observer target is not the declared owner page'
+    );
+    const session = await context.newCDPSession(page);
+    const scripts: Array<{ scriptId: string; url: string; executionContextId: number }> = [];
+    let overflow = false;
+    let detached = false;
+    let stopped = false;
+    let trace: ReturnType<typeof createInstalledUserscriptApiTrace> | null = null;
+    let binding: Record<string, unknown> | null = null;
+    const guard = createPreArmPauseGuard(session);
+    const parsed = (item: { scriptId: string; url: string; executionContextId: number }) => {
+      if (scripts.length >= 256) {
+        overflow = true;
+        return;
+      }
+      scripts.push(item);
+    };
+    const detach = async () => {
+      if (!detached && !trace?.snapshot().debuggerDetached && !guard.snapshot().detached) {
+        await withUserscriptTraceTimeout(session.detach(), 4000, 'API source observer detach');
+      }
+      detached = true;
+    };
+    session.on('Debugger.scriptParsed', parsed);
+    guard.start();
+    try {
+      await withUserscriptTraceTimeout(
+        session.send('Runtime.enable'),
+        4000,
+        'API source runtime enable'
+      );
+      await withUserscriptTraceTimeout(
+        session.send('Debugger.enable'),
+        4000,
+        'API source debugger enable'
+      );
+      const candidates = scripts.filter(
+        (item) =>
+          item.url.includes(managerId) ||
+          /(?:user-script|userscript|\.user\.js)/iu.test(item.url) ||
+          item.url === ''
+      );
+      assert(
+        !overflow && candidates.length <= 64,
+        'Installed API script discovery exceeded its bound'
+      );
+      let selected: { scriptId: string; responseLine: number } | null = null;
+      const discoveryDeadline = Date.now() + 12_000;
+      for (const item of candidates) {
+        assert(Date.now() < discoveryDeadline, 'Installed API source discovery timed out');
+        const value = await withUserscriptTraceTimeout(
+          session.send('Debugger.getScriptSource', { scriptId: item.scriptId }),
+          4000,
+          'API source read'
+        ).catch(() => null);
+        const text = value?.scriptSource;
+        if (
+          !text ||
+          Buffer.byteLength(text, 'utf8') > 5 * 1024 * 1024 ||
+          !text.includes('function downloadSingleFile(')
+        ) {
+          continue;
+        }
+        const product = bindInstalledUserscriptSource(installed, text);
+        const location = resolveUserscriptApiOnloadLine(text);
+        assert(!selected, 'Installed API product source is ambiguous');
+        assert(
+          Number.isSafeInteger(item.executionContextId) && item.executionContextId > 0,
+          'Installed API source realm is unavailable'
+        );
+        selected = { scriptId: item.scriptId, responseLine: location.lineNumber };
+        binding = {
+          ...product,
+          scriptId: item.scriptId,
+          executionContextId: item.executionContextId,
+          responseLine: location.lineNumber,
+          parsedScripts: scripts.length,
+          candidates: candidates.length,
+        };
+      }
+      assert(selected && binding, 'Installed API product source was not uniquely identified');
+      guard.assertClean();
+      trace = createInstalledUserscriptApiTrace({
+        session,
+        scriptId: selected.scriptId,
+        responseLine: selected.responseLine,
+        requestedId,
+        onResponse: capture,
+      });
+      await trace.arm();
+      await guard.handoff();
+      session.off('Debugger.scriptParsed', parsed);
+      return {
+        snapshot: () => ({
+          ...trace!.snapshot(),
+          sourceBinding: binding,
+          sessionDetached: detached,
+        }),
+        async stop() {
+          if (stopped) {
+            return;
+          }
+          try {
+            await trace!.stop();
+          } finally {
+            session.off('Debugger.scriptParsed', parsed);
+            await guard.stop();
+            await detach();
+            stopped = true;
+          }
+        },
+      };
+    } catch (error) {
+      try {
+        if (trace) {
+          await trace.stop();
+        }
+      } catch {
+        /* The outer failed visit remains unverified. */
+      }
+      try {
+        await guard.stop();
+      } finally {
+        session.off('Debugger.scriptParsed', parsed);
+        await detach();
+      }
+      throw error;
+    }
   };
 }
 
@@ -6153,6 +6348,191 @@ async function captureUserscriptLiveEntryFailure(
     evidence.screenshotError = error instanceof Error ? error.name : typeof error;
   }
   return evidence;
+}
+
+/** Fresh owned manager profile for the declared 20/40 photo-only qualification. */
+export async function runUserscriptPhotoCollectionInstallation(options: {
+  chromium: BrowserType;
+  root: string;
+  output: string;
+  browserName: string;
+  headless: boolean;
+  contract: PhotoCollectionContract;
+}) {
+  const { chromium, root, output, browserName, headless, contract } = options;
+  assert(['chrome', 'msedge'].includes(browserName));
+  await mkdir(output, { recursive: true });
+  const source = await readFile(join(root, 'dist/xcom-enhanced-gallery.user.js'));
+  const profile = await mkdtemp(join(root, PROFILE_PREFIX));
+  assertOwned(root, profile);
+  const downloads = join(profile, 'downloads');
+  await mkdir(downloads);
+  await mkdir(join(profile, 'Default'));
+  await writeFile(
+    join(profile, 'Default', 'Preferences'),
+    JSON.stringify({
+      download: {
+        default_directory: downloads,
+        prompt_for_download: false,
+        directory_upgrade: true,
+      },
+    })
+  );
+  const receipt: Record<string, unknown> = {
+    status: 'failed',
+    scope:
+      'fresh installed Tampermonkey public 20/40 photo collection; no full actual-site campaign',
+    sourceSha256: sha256(source),
+    browserName,
+    cleanup: {},
+  };
+  const cleanup = receipt.cleanup as Record<string, unknown>;
+  const cleanupErrors: unknown[] = [];
+  let primaryError: unknown;
+  let context: BrowserContext | undefined;
+  let cdp: CDPSession | undefined;
+  let managerId: string | undefined;
+  let managerPage: Page | undefined;
+  let observer: ReturnType<typeof createBrowserDownloadObserver> | undefined;
+  try {
+    context = await chromium.launchPersistentContext(profile, {
+      channel: browserName,
+      headless,
+      acceptDownloads: true,
+      downloadsPath: downloads,
+      locale: 'en-US',
+      viewport: { width: 1280, height: 800 },
+      ignoreDefaultArgs: ['--disable-extensions'],
+      args: ['--enable-unsafe-extension-debugging'],
+    });
+    const browser = context.browser();
+    assert(browser, 'Owned manager context has no browser');
+    receipt.browserVersion = browser.version();
+    receipt.profileTransport = 'public network without fixture host mappings or SPKI exception';
+    await enableDeveloperMode(context, browserName);
+    await verifyDownloadDirectory(context, downloads);
+    cdp = await browser.newBrowserCDPSession();
+    await cdp.send('Browser.setDownloadBehavior', { behavior: 'default', eventsEnabled: true });
+    ({ id: managerId } = await cdp.send('Extensions.loadUnpacked', {
+      path: join(root, 'test-tools/userscript-manager'),
+    }));
+    assert(typeof managerId === 'string');
+    receipt.manager = await installUserscript(
+      context,
+      managerId,
+      root,
+      output,
+      browserName,
+      sha256(source),
+      profile,
+      (ask, id, ownedContext) =>
+        inspectAndAllowNativeManagerPermission(
+          cdp!,
+          root,
+          output,
+          profile,
+          browserName,
+          ask,
+          id,
+          ownedContext
+        )
+    );
+    managerPage = await context.newPage();
+    await managerPage.goto(`chrome-extension://${managerId}/options.html`);
+    assert(isOwnedManagerOptionsUrl(managerPage.url(), managerId));
+    observer = createBrowserDownloadObserver(cdp);
+    const focused = await runLivePhotoCollection({
+      context,
+      extensionId: managerId,
+      contract,
+      downloads,
+      output,
+      managerObserver: observer,
+      managerApiObserver: createManagerPhotoApiObserver(
+        context,
+        managerId,
+        source.toString('utf8')
+      ),
+    });
+    receipt.focused = focused;
+    assert.equal(focused.status, 'observed', 'Manager photo collection proof is incomplete');
+    receipt.status = 'observed';
+  } catch (error) {
+    primaryError = error;
+    receipt.error = safeRouteError(error);
+  } finally {
+    if (observer) {
+      receipt.browserDownloadEvents = observer.events();
+      observer.dispose();
+      cleanup.downloadObserverRemoved = true;
+    }
+    if (managerPage) {
+      await managerPage.close().then(
+        () => {
+          cleanup.managerPageClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (cdp && managerId) {
+      await cdp.send('Extensions.uninstall', { id: managerId }).then(
+        () => {
+          cleanup.managerUninstalled = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    if (context) {
+      await context.close().then(
+        () => {
+          cleanup.browserClosed = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    }
+    let failureRetained = true;
+    if (primaryError || cleanupErrors.length) {
+      try {
+        receipt.failedNativeRetention = await retainFailedLiveNativeFiles(downloads, output, [], 8);
+      } catch (error) {
+        failureRetained = false;
+        cleanupErrors.push(error);
+        cleanup.failureRetentionError = safeRouteError(error);
+      }
+    }
+    if ((cleanup.browserClosed || !context) && failureRetained) {
+      await rm(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }).then(
+        () => {
+          cleanup.profileRemoved = true;
+        },
+        (error) => cleanupErrors.push(error)
+      );
+    } else {
+      cleanup.profilePreserved = true;
+    }
+    if (cleanupErrors.length) {
+      receipt.status = 'failed';
+      cleanup.errors = cleanupErrors.map(safeRouteError);
+    }
+    await writeFile(
+      join(output, 'userscript-photo-collection-installation.json'),
+      JSON.stringify(receipt, null, 2),
+      { flag: 'wx', mode: 0o600 }
+    );
+  }
+  if (primaryError && cleanupErrors.length) {
+    throw new AggregateError(
+      [primaryError, ...cleanupErrors],
+      'Photo manager qualification and cleanup failed'
+    );
+  }
+  if (primaryError) {
+    throw primaryError;
+  }
+  if (cleanupErrors.length) {
+    throw new AggregateError(cleanupErrors, 'Photo manager cleanup failed');
+  }
+  return receipt;
 }
 
 /** Fresh manager profile: one observed live save and one repeat after diagnostics are removed. */
