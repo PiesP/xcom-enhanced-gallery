@@ -829,6 +829,123 @@ describe('TweetMetadataReuse', () => {
     }
   );
 
+  it.each(['video', 'mixed'] as const)(
+    'keeps 20 supported %s attachments after synthetic middle gaps without substitution',
+    async (kind) => {
+      const omitted = new Set([4, 11, 17]);
+      const supportedOrdinals = Array.from({ length: 23 }, (_, ordinal) => ordinal).filter(
+        (ordinal) => !omitted.has(ordinal)
+      );
+      const attachments = Array.from({ length: 23 }, (_, ordinal) => {
+        if (ordinal === 4) {
+          return {
+            type: 'video',
+            id_str: 'hls-only',
+            media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/4/pu/img/hls.jpg',
+            video_info: {
+              variants: [
+                {
+                  content_type: 'application/x-mpegURL',
+                  url: 'https://video.twimg.com/ext_tw_video/4/pu/pl/list.m3u8',
+                },
+              ],
+            },
+          };
+        }
+        if (ordinal === 11) {
+          // Synthetic deleted attachment: the provider has no media ID.
+          return {
+            type: 'photo',
+            id_str: '',
+            media_url_https: 'https://pbs.twimg.com/media/DELETED.jpg',
+          };
+        }
+        if (ordinal === 17) {
+          // Synthetic inaccessible attachment: the source is outside the trusted CDN URL policy.
+          return {
+            type: 'photo',
+            id_str: 'inaccessible',
+            media_url_https: 'http://pbs.twimg.com/media/INACCESSIBLE.jpg',
+          };
+        }
+        const supportedIndex = supportedOrdinals.indexOf(ordinal);
+        if (kind === 'mixed' && supportedIndex % 2 === 0) {
+          return {
+            type: 'photo',
+            id_str: `photo-${ordinal}`,
+            media_url_https: `https://pbs.twimg.com/media/PHOTO${ordinal}.jpg`,
+          };
+        }
+        return {
+          type: 'video',
+          id_str: `video-${ordinal}`,
+          media_url_https: `https://pbs.twimg.com/ext_tw_video_thumb/${ordinal}/pu/img/poster.jpg`,
+          video_info: {
+            variants: [
+              {
+                content_type: 'video/mp4',
+                bitrate: 512_000,
+                url: `https://video.twimg.com/ext_tw_video/${ordinal}/pu/vid/320x180/clip.mp4`,
+              },
+            ],
+          },
+        };
+      });
+      const data = createPhotoTweetResponse();
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: {
+          data: {
+            tweetResult: {
+              result: {
+                ...data.data.tweetResult.result,
+                legacy: {
+                  ...data.data.tweetResult.result.legacy,
+                  extended_entities: { media: attachments },
+                },
+              },
+            },
+          },
+        },
+      });
+      const entries = await getTweetMedias('222');
+      expect(entries).toHaveLength(21);
+      expect(entries.find((entry) => entry.attachmentOrdinal === 4)).toMatchObject({
+        availability: 'unsupported-hls',
+      });
+      expect(
+        entries.some((entry) => entry.attachmentOrdinal === 11 || entry.attachmentOrdinal === 17)
+      ).toBe(false);
+      const items = convertAPIMediaToMediaInfo(entries, {
+        tweetId: '222',
+        username: 'cache_author',
+        tweetUrl: 'https://x.com/cache_author/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      });
+      expect(items).toHaveLength(20);
+      expect(items.map((item) => item.attachmentOrdinal)).toEqual(supportedOrdinals);
+      expect(items.map((item) => item.tweetId)).toEqual(Array(20).fill('222'));
+      const plan = planBulkDownload({ mediaItems: items });
+      for (const [index, ordinal] of supportedOrdinals.entries()) {
+        const isPhoto = kind === 'mixed' && index % 2 === 0;
+        const expectedUrl = isPhoto
+          ? `https://pbs.twimg.com/media/PHOTO${ordinal}.jpg?format=jpg&name=orig`
+          : `https://video.twimg.com/ext_tw_video/${ordinal}/pu/vid/320x180/clip.mp4`;
+        const expectedName = `cache_author_222_${ordinal}.${isPhoto ? 'jpg' : 'mp4'}`;
+        expect(items[index]).toMatchObject({
+          type: isPhoto ? 'image' : 'video',
+          url: expectedUrl,
+          attachmentOrdinal: ordinal,
+        });
+        expect(generateMediaFilename(items[index]!)).toBe(expectedName);
+        expect(plan.items[index]).toMatchObject({ url: expectedUrl, desiredName: expectedName });
+      }
+      expect(httpGet).toHaveBeenCalledOnce();
+    }
+  );
+
   it.each([64_000, 64_001])(
     'serves %i normalized serialized characters but caches at most 64,000',
     async (characters) => {
