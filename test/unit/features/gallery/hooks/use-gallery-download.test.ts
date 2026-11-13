@@ -13,11 +13,13 @@ const state = vi.hoisted(() => ({
   setBulkDownloadOutcome: vi.fn(),
   setSingleDownloadOutcome: vi.fn(),
   setError: vi.fn(),
+  applyObservedDownloadSources: vi.fn(),
   translate: vi.fn((key: string) => key),
   status: 'idle',
   bulkOutcome: null as object | null,
   singleOutcome: null as { observedFilename: string; filenameConforms?: boolean } | null,
   sessionRevision: 1,
+  recoveryScope: null as 'visible-tile' | 'visible-article' | 'api-supported-subset' | null,
   mediaItems: [] as MediaInfo[],
 }));
 
@@ -47,7 +49,11 @@ vi.mock('@shared/state/signals/gallery.signals', () => ({
     get mediaItems() {
       return state.mediaItems;
     },
+    get recoveryScope() {
+      return state.recoveryScope;
+    },
   },
+  applyObservedDownloadSources: state.applyObservedDownloadSources,
   getDisplayedMediaIndex: () => state.displayedIndex,
   setError: state.setError,
 }));
@@ -94,6 +100,7 @@ describe('createDownloadHandler bulk resource limits', () => {
     state.bulkOutcome = null;
     state.singleOutcome = null;
     state.sessionRevision = 1;
+    state.recoveryScope = null;
     state.mediaItems = [
       { id: 'first', type: 'image', url: 'https://example.test/first.jpg' },
       { id: 'shown', type: 'image', url: 'https://example.test/shown.jpg' },
@@ -224,6 +231,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       })
     );
     const pending = handler.handleDownload('current');
+    await vi.waitFor(() => expect(state.downloadSingle).toHaveBeenCalledTimes(2));
     expect(state.singleOutcome).toBeNull();
     state.sessionRevision += 1;
     resolveLate?.({ success: true, observedFilename: 'late.jpg', filenameConforms: false });
@@ -264,6 +272,7 @@ describe('createDownloadHandler bulk resource limits', () => {
       error: 'Original source is unverified',
     });
     await createDownloadHandler().handleDownload('current');
+    expect(state.downloadSingle).toHaveBeenCalledOnce();
     expect(state.setError).toHaveBeenLastCalledWith('msg.dl.sourceUnavailable');
     expect(state.setDownloadStatus).toHaveBeenLastCalledWith('error');
   });

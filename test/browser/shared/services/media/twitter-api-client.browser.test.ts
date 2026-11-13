@@ -4,6 +4,7 @@
 import type { BuildTweetResultByRestIdUrlArgs } from '@shared/core/twitter-api/endpoint';
 import { buildTweetResultByRestIdUrl } from '@shared/core/twitter-api/endpoint';
 import { generateMediaFilename } from '@shared/core/filename/filename-utils';
+import { planBulkDownload } from '@shared/core/download/download-plan';
 import { convertAPIMediaToMediaInfo } from '@shared/services/media/media-factory';
 import type { TwitterTweet } from '@shared/services/media/types';
 import { HttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
@@ -397,6 +398,73 @@ describe('TweetMetadataReuse', () => {
     expect(httpGet).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps 20 direct-quote photos before 20 requested photos with owner-local names', async () => {
+    const aId = '2121025509215850557';
+    const bId = '2121007970545017041';
+    const photos = (ownerId: string) =>
+      Array.from({ length: 20 }, (_, ordinal) => ({
+        type: 'photo' as const,
+        id_str: `${ownerId}-${ordinal}`,
+        media_url_https: `https://pbs.twimg.com/media/PHOTO_${ownerId}_${ordinal}.jpg`,
+        expanded_url: `https://x.com/shinchilla_/status/${ownerId}/photo/${ordinal + 1}`,
+      }));
+    const post = (id: string, quoted?: object) => ({
+      rest_id: id,
+      core: { user_results: { result: { legacy: { screen_name: 'shinchilla_' } } } },
+      legacy: { id_str: id, extended_entities: { media: photos(id) } },
+      ...(quoted ? { quoted_status_result: { result: quoted } } : {}),
+    });
+    const b = post(bId);
+    const a = post(aId, b);
+    httpGet.mockImplementation(async (url: string) => ({
+      ok: true,
+      status: 200,
+      data: {
+        data: {
+          tweetResult: {
+            result:
+              JSON.parse(new URL(url).searchParams.get('variables') ?? '{}').tweetId === aId
+                ? a
+                : b,
+          },
+        },
+      },
+    }));
+    const info = (id: string) => ({
+      tweetId: id,
+      username: 'shinchilla_',
+      tweetUrl: `https://x.com/shinchilla_/status/${id}`,
+      extractionMethod: 'fixture',
+      confidence: 1,
+    });
+    const fromA = convertAPIMediaToMediaInfo(await getTweetMedias(aId), info(aId));
+    const fromB = convertAPIMediaToMediaInfo(await getTweetMedias(bId), info(bId));
+    expect(fromA).toHaveLength(40);
+    expect(fromB).toHaveLength(20);
+    expect(fromA.map((media) => media.tweetId)).toEqual([
+      ...Array(20).fill(bId),
+      ...Array(20).fill(aId),
+    ]);
+    expect(fromA.map((media) => media.attachmentOrdinal)).toEqual([
+      ...Array.from({ length: 20 }, (_, index) => index),
+      ...Array.from({ length: 20 }, (_, index) => index),
+    ]);
+    const plan = planBulkDownload({ mediaItems: fromA });
+    for (const ownerId of [bId, aId]) {
+      for (const ordinal of [0, 3, 4, 9, 19]) {
+        const index = (ownerId === aId ? 20 : 0) + ordinal;
+        const expected = `shinchilla__${ownerId}_${ordinal}.jpg`;
+        expect(generateMediaFilename(fromA[index]!)).toBe(expected);
+        expect(plan.items[index]?.desiredName).toBe(expected);
+        expect(plan.items[index]?.url).toBe(
+          `https://pbs.twimg.com/media/PHOTO_${ownerId}_${ordinal}.jpg?format=jpg&name=orig`
+        );
+      }
+    }
+    expect(fromB.map((media) => media.tweetId)).toEqual(Array(20).fill(bId));
+    expect(plan.items.map((item) => item.desiredName)).toHaveLength(40);
+  });
+
   it('reuses only normalized successful media and gives each caller a private copy', async () => {
     const reuse = new TweetMetadataReuse();
     const first = await reuse.get('222');
@@ -736,6 +804,30 @@ describe('TweetMetadataReuse', () => {
       reuse.dispose();
     }
   });
+
+  it.each([1, 4, 5, 10, 20])(
+    'keeps all %i supported photo identities and positions',
+    async (count) => {
+      httpGet.mockResolvedValue({
+        ok: true,
+        status: 200,
+        data: createPhotoTweetResponse('222', count),
+      });
+      const entries = await getTweetMedias('222');
+      const items = convertAPIMediaToMediaInfo(entries, {
+        tweetId: '222',
+        username: 'author',
+        tweetUrl: 'https://x.com/author/status/222',
+        extractionMethod: 'fixture',
+        confidence: 1,
+      });
+      expect(items).toHaveLength(count);
+      expect(items.map((item) => item.attachmentOrdinal)).toEqual(
+        Array.from({ length: count }, (_, index) => index)
+      );
+      expect(planBulkDownload({ mediaItems: items }).items).toHaveLength(count);
+    }
+  );
 
   it.each([64_000, 64_001])(
     'serves %i normalized serialized characters but caches at most 64,000',

@@ -83,15 +83,24 @@ function probe(url: string, signal?: AbortSignal): Promise<ProbeOutcome> {
 }
 
 export function getDomImageOriginalProbeUrl(media: MediaInfo): string | null {
-  if (
-    media.type !== 'image' ||
-    media.downloadSource?.quality !== 'cdn-original' ||
-    media.downloadSource.provenance !== 'dom'
-  ) {
+  const resolution = media.metadata?.originalSourceResolution;
+  const deferredUrl =
+    resolution && typeof resolution === 'object' && 'requestedUrl' in resolution
+      ? resolution.requestedUrl
+      : null;
+  const sourceUrl =
+    media.downloadSource?.quality === 'cdn-original'
+      ? media.downloadSource.url
+      : media.downloadSource?.quality === 'unverified-original' &&
+          typeof deferredUrl === 'string' &&
+          deferredUrl === media.originalUrl
+        ? deferredUrl
+        : null;
+  if (media.type !== 'image' || media.downloadSource?.provenance !== 'dom' || !sourceUrl) {
     return null;
   }
-  const normalized = normalizeOriginalImageUrl(media.downloadSource.url);
-  if (normalized !== media.downloadSource.url) {
+  const normalized = normalizeOriginalImageUrl(sourceUrl);
+  if (normalized !== sourceUrl) {
     return null;
   }
   const parsed = new URL(normalized);
@@ -170,4 +179,61 @@ export function markDomImageOriginalProbeLimit(media: MediaInfo, original: strin
       },
     },
   };
+}
+
+/** Resolve only deferred or failed DOM originals for this save request. */
+export async function resolveDomImagesForDownload(
+  mediaItems: readonly MediaInfo[],
+  signal?: AbortSignal
+): Promise<MediaInfo[]> {
+  const pending = new Map<string, MediaInfo>();
+  for (const media of mediaItems) {
+    if (media.downloadSource?.quality !== 'unverified-original') {
+      continue;
+    }
+    const original = getDomImageOriginalProbeUrl(media);
+    if (original && !pending.has(original)) {
+      pending.set(original, media);
+    }
+  }
+  if (pending.size === 0 || signal?.aborted) {
+    return [...mediaItems];
+  }
+
+  // The extraction budget remains four eager sources; a requested ZIP can
+  // eventually visit every remaining source with at most four active probes.
+  const entries = [...pending.entries()];
+  const results = new Map<string, MediaInfo>();
+  let cursor = 0;
+  const worker = async (): Promise<void> => {
+    while (!signal?.aborted && cursor < entries.length) {
+      const entry = entries[cursor++];
+      if (!entry) {
+        return;
+      }
+      results.set(entry[0], await resolveDomImageOriginal(entry[1], signal));
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(4, entries.length) }, () => worker()));
+  if (signal?.aborted) {
+    return [...mediaItems];
+  }
+  return mediaItems.map((media) => {
+    if (media.downloadSource?.quality !== 'unverified-original') {
+      return media;
+    }
+    const original = getDomImageOriginalProbeUrl(media);
+    const resolved = original ? results.get(original) : undefined;
+    return resolved
+      ? {
+          ...media,
+          originalUrl: resolved.originalUrl,
+          ...(resolved.downloadSource ? { downloadSource: resolved.downloadSource } : {}),
+          metadata: {
+            ...media.metadata,
+            originalSourceResolution: resolved.metadata?.originalSourceResolution,
+          },
+        }
+      : media;
+  });
 }

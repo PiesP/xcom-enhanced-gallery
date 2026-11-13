@@ -15,8 +15,15 @@ export function GallerySourceDetails(): JSXElement {
     const index = getDisplayedMediaIndex();
     return index === null ? null : (gallerySignals.mediaItems[index] ?? null);
   });
-  const isPartial = () => gallerySignals.recoveryScope === 'visible-tile';
+  const isPartial = () => gallerySignals.recoveryScope !== null;
+  const isKnownSubset = () => gallerySignals.recoveryScope === 'api-supported-subset';
   const quality = () => displayedMedia()?.downloadSource?.quality;
+  const isDeferred = () => {
+    const resolution = displayedMedia()?.metadata?.originalSourceResolution;
+    return resolution && typeof resolution === 'object' && 'reason' in resolution
+      ? resolution.reason === 'probe-limit'
+      : false;
+  };
   const hasLimitation = () =>
     isPartial() || quality() === 'observed' || quality() === 'unverified-original';
 
@@ -43,27 +50,46 @@ export function GallerySourceDetails(): JSXElement {
           <summary>
             <Show when={isPartial()}>
               <span>
-                {translate('msg.gal.sourceDetails.shown', {
-                  count: gallerySignals.mediaItems.length,
-                })}
+                {translate(
+                  isKnownSubset()
+                    ? 'msg.gal.sourceDetails.knownSubset'
+                    : 'msg.gal.sourceDetails.shown',
+                  {
+                    count: gallerySignals.mediaItems.length,
+                  }
+                )}
               </span>
             </Show>
             <Show when={quality() === 'observed'}>
               <span>{translate('msg.gal.sourceDetails.observed')}</span>
             </Show>
             <Show when={quality() === 'unverified-original'}>
-              <span>{translate('msg.gal.sourceDetails.unavailable')}</span>
+              <span>
+                {translate(
+                  isDeferred()
+                    ? 'msg.gal.sourceDetails.pending'
+                    : 'msg.gal.sourceDetails.unavailable'
+                )}
+              </span>
             </Show>
           </summary>
           <h2>{translate('msg.gal.sourceDetails.title')}</h2>
           <Show when={isPartial()}>
-            <p>{translate('msg.gal.partialRecovery.body')}</p>
+            <p>
+              {translate(
+                isKnownSubset() ? 'msg.gal.knownSubset.body' : 'msg.gal.partialRecovery.body'
+              )}
+            </p>
           </Show>
           <p>
             {quality() === 'observed'
               ? translate('msg.gal.sourceDetails.observedDetail')
               : quality() === 'unverified-original'
-                ? translate('msg.gal.sourceDetails.unavailableDetail')
+                ? translate(
+                    isDeferred()
+                      ? 'msg.gal.sourceDetails.pendingDetail'
+                      : 'msg.gal.sourceDetails.unavailableDetail'
+                  )
                 : quality() === 'best-mp4'
                   ? translate('msg.gal.sourceDetails.bestMp4')
                   : quality() === 'cdn-original'

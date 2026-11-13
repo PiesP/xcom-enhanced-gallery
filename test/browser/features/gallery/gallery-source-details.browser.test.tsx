@@ -3,6 +3,7 @@
 
 import { GallerySourceDetails } from '@features/gallery/components/GallerySourceDetails';
 import {
+  applyObservedDownloadSources,
   closeGallery,
   gallerySignals,
   navigateToItem,
@@ -41,6 +42,19 @@ const unavailable: MediaInfo = {
   ...verified,
   id: 'unavailable',
   downloadSource: { provenance: 'dom', quality: 'unverified-original', url: '' },
+};
+const deferred: MediaInfo = {
+  ...unavailable,
+  id: 'deferred',
+  originalUrl: 'https://pbs.twimg.com/media/deferred?format=webp&name=orig',
+  metadata: {
+    originalSourceResolution: {
+      requestedUrl: 'https://pbs.twimg.com/media/deferred?format=webp&name=orig',
+      selectedUrl: null,
+      attempts: [],
+      reason: 'probe-limit',
+    },
+  },
 };
 
 describe('current media source limitations', () => {
@@ -115,5 +129,39 @@ describe('current media source limitations', () => {
     expect(gallerySignals.recoveryScope).toBeNull();
     openGallery([verified]);
     expect(host.querySelector('details')).toBeNull();
+  });
+
+  it('marks observed articles as unknown-total and distinguishes deferred from unavailable originals', () => {
+    openGallery([deferred], 0, 'visible-article');
+    expect(host.querySelector('summary')?.textContent).toContain('msg.gal.sourceDetails.shown:1');
+    expect(host.querySelector('summary')?.textContent).toContain('msg.gal.sourceDetails.pending');
+    expect(host.textContent).toContain('msg.gal.sourceDetails.pendingDetail');
+    const revision = gallerySignals.sessionRevision;
+    const checked = {
+      ...deferred,
+      metadata: {
+        originalSourceResolution: {
+          requestedUrl: deferred.originalUrl,
+          selectedUrl: null,
+          attempts: [{ url: deferred.originalUrl, status: 403, mime: null }],
+        },
+      },
+    };
+    applyObservedDownloadSources([deferred], [checked], revision);
+    expect(host.querySelector('summary')?.textContent).toContain(
+      'msg.gal.sourceDetails.unavailable'
+    );
+    closeGallery();
+    openGallery([deferred], 0, 'visible-article');
+    applyObservedDownloadSources([deferred], [checked], revision);
+    expect(host.querySelector('summary')?.textContent).toContain('msg.gal.sourceDetails.pending');
+  });
+
+  it('identifies a known unsupported API subset without inventing a raw post count', () => {
+    openGallery([verified], 0, 'api-supported-subset');
+    expect(host.querySelector('summary')?.textContent).toContain(
+      'msg.gal.sourceDetails.knownSubset:1'
+    );
+    expect(host.textContent).toContain('msg.gal.knownSubset.body');
   });
 });

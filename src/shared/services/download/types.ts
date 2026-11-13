@@ -50,6 +50,8 @@ export interface DownloadProgress {
 export type DownloadProgressCallback = (progress: DownloadProgress) => void;
 
 export interface DownloadOptions {
+  /** The gallery already probed deferred DOM originals for this operation. */
+  domOriginalsResolved?: boolean;
   /** Shared binary ownership ledger; injectable for bounded acceptance fixtures. */
   liveBudget?: LiveByteBudget;
   concurrency?: number;

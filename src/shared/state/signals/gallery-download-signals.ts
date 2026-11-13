@@ -20,6 +20,10 @@ export interface SingleDownloadOutcome {
 export interface BulkDownloadOutcome {
   /** The count refers to the media shown when Download all was requested. */
   readonly total: number;
+  /** DOM observation cannot establish the post's attachment total. */
+  readonly unknownPostTotal?: boolean;
+  /** API identified additional entries that are unsupported for saving. */
+  readonly knownSubset?: boolean;
   /** Files included in the ZIP accepted by the browser, never merely prepared. */
   readonly included: number;
   readonly omitted: number;
