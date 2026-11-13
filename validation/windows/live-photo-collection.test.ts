@@ -6,7 +6,12 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
 import { join } from 'node:path';
-import { createInstalledLargePhotoFixture } from './installed-large-photo-fixture.ts';
+import {
+  assertLargePhotoNativeTransport,
+  createInstalledLargePhotoFixture,
+  createInstalledLargePhotoRouteBudget,
+  largePhotoFixtureMedia,
+} from './installed-large-photo-fixture.ts';
 import { createExtensionNativeFixtureHandler } from './extension-native-loopback.ts';
 import { createUserscriptFixtureHandler } from './userscript-loopback.ts';
 import { summarizeTweetResultResponse } from './live-page.ts';
@@ -326,6 +331,9 @@ const source = readFileSync(
 );
 
 test('source-known 20/40 fixture has distinct marked JPEG references and pinned B then A ownership', () => {
+  const sof = source.indexOf(Buffer.from([0xff, 0xc0]));
+  assert(sof >= 0, 'Narrow source JPEG lacks baseline frame dimensions');
+  assert.deepEqual([source.readUInt16BE(sof + 7), source.readUInt16BE(sof + 5)], [54, 1080]);
   const fixture = createInstalledLargePhotoFixture(source);
   assert.equal(fixture.originals.size, 40);
   assert.equal(
@@ -339,6 +347,28 @@ test('source-known 20/40 fixture has distinct marked JPEG references and pinned 
     assert.equal(bytes[3], 0xfe);
     assert(url.endsWith('?format=jpg&name=orig'));
   }
+  for (const photo of fixture.photos) {
+    assert.equal(fixture.originals.get(photo.reference.originalUrl), photo.bytes);
+    assert.equal(photo.displayUrl.replace('name=large', 'name=orig'), photo.reference.originalUrl);
+    assert(!photo.previewBytes.equals(photo.bytes), 'Displayed preview must differ from original');
+    assert.notEqual(
+      createHash('sha256').update(photo.previewBytes).digest('hex'),
+      photo.reference.sha256
+    );
+    assert.deepEqual(largePhotoFixtureMedia(fixture.photos, photo.reference.originalUrl, 'other'), {
+      purpose: 'original',
+      key: photo.reference.sourceKey,
+      bytes: photo.bytes,
+    });
+    assert.deepEqual(largePhotoFixtureMedia(fixture.photos, photo.displayUrl, 'image'), {
+      purpose: 'preview',
+      key: photo.reference.sourceKey,
+      bytes: photo.previewBytes,
+    });
+  }
+  assert.throws(() =>
+    largePhotoFixtureMedia(fixture.photos, fixture.photos[0]!.displayUrl, 'other')
+  );
   const { requested, directQuote, expected } = fixture.contract;
   assert(directQuote);
   assert.deepEqual(
@@ -357,6 +387,10 @@ test('source-known 20/40 fixture has distinct marked JPEG references and pinned 
     [...Array(20).fill(directQuote.statusId), ...Array(20).fill(requested.statusId)]
   );
   const traces = [...fixture.apiResponses].map(([id, body]) => {
+    assert.equal(
+      body.toString('utf8').match(/"original_info":\{"width":54,"height":1080\}/gu)?.length,
+      id === requested.statusId ? 40 : 20
+    );
     const summary = summarizeTweetResultResponse(
       `https://x.com/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: id }))}`,
       200,
@@ -391,6 +425,41 @@ test('source-known 20/40 fixture has distinct marked JPEG references and pinned 
       .get(`https://x.com/${requested.handle}/status/${requested.statusId}`)
       ?.includes('data-testid="quoteTweet"')
   );
+  for (const [url, html] of fixture.pages) {
+    assert.equal(
+      (html.match(/width="54" height="1080"/gu) ?? []).length,
+      url.includes(requested.statusId) ? 40 : 20
+    );
+    assert(html.includes('max-width:54px;width:auto;height:auto'));
+  }
+});
+
+test('large-photo route and native budgets reject overflow instead of passing it', async () => {
+  const budget = createInstalledLargePhotoRouteBudget(2);
+  let aborted = 0;
+  const route = {
+    abort: async () => {
+      aborted += 1;
+    },
+  };
+  const document = await budget.admit(route);
+  assert(document);
+  document.kind = 'document';
+  const api = await budget.admit(route);
+  assert(api);
+  api.kind = 'api';
+  assert.equal(await budget.admit(route), null);
+  assert.equal(aborted, 1);
+  assert.equal(budget.overflow, true);
+  assert.deepEqual(
+    budget.events.map((event) => event.kind),
+    ['document', 'api']
+  );
+  const before = { overflow: false, unexpectedCount: 2, activeCount: 0 };
+  assertLargePhotoNativeTransport(before, before);
+  assert.throws(() => assertLargePhotoNativeTransport(before, { ...before, overflow: true }));
+  assert.throws(() => assertLargePhotoNativeTransport(before, { ...before, unexpectedCount: 3 }));
+  assert.throws(() => assertLargePhotoNativeTransport(before, { ...before, activeCount: 1 }));
 });
 
 async function readHosted(
