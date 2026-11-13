@@ -268,6 +268,28 @@ test('transport probe is extension-only and cannot visit public X', () => {
   );
 });
 
+test('source-known photo mode is exclusive, extension-only, and has no public URLs', () => {
+  const { contract } = fixture(true);
+  const selector = { scenario: 'photo-collection-20-40', ...contract, sourceKnownOnly: true };
+  assert.deepEqual(parsePhotoCollectionSelector(selector, 'extension', []), {
+    ...contract,
+    sourceKnownOnly: true,
+  });
+  assert.throws(() => parsePhotoCollectionSelector(selector, 'userscript', []));
+  assert.throws(() =>
+    parsePhotoCollectionSelector(selector, 'extension', [
+      `https://x.com/${requested.handle}/status/${requested.statusId}`,
+      `https://x.com/${directQuote.handle}/status/${directQuote.statusId}`,
+    ])
+  );
+  assert.throws(() =>
+    parsePhotoCollectionSelector({ ...selector, transportProbe: true }, 'extension', [])
+  );
+  assert.throws(() =>
+    parsePhotoCollectionSelector({ ...selector, sourceKnownOnly: false }, 'extension', [])
+  );
+});
+
 test('transport probe waits for canceled native downloads to become terminal', async () => {
   let canceled = false;
   let observations = 0;
@@ -710,7 +732,8 @@ test('installed recovery notice permits one identified opening call and rejects 
 async function readHosted(
   handle: (request: IncomingMessage, response: ServerResponse) => void,
   path: string,
-  host: string
+  host: string,
+  headers: Record<string, string> = {}
 ): Promise<{ status: number | undefined; bytes: Buffer }> {
   const server = createServer(handle);
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -719,7 +742,7 @@ async function readHosted(
   try {
     return await new Promise((resolve, reject) => {
       const outgoing = request(
-        { hostname: '127.0.0.1', port: address.port, path, headers: { Host: host } },
+        { hostname: '127.0.0.1', port: address.port, path, headers: { Host: host, ...headers } },
         (incoming) => {
           const chunks: Buffer[] = [];
           incoming.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -738,6 +761,44 @@ async function readHosted(
     );
   }
 }
+
+test('native photo documents require the three exact source-known paths and bytes', async () => {
+  const fixture = createInstalledLargePhotoFixture(source);
+  const base = Buffer.from('base');
+  const extension = createExtensionNativeFixtureHandler();
+  extension.setPayloads(
+    [base, base, base],
+    Object.fromEntries(
+      ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+        name,
+        base,
+      ])
+    )
+  );
+  extension.setLargePhotos(fixture.originals);
+  const pages = new Map([...fixture.pages, ...fixture.dom.pages]);
+  assert.throws(() => extension.setLargePhotoDocuments(new Map([...pages].slice(0, 2))));
+  extension.setLargePhotoDocuments(pages);
+  assert.throws(() => extension.setLargePhotoDocuments(pages));
+  for (const [sourceUrl, html] of pages) {
+    const url = new URL(sourceUrl);
+    assert.deepEqual(
+      await readHosted(extension.handle, url.pathname, url.hostname, {
+        'Sec-Fetch-Dest': 'document',
+      }),
+      { status: 200, bytes: Buffer.from(html) }
+    );
+  }
+  assert.equal(
+    (await readHosted(extension.handle, '/fixture_owner_/status/9666600000000000004', 'x.com'))
+      .status,
+    404
+  );
+  assert.equal(
+    extension.snapshot().events.filter((event) => event.purpose === 'document').length,
+    3
+  );
+});
 
 test('both installed native transports serve exact original bytes and reject another quality', async () => {
   const fixture = createInstalledLargePhotoFixture(source);

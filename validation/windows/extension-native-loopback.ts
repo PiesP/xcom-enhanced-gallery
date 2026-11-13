@@ -19,6 +19,11 @@ const LARGE_PHOTO_MAX_REQUESTS = 512;
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_SERVED_BYTES = 16 * 1024 * 1024;
 const IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
+const LARGE_PHOTO_DOCUMENT_URLS = [
+  'https://x.com/fixture_owner_/status/9666600000000000001',
+  'https://x.com/fixture_owner_/status/9666600000000000002',
+  'https://x.com/fixture_owner_/status/9666600000000000003',
+];
 
 type NativeRoute = {
   bytes: Buffer;
@@ -436,6 +441,29 @@ export function createExtensionNativeFixtureHandler() {
         allowed.set(key, { bytes, host: url.hostname, path: url.pathname });
       }
       largePhotosInstalled = true;
+    },
+    setLargePhotoDocuments(pages: ReadonlyMap<string, string>) {
+      assert(largePhotosInstalled, 'Install the 20/40 photo originals first');
+      assert.deepEqual([...pages.keys()].sort(), [...LARGE_PHOTO_DOCUMENT_URLS].sort());
+      const additions = LARGE_PHOTO_DOCUMENT_URLS.map((source) => {
+        const url = new URL(source);
+        const bytes = Buffer.from(pages.get(source)!);
+        assert(bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+        const key = `${url.hostname}${url.pathname}`;
+        assert(!allowed.has(key), 'Large photo document already installed');
+        return [
+          key,
+          {
+            bytes,
+            host: 'x.com',
+            path: url.pathname,
+            contentType: 'text/html; charset=utf-8',
+          },
+        ] as const;
+      });
+      for (const [key, route] of additions) {
+        allowed.set(key, route);
+      }
     },
     setLargeDomPhotos(originals: ReadonlyMap<string, Buffer>) {
       assert(largePhotosInstalled, 'Install the 20/40 photo originals first');

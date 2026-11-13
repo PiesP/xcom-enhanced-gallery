@@ -217,7 +217,17 @@ type NativeSnapshot = {
   unexpectedCount: number;
   activeCount: number;
   domProbePeak?: number;
-  events?: readonly { sourceUrl?: string; method: string; status?: number; result: string }[];
+  events?: readonly {
+    sourceUrl?: string;
+    host?: string;
+    path?: string;
+    method: string;
+    purpose?: string;
+    status?: number;
+    bytes?: number;
+    sha256?: string | null;
+    result: string;
+  }[];
   transport?: unknown;
 };
 
@@ -328,6 +338,7 @@ export async function runInstalledLargePhotoFixture({
   installDomNative,
   nativeSnapshot,
   transportProbe = false,
+  sourceKnownOnly = false,
   managerObserver = null,
   managerApiObserver = null,
 }: {
@@ -340,20 +351,31 @@ export async function runInstalledLargePhotoFixture({
   installDomNative?: (fixture: NativeFixture) => void;
   nativeSnapshot: () => NativeSnapshot;
   transportProbe?: boolean;
+  sourceKnownOnly?: boolean;
   managerObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerObserver'];
   managerApiObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerApiObserver'];
 }) {
+  assert(!transportProbe || !sourceKnownOnly, 'Photo fixture modes are mutually exclusive');
+  assert(!sourceKnownOnly || !managerObserver, 'Source-known document mode requires extension');
   const fixture = createInstalledLargePhotoFixture(
     await readFile(join(root, 'test/e2e/fixtures/large-photo-narrow.jpg'))
   );
+  const nativeDocuments = new Map([...fixture.pages, ...fixture.dom.pages]);
   const readNative = (): NativeSnapshot => {
     const { overflow, unexpectedCount, activeCount } = nativeSnapshot();
     return { overflow, unexpectedCount, activeCount };
   };
   const beforeNative = readNative();
-  installNative(fixture);
   const budget = createInstalledLargePhotoRouteBudget();
   const routed = new Map<Request, FixtureRouteEvent>();
+  const pendingDocuments = new Set<Request>();
+  const settleDocumentRoutes = async () => {
+    const deadline = Date.now() + 3_000;
+    while (pendingDocuments.size > 0 && Date.now() < deadline) {
+      await new Promise((done) => setTimeout(done, 50));
+    }
+    assert.equal(pendingDocuments.size, 0, 'Native document route did not settle');
+  };
   const onResponse = (response: { request(): Request; status(): number }) => {
     const event = routed.get(response.request());
     if (event) {
@@ -362,12 +384,14 @@ export async function runInstalledLargePhotoFixture({
     }
   };
   const onRequestFinished = (request: Request) => {
+    pendingDocuments.delete(request);
     const event = routed.get(request);
     if (event) {
       event.settlement = 'finished';
     }
   };
   const onRequestFailed = (request: Request) => {
+    pendingDocuments.delete(request);
     const event = routed.get(request);
     if (event) {
       event.settlement = 'failed';
@@ -389,9 +413,21 @@ export async function runInstalledLargePhotoFixture({
     }
     const page = fixture.pages.get(url.href) ?? fixture.dom.pages.get(url.href);
     if (page && request.isNavigationRequest() && request.method() === 'GET') {
-      event.kind = 'document';
-      event.status = 200;
-      await requestRoute.fulfill({ status: 200, contentType: 'text/html', body: page });
+      event.kind = sourceKnownOnly ? 'document-native' : 'document';
+      event.key = url.pathname;
+      event.method = request.method();
+      if (sourceKnownOnly) {
+        pendingDocuments.add(request);
+        try {
+          await requestRoute.continue();
+        } catch (error) {
+          pendingDocuments.delete(request);
+          throw error;
+        }
+      } else {
+        event.status = 200;
+        await requestRoute.fulfill({ status: 200, contentType: 'text/html', body: page });
+      }
       return;
     }
     if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
@@ -486,11 +522,16 @@ export async function runInstalledLargePhotoFixture({
   context.on('requestfinished', onRequestFinished);
   context.on('requestfailed', onRequestFailed);
   try {
+    installNative(fixture);
     await context.route('**/*', route);
     const proof = await runLivePhotoCollection({
       context,
       extensionId,
-      contract: transportProbe ? { ...fixture.contract, transportProbe: true } : fixture.contract,
+      contract: transportProbe
+        ? { ...fixture.contract, transportProbe: true }
+        : sourceKnownOnly
+          ? { ...fixture.contract, sourceKnownOnly: true }
+          : fixture.contract,
       downloads,
       output,
       managerObserver,
@@ -500,6 +541,7 @@ export async function runInstalledLargePhotoFixture({
         receiptFile: 'installed-large-photo-collection.json',
         retainedPrefix: 'installed-large-photo',
         scope: 'source-known installed photo fixture; not actual public X acceptance',
+        ...(sourceKnownOnly ? { nativeDocuments } : {}),
         ...(transportProbe ? { transportProbeSnapshot: nativeSnapshot } : {}),
         ...(managerObserver
           ? {
@@ -531,6 +573,9 @@ export async function runInstalledLargePhotoFixture({
       return receipt;
     }
     const idleDeadline = Date.now() + 3_000;
+    if (sourceKnownOnly) {
+      await settleDocumentRoutes();
+    }
     while (nativeSnapshot().activeCount > 0 && Date.now() < idleDeadline) {
       await new Promise((done) => setTimeout(done, 50));
     }
@@ -542,7 +587,9 @@ export async function runInstalledLargePhotoFixture({
     const domProof = await runLivePhotoCollection({
       context,
       extensionId,
-      contract: fixture.dom.contract,
+      contract: sourceKnownOnly
+        ? { ...fixture.dom.contract, sourceKnownOnly: true }
+        : fixture.dom.contract,
       downloads,
       output,
       managerObserver,
@@ -562,6 +609,7 @@ export async function runInstalledLargePhotoFixture({
         retainedPrefix: 'installed-dom-photo',
         scope:
           'source-known installed DOM 20 photo fixture after exact-owner API 403; unknown post total',
+        ...(sourceKnownOnly ? { nativeDocuments } : {}),
         nativeSnapshot: () => {
           const snapshot = nativeSnapshot();
           assert(snapshot.events, 'DOM original transport observations are unavailable');
@@ -573,6 +621,25 @@ export async function runInstalledLargePhotoFixture({
       },
     });
     receipt.domProof = domProof;
+    if (sourceKnownOnly) {
+      await settleDocumentRoutes();
+      const documentPaths = new Set(
+        [...nativeDocuments.keys()].map((source) => new URL(source).pathname)
+      );
+      const deadline = Date.now() + 3_000;
+      while (
+        (nativeSnapshot().events ?? []).filter(
+          (event) =>
+            event.host === 'x.com' &&
+            event.purpose === 'document' &&
+            event.result === 'served' &&
+            documentPaths.has(event.path ?? '')
+        ).length < documentPaths.size &&
+        Date.now() < deadline
+      ) {
+        await new Promise((done) => setTimeout(done, 50));
+      }
+    }
     assert.equal(proof.status, 'observed', 'Installed 20/40 fixture proof is incomplete');
     assert.equal(domProof.status, 'observed', 'Installed DOM 20 fixture proof is incomplete');
     const afterDomNative = nativeSnapshot();
@@ -597,20 +664,43 @@ export async function runInstalledLargePhotoFixture({
     const afterNative = readNative();
     receipt.nativeTransport = { before: beforeNative, after: afterNative };
     assertLargePhotoNativeTransport(beforeNative, afterNative);
+    if (sourceKnownOnly) {
+      const observed = nativeSnapshot().events;
+      assert(observed, 'Native document server events are unavailable');
+      const documents = [...nativeDocuments].map(([source, html]) => {
+        const url = new URL(source);
+        const bytes = Buffer.from(html);
+        const sha256 = hash(bytes);
+        const matches = observed.filter(
+          (event) =>
+            event.host === 'x.com' &&
+            event.path === url.pathname &&
+            event.method === 'GET' &&
+            event.purpose === 'document' &&
+            event.status === 200 &&
+            event.result === 'served' &&
+            event.bytes === bytes.length &&
+            event.sha256 === sha256
+        );
+        assert.equal(matches.length, 1, 'Native document server identity is incomplete');
+        const routeMatches = budget.events.filter(
+          (event) =>
+            event.kind === 'document-native' &&
+            event.key === url.pathname &&
+            event.method === 'GET' &&
+            event.status === 200 &&
+            event.settlement === 'finished'
+        );
+        assert.equal(routeMatches.length, 1, 'Native document client route is incomplete');
+        return { host: url.hostname, path: url.pathname, bytes: bytes.length, sha256 };
+      });
+      receipt.nativeDocuments = documents;
+    }
     receipt.status = 'passed';
   } catch (error) {
     primaryError = error;
     receipt.error = error instanceof Error ? error.message : String(error);
   } finally {
-    context.off('response', onResponse);
-    context.off('requestfinished', onRequestFinished);
-    context.off('requestfailed', onRequestFailed);
-    routed.clear();
-    receipt.requests = budget.events;
-    receipt.requestOverflow = budget.overflow;
-    if (!receipt.nativeTransport) {
-      receipt.nativeTransport = { before: beforeNative, after: readNative() };
-    }
     try {
       await context.unroute('**/*', route);
       receipt.routeRemoved = true;
@@ -620,6 +710,26 @@ export async function runInstalledLargePhotoFixture({
         primaryError = error;
       }
       receipt.status = 'failed';
+    }
+    if (sourceKnownOnly) {
+      try {
+        await settleDocumentRoutes();
+      } catch (error) {
+        receipt.documentSettlementError = error instanceof Error ? error.message : String(error);
+        if (!primaryError) {
+          primaryError = error;
+        }
+        receipt.status = 'failed';
+      }
+    }
+    context.off('response', onResponse);
+    context.off('requestfinished', onRequestFinished);
+    context.off('requestfailed', onRequestFailed);
+    routed.clear();
+    receipt.requests = budget.events;
+    receipt.requestOverflow = budget.overflow;
+    if (!receipt.nativeTransport) {
+      receipt.nativeTransport = { before: beforeNative, after: readNative() };
     }
     await writeFile(
       join(output, 'installed-large-photo-fixture.json'),

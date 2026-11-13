@@ -48,6 +48,7 @@ export type PhotoCollectionContract = {
   directQuote: PhotoOwner | null;
   expected: readonly PhotoExpectedReference[];
   transportProbe?: true;
+  sourceKnownOnly?: true;
 };
 
 /** A diagnostic must account for a native ZIP after cancellation and page closure. */
@@ -263,12 +264,17 @@ export function parsePhotoCollectionSelector(
       'requested',
       'scenario',
       ...(input.transportProbe === undefined ? [] : ['transportProbe']),
+      ...(input.sourceKnownOnly === undefined ? [] : ['sourceKnownOnly']),
     ].sort()
   );
   assert.equal(input.scenario, 'photo-collection-20-40');
   const transportProbe = input.transportProbe === true;
+  const sourceKnownOnly = input.sourceKnownOnly === true;
   assert(input.transportProbe === undefined || transportProbe, 'Unsupported transport probe');
+  assert(input.sourceKnownOnly === undefined || sourceKnownOnly, 'Unsupported source-known mode');
+  assert(!transportProbe || !sourceKnownOnly, 'Photo modes are mutually exclusive');
   assert(!transportProbe || installation === 'extension', 'Transport probe requires extension');
+  assert(!sourceKnownOnly || installation === 'extension', 'Source-known mode requires extension');
   assert(
     installation === 'extension' || installation === 'userscript',
     'Photo collection route requires an installed extension or manager userscript'
@@ -287,6 +293,7 @@ export function parsePhotoCollectionSelector(
   const directQuote = input.directQuote === null ? null : parseOwner(input.directQuote);
   assert(!directQuote || directQuote.statusId !== requested.statusId);
   assert(!transportProbe || directQuote, 'Transport probe requires the direct B owner');
+  assert(!sourceKnownOnly || directQuote, 'Source-known mode requires the direct B owner');
   assert(Array.isArray(input.expected), 'Photo selector must pin every independent original');
   const expected = input.expected.map((raw: unknown, index: number): PhotoExpectedReference => {
     assert(raw && typeof raw === 'object' && !Array.isArray(raw));
@@ -334,10 +341,20 @@ export function parsePhotoCollectionSelector(
   const url = (owner: PhotoOwner) => `https://x.com/${owner.handle}/status/${owner.statusId}`;
   assert.deepEqual(
     liveUrls,
-    transportProbe ? [] : directQuote ? [url(requested), url(directQuote)] : [url(requested)],
+    transportProbe || sourceKnownOnly
+      ? []
+      : directQuote
+        ? [url(requested), url(directQuote)]
+        : [url(requested)],
     'Photo collection URLs must match the exact declared owners'
   );
-  return { requested, directQuote, expected, ...(transportProbe ? { transportProbe: true } : {}) };
+  return {
+    requested,
+    directQuote,
+    expected,
+    ...(transportProbe ? { transportProbe: true } : {}),
+    ...(sourceKnownOnly ? { sourceKnownOnly: true } : {}),
+  };
 }
 
 export type PhotoProviderTrace = NonNullable<ReturnType<typeof summarizeTweetResultResponse>>;
@@ -1120,6 +1137,7 @@ export async function runLivePhotoCollection({
     scope: string;
     observation?: 'dom';
     providerEvidence?: { snapshot(): readonly unknown[]; bodies: ReadonlyMap<string, Buffer> };
+    nativeDocuments?: ReadonlyMap<string, string>;
     nativeSnapshot?: () => DomNativeSnapshot;
     transportProbeSnapshot?: () => unknown;
   } | null;
@@ -1127,6 +1145,10 @@ export async function runLivePhotoCollection({
   assert(
     !contract.transportProbe || (fixture && !managerObserver),
     'Probe needs owned extension fixture'
+  );
+  assert(
+    !contract.sourceKnownOnly || fixture?.nativeDocuments,
+    'Source-known mode needs native documents'
   );
   assert(
     !managerApiObserver || managerObserver,
@@ -1341,6 +1363,24 @@ export async function runLivePhotoCollection({
         const url = `https://x.com/${owner.handle}/status/${owner.statusId}`;
         const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
         assert.equal(response?.status(), 200, 'Public post did not return HTTP 200');
+        if (contract.sourceKnownOnly) {
+          assert(response, 'Source-known native document has no client response');
+          const expectedHtml = fixture?.nativeDocuments?.get(url);
+          assert(expectedHtml, 'Source-known document is not declared');
+          const expectedBytes = Buffer.from(expectedHtml);
+          assert(expectedBytes.length <= 256 * 1024, 'Source-known document exceeds native bound');
+          const actualBytes = await response.body();
+          await response.finished();
+          assert(actualBytes.equals(expectedBytes), 'Native document client bytes differ');
+          visit.nativeDocument = {
+            host: 'x.com',
+            path: new URL(url).pathname,
+            method: response.request().method(),
+            status: response.status(),
+            bytes: actualBytes.length,
+            sha256: createHash('sha256').update(actualBytes).digest('hex'),
+          };
+        }
         await page
           .locator('html[data-xeg-gallery-ready="true"]')
           .waitFor({ state: 'attached', timeout: 20_000 });

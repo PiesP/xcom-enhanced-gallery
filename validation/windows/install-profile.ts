@@ -1189,6 +1189,7 @@ type InstallResult = {
   liveBrowserScope?: string;
   live?: unknown;
   evidenceStatus?: string;
+  publicAcceptance?: 'not-run';
   error?: string;
 };
 type TrustedDownloadInputEvidence = {
@@ -21845,6 +21846,12 @@ export async function run({
   if (photoCollection) {
     assert.equal(liveObservation, null);
     assert(!reportedFilenameProbe && !liveSettingsProbe);
+    if (photoCollection.sourceKnownOnly) {
+      assert.equal(browserName, 'chrome', 'Source-known mode requires installed Chrome');
+      assert.equal(headless, false, 'Source-known mode requires desktop Chrome');
+      assert.equal(installation, 'extension', 'Source-known mode requires the extension');
+      assert.equal(validatedLiveUrls.length, 0, 'Source-known mode cannot visit public X');
+    }
     const selectors = (await readdir(join(root, 'validation/windows/inputs')))
       .filter((name) => name.endsWith('.json'))
       .sort();
@@ -22259,6 +22266,10 @@ export async function run({
                                   : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
+  if (photoCollection?.sourceKnownOnly) {
+    result.scope =
+      'source-known installed-extension API 20/40 and DOM 20 fixtures only; no public X acceptance';
+  }
   try {
     if (upgradeInput) {
       await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
@@ -22507,10 +22518,16 @@ export async function run({
             downloads,
             output,
             root,
-            installNative: ({ originals }) => nativeLoopback!.setLargePhotos(originals),
+            installNative: ({ originals, pages, dom }) => {
+              nativeLoopback!.setLargePhotos(originals);
+              if (photoCollection.sourceKnownOnly) {
+                nativeLoopback!.setLargePhotoDocuments(new Map([...pages, ...dom.pages]));
+              }
+            },
             installDomNative: ({ dom }) => nativeLoopback!.setLargeDomPhotos(dom.originals),
             nativeSnapshot: () => nativeLoopback!.snapshot(),
             transportProbe: photoCollection.transportProbe === true,
+            sourceKnownOnly: photoCollection.sourceKnownOnly === true,
           });
         }
       }
@@ -22559,6 +22576,10 @@ export async function run({
     if (photoCollection?.transportProbe) {
       assert.equal(result.largePhotoFixture?.status, 'diagnostic');
       result.evidenceStatus = 'diagnostic-only';
+    } else if (photoCollection?.sourceKnownOnly) {
+      assert.equal(result.largePhotoFixture?.status, 'passed');
+      result.evidenceStatus = 'source-known-fixture-only';
+      result.publicAcceptance = 'not-run';
     } else if (!sameVersionInput) {
       const live = photoCollection
         ? await runLivePhotoCollection({
