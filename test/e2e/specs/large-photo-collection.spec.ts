@@ -213,3 +213,25 @@ test('nested owner click selects C without flattening sixty and native non-media
   await expect(page).toHaveURL(new RegExp(`/status/${LARGE_PHOTO_OWNERS[2]}$`));
   await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
 });
+
+test('source-known virtualized article reports only three observed tiles and preserves ordinal gaps in ZIP', async ({
+  page,
+}) => {
+  const originals = await setupLargePhotoFixture(page, {
+    count: 20,
+    domFallback: true,
+    visibleOrdinals: [0, 4, 19],
+  });
+  const observed = [originals[0]!, originals[4]!, originals[19]!];
+  await page.locator(`#photo-${LARGE_PHOTO_OWNERS[0]}-19`).click();
+  await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-total', '3');
+  await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-position', '3');
+  await expectRendered(page, 2, observed[2]!);
+  await saveSingle(page, observed[2]!);
+  await saveZip(page, observed);
+  await expect(page.locator('[data-gallery-element="bulk-download-outcome"]')).toContainText(
+    /post may contain more/iu
+  );
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
+});

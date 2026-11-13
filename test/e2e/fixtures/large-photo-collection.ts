@@ -104,6 +104,7 @@ export async function setupLargePhotoFixture(
     quote?: boolean;
     nested?: boolean;
     domFallback?: boolean;
+    visibleOrdinals?: readonly number[];
   }
 ): Promise<PhotoExpectation[]> {
   const groups = [
@@ -123,7 +124,11 @@ export async function setupLargePhotoFixture(
   );
   const nestedHtml = options.nested ? article(groups[2]!) : '';
   const quoteHtml = options.quote ? article(groups[1]!, nestedHtml) : '';
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Large source-known photo fixture</title><style>body{margin:0;background:#222;color:white;font:16px sans-serif}article{padding:12px}.tiles{display:flex;flex-wrap:wrap;gap:8px}.tiles img{width:120px;height:90px;object-fit:cover}.quote{border:1px solid #888;padding:8px}</style></head><body>${article(groups[requestedOwner]!, requestedOwner === 0 ? quoteHtml : requestedOwner === 1 ? nestedHtml : '', options.domFallback)}</body></html>`;
+  // Source-known virtualized-carousel hypothesis: only mounted tiles are observable.
+  const mounted = groups[requestedOwner]!.filter((item) =>
+    options.visibleOrdinals ? options.visibleOrdinals.includes(item.ordinal) : true
+  );
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Large source-known photo fixture</title><style>body{margin:0;background:#222;color:white;font:16px sans-serif}article{padding:12px}.tiles{display:flex;flex-wrap:wrap;gap:8px}.tiles img{width:120px;height:90px;object-fit:cover}.quote{border:1px solid #888;padding:8px}</style></head><body>${article(mounted, requestedOwner === 0 ? quoteHtml : requestedOwner === 1 ? nestedHtml : '', options.domFallback)}</body></html>`;
   const all = groups.flat();
   const bySource = new Map(all.map((item) => [item.sourceKey, item.bytes]));
   await page.route('https://pbs.twimg.com/**', async (route) => {
