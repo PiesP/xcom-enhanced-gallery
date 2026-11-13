@@ -890,6 +890,7 @@ export async function runLivePhotoCollection({
       const pending = new Set<Promise<void>>();
       const captureErrors: unknown[] = [];
       let overflow = false;
+      let admittedProviderResponses = 0;
       const providerChannels: Array<Record<string, unknown>> = [];
       visit.providerChannels = providerChannels;
       visit.apiObservationChannel = 'owned-browser-context (frame and service-worker responses)';
@@ -911,10 +912,11 @@ export async function runLivePhotoCollection({
           return;
         }
         const requestedId = target.requested.statusId;
-        if (pending.size + observations.length >= 12) {
+        if (admittedProviderResponses >= 12) {
           overflow = true;
           return;
         }
+        admittedProviderResponses += 1;
         const request = response.request();
         const worker = request.serviceWorker();
         let producerOrigin: string | null = null;
