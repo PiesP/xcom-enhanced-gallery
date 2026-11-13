@@ -7,12 +7,15 @@ import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
 import {
   parsePhotoCollectionSelector,
+  requiredPhotoPositions,
   verifyPhotoCollection,
   verifyPhotoCollectionDownloads,
+  verifySelectedPhoto,
   type PhotoCollectionContract,
   type PhotoGalleryEntry,
   type PhotoOriginalReference,
   type PhotoProviderTrace,
+  type SelectedPhotoSnapshot,
 } from './live-photo-collection.ts';
 
 const requested = { handle: 'shinchilla_', statusId: '2121025509215850557', count: 20 } as const;
@@ -169,6 +172,44 @@ test('photo collection checks all B-then-A identities and each owner-local ordin
   assert.throws(
     () => verifyPhotoCollection(contract, [{ ...trace, directQuote: null }], gallery),
     /another post/u
+  );
+});
+
+test('boundary selection verifies the rendered source even when counter and model are correct', () => {
+  const { contract, trace, gallery } = fixture(true);
+  const expected = verifyPhotoCollection(contract, [trace], gallery);
+  assert.deepEqual(requiredPhotoPositions(20), [0, 3, 4, 9, 11, 12, 19]);
+  assert.deepEqual(requiredPhotoPositions(40), [0, 3, 4, 9, 11, 12, 19, 20, 39]);
+  const selected: SelectedPhotoSnapshot = {
+    total: 40,
+    currentIndex: 20,
+    focusedIndex: 20,
+    counterPosition: 21,
+    itemIndex: 20,
+    active: true,
+    focused: true,
+    mediaId: expected[20]!.mediaId,
+    declaredUrl: gallery.entries[20]!.displayUrl,
+    renderedUrl: gallery.entries[20]!.displayUrl,
+    imageLoaded: true,
+    imageVisible: true,
+  };
+  assert.doesNotThrow(() => verifySelectedPhoto(expected[20]!, 40, selected));
+  assert.throws(
+    () =>
+      verifySelectedPhoto(expected[20]!, 40, {
+        ...selected,
+        renderedUrl: gallery.entries[19]!.displayUrl,
+      }),
+    /rendered source differs/u
+  );
+  assert.throws(
+    () => verifySelectedPhoto(expected[20]!, 40, { ...selected, imageVisible: false }),
+    /visible/u
+  );
+  assert.throws(
+    () => verifySelectedPhoto(expected[20]!, 40, { ...selected, mediaId: expected[19]!.mediaId }),
+    /media ID differs/u
   );
 });
 
