@@ -79,7 +79,7 @@ preparation fails. A source-known owner failure is retained while the next owner
 is inspected only when no owned native download remains pending. Manager-backed
 visits additionally require recorded completion for every observed browser download;
 a missing or canceled terminal observation stops continuation. Public observation
-remains fail-fast. DOM evidence may proceed only after both API visit pages and
+remains fail-fast. In the full fixture mode, DOM evidence proceeds only after both API visit pages and
 their observer close, with idle, non-overflowed owned transport. Any failed API
 or DOM proof keeps the overall result failed. Both synthetic owners share one trailing-underscore
 handle and user ID, with distinct post IDs and owner-local ordinals. The fixture then
@@ -103,6 +103,23 @@ declared owner/status/body length and SHA. Its receipt is marked
 body remains fixture input, not a claim that the client received or used it.
 Conflicting client observations fail. Existing product owner IDs, sources,
 full collections, native files and ZIP bytes remain independently required.
+
+For a bounded installed Chrome extension fixture run, `sourceKnownOnly: true`
+requires an empty live-URL list and stops before public observation. Its exact
+synthetic document responses use the same owned HTTPS listener as original media;
+the receipt verifies document client bytes/hash and finished server responses.
+This preserves browser address-space behavior without granting permissions or
+changing product network routing. The full mode reports
+`source-known-fixture-only` and `publicAcceptance: "not-run"`.
+
+After matching API fixture evidence is retained, adding
+`sourceKnownScope: "dom20"` runs only the independent DOM owner. It admits only
+that owner's document/media routes, records API proof as `NOT_RUN`, and reports
+`source-known-dom20-fixture-only` with `fixtureScope: "dom20"`. It cannot qualify
+API 20/40 or public acceptance. Navigation uses real toolbar clicks planned from
+the displayed focus; final identity, current/focused index, counter and rendered
+source assertions still apply. Bounded movement/scroll observations and a failure
+screen help distinguish verifier assumptions from installed geometry behavior.
 For the selected manager photo route, an additional owned CDP observer binds the
 exact installed product body in its executed manager wrapper and the sole GM
 JSON-response callback. Its conditional breakpoint admits only the declared
