@@ -142,6 +142,91 @@ export type VerifiedPhoto = {
   expected: PhotoExpectedReference;
 };
 
+export type SelectedPhotoSnapshot = {
+  total: number;
+  currentIndex: number;
+  focusedIndex: number;
+  counterPosition: number;
+  itemIndex: number;
+  active: boolean;
+  focused: boolean;
+  mediaId: string;
+  declaredUrl: string;
+  renderedUrl: string;
+  imageLoaded: boolean;
+  imageVisible: boolean;
+};
+
+/** Inspect only the selected photo; other gallery items need not be visible or mounted. */
+export function inspectSelectedPhotoDocument(gallery: Element): SelectedPhotoSnapshot | null {
+  const toolbar = gallery.querySelector('[data-gallery-element="toolbar"]');
+  const counter = toolbar?.querySelector('#xeg-toolbar-counter[data-gallery-element="position"]');
+  const currentIndex = Number(toolbar?.getAttribute('data-current-index'));
+  const selected = [...gallery.querySelectorAll('[data-gallery-element="item"]')].filter(
+    (item) => item.getAttribute('data-index') === String(currentIndex)
+  );
+  const item = selected.length === 1 ? selected[0] : null;
+  const image = item?.querySelector('img');
+  if (!(item instanceof HTMLElement) || !(image instanceof HTMLImageElement)) {
+    return null;
+  }
+  const style = getComputedStyle(image);
+  const bounds = image.getBoundingClientRect();
+  return {
+    total: Number(counter?.getAttribute('data-total')),
+    currentIndex,
+    focusedIndex: Number(toolbar?.getAttribute('data-focused-index')),
+    counterPosition: Number(counter?.getAttribute('data-position')),
+    itemIndex: Number(item.getAttribute('data-index')),
+    active: item.getAttribute('data-media-active') === 'true',
+    focused: item.getAttribute('data-media-focused') === 'true',
+    mediaId: item.getAttribute('data-media-id') ?? '',
+    declaredUrl: item.getAttribute('data-media-display-url') ?? '',
+    renderedUrl: image.currentSrc || image.src,
+    imageLoaded:
+      item.getAttribute('data-media-loaded') === 'true' && image.complete && image.naturalWidth > 0,
+    imageVisible:
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity) !== 0 &&
+      bounds.width > 0 &&
+      bounds.height > 0 &&
+      bounds.bottom > 0 &&
+      bounds.top < innerHeight &&
+      bounds.right > 0 &&
+      bounds.left < innerWidth,
+  };
+}
+
+/** A correct counter and model cannot mask a stale or wrong rendered image. */
+export function verifySelectedPhoto(
+  expected: VerifiedPhoto,
+  expectedTotal: number,
+  snapshot: SelectedPhotoSnapshot | null
+): void {
+  assert(snapshot, `Selected gallery position ${expected.index} was not rendered`);
+  assert.equal(snapshot.total, expectedTotal, 'Selected photo total differs');
+  assert.equal(snapshot.currentIndex, expected.index, 'Selected photo index differs');
+  assert.equal(snapshot.focusedIndex, expected.index, 'Selected photo focus differs');
+  assert.equal(snapshot.counterPosition, expected.index + 1, 'Selected photo counter differs');
+  assert.equal(snapshot.itemIndex, expected.index, 'Selected item index differs');
+  assert(
+    snapshot.active && snapshot.focused && snapshot.imageLoaded && snapshot.imageVisible,
+    'Selected photo is not active, focused, loaded and visible'
+  );
+  assert.equal(snapshot.mediaId, expected.mediaId, 'Selected photo media ID differs');
+  assert.equal(stem(snapshot.declaredUrl), expected.displayStem, 'Selected model source differs');
+  assert.equal(
+    stem(snapshot.renderedUrl),
+    expected.displayStem,
+    'Selected rendered source differs'
+  );
+}
+
+export function requiredPhotoPositions(total: 20 | 40): readonly number[] {
+  return total === 20 ? [0, 3, 4, 9, 11, 12, 19] : [0, 3, 4, 9, 11, 12, 19, 20, 39];
+}
+
 const MEDIA_PATH = /^\/media\/([A-Za-z0-9_-]+)(?:\.(?:jpe?g|png|webp|gif))?$/iu;
 const HANDLE = /^[A-Za-z0-9_]{1,15}$/u;
 const STATUS = /^[1-9]\d{1,39}$/u;
@@ -433,6 +518,59 @@ async function observeGallery(page: Page, expectedCount: number) {
   };
 }
 
+async function verifyBoundaryPhotoSelections(page: Page, expected: readonly VerifiedPhoto[]) {
+  assert(expected.length === 20 || expected.length === 40);
+  const gallery = page.locator('[data-xeg-gallery-container]');
+  const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
+  let current = Number(await toolbar.getAttribute('data-current-index'));
+  assert(Number.isSafeInteger(current) && current >= 0 && current < expected.length);
+  const visits: Array<SelectedPhotoSnapshot & { ownerId: string; ordinal: number }> = [];
+  const moves: Array<{ from: number; to: number; direction: 'Next' | 'Previous' }> = [];
+  for (const index of requiredPhotoPositions(expected.length as 20 | 40)) {
+    while (current !== index) {
+      const direction = current < index ? 'Next' : 'Previous';
+      const from = current;
+      await toolbar.locator(`button[aria-label="${direction}"]`).click();
+      current += direction === 'Next' ? 1 : -1;
+      await page.waitForFunction(
+        (target) =>
+          document
+            .querySelector('[data-xeg-gallery-container] [data-gallery-element="toolbar"]')
+            ?.getAttribute('data-current-index') === String(target),
+        current,
+        { timeout: 10_000 }
+      );
+      moves.push({ from, to: current, direction });
+    }
+    const item = expected[index]!;
+    let selected: SelectedPhotoSnapshot | null = null;
+    let lastFailure: unknown = new Error(`Selected photo ${index} did not settle`);
+    const deadline = Date.now() + 10_000;
+    do {
+      selected = await gallery.evaluate(inspectSelectedPhotoDocument);
+      try {
+        verifySelectedPhoto(item, expected.length, selected);
+        break;
+      } catch (error) {
+        lastFailure = error;
+      }
+      await new Promise((done) => setTimeout(done, 100));
+    } while (Date.now() < deadline);
+    if (!selected || !selected.imageLoaded || !selected.imageVisible) {
+      throw lastFailure;
+    }
+    verifySelectedPhoto(item, expected.length, selected);
+    visits.push({ ...selected, ownerId: item.owner.statusId, ordinal: item.attachmentOrdinal });
+  }
+  if (expected.length === 40) {
+    assert(
+      moves.some((move) => move.from === 19 && move.to === 20 && move.direction === 'Next'),
+      'Requested-owner transition 19 to 20 was not navigated'
+    );
+  }
+  return { visits, moves };
+}
+
 /** A separate photo-only installed-extension route. It does not satisfy full actual-site acceptance. */
 export async function runLivePhotoCollection({
   context,
@@ -628,6 +766,7 @@ export async function runLivePhotoCollection({
             sourceStem: item.displayStem,
           })),
         };
+        visit.selectedPositions = await verifyBoundaryPhotoSelections(page, verified);
         const toolbar = page.locator(
           '[data-xeg-gallery-container] [data-gallery-element="toolbar"]'
         );

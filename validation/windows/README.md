@@ -79,7 +79,10 @@ the maintained manager installation and browser ZIP completion GUID in a fresh
 owned profile; its binary evidence is flattened through the existing transport.
 The gallery count is checked separately
 from mounted items; article-local media visibility alone is not accepted as a
-complete attachment set. The photo-only result supplies no video, settings,
+complete attachment set. It navigates to selected positions 1, 4, 5, 10, 12,
+13 and 20 in both owner cases, plus 21 and 40 for the combined gallery, then
+checks the active media ID and rendered image source at each position. The
+photo-only result supplies no video, settings,
 post-close navigation, authenticated-X, or publication acceptance. See
 `inputs/README.md` for the exact selector and URL order. The external controller
 must admit the selected installed route before VM execution; this repository's
