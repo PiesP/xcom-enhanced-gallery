@@ -59,15 +59,24 @@ export async function settlePhotoTransportProbeDownloads(
   const initial = (await query()).filter((item) => item.state === 'in_progress');
   assert(initial.length <= 1, 'Probe produced more than one native download');
   const ids = initial.map((item) => item.id);
+  const unsettled = new Set(ids);
   if (ids.length > 0 && cancel) {
     await cancel(ids);
   }
   for (let attempt = 0; attempt < 40; attempt++) {
-    const pending = (await query()).filter((item) => item.state === 'in_progress');
-    if (pending.length === 0) {
+    const downloads = await query();
+    const pending = downloads.filter((item) => item.state === 'in_progress');
+    assert(pending.length <= 1, 'Probe produced more than one native download');
+    for (const item of downloads) {
+      if (item.state === 'in_progress') {
+        unsettled.add(item.id);
+      } else if (item.state === 'complete' || item.state === 'interrupted') {
+        unsettled.delete(item.id);
+      }
+    }
+    if (pending.length === 0 && unsettled.size === 0) {
       return ids;
     }
-    assert(pending.length <= 1, 'Probe produced more than one native download');
     if (attempt < 39) {
       await pause();
     }

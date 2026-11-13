@@ -306,6 +306,34 @@ test('transport probe fails closed while a native download remains pending', asy
   await assert.rejects(settlePhotoTransportProbeDownloads(query, null, async () => {}));
 });
 
+test('transport probe requires a terminal observation for a missing native download', async () => {
+  let observations = 0;
+  const query = async () => (++observations === 1 ? [{ id: 17, state: 'in_progress' }] : []);
+  await assert.rejects(
+    settlePhotoTransportProbeDownloads(
+      query,
+      async () => {},
+      async () => {}
+    ),
+    /terminal state/u
+  );
+  assert.equal(observations, 41);
+});
+
+test('transport probe requires a terminal observation for an unknown native state', async () => {
+  let observations = 0;
+  const query = async () => [{ id: 17, state: ++observations === 1 ? 'in_progress' : 'unknown' }];
+  await assert.rejects(
+    settlePhotoTransportProbeDownloads(
+      query,
+      async () => {},
+      async () => {}
+    ),
+    /terminal state/u
+  );
+  assert.equal(observations, 41);
+});
+
 test('boundary selection verifies the rendered source even when counter and model are correct', () => {
   const { contract, trace, gallery } = fixture(true);
   const expected = verifyPhotoCollection(contract, [trace], gallery);
