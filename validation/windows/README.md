@@ -69,6 +69,22 @@ for another, and none is a required CI lane.
    `inputs/live-acceptance.json` selector opts the installed extension into
    actual-site image navigation, downloads, settings, and status-navigation checks.
 
+The focused `inputs/live-photo-collection.json` route is separate from the
+2-4-item full actual-site selector. It declares one 20-photo owner or a requested
+20-photo post and its direct 20-photo quote. Its installed distribution receipt
+retains all 20/40 provider and gallery identities (including owner-local
+ordinals), actual completed native IDs, independent original hashes, and every
+ZIP member's verified CRC/name/hash. The userscript route additionally requires
+the maintained manager installation and browser ZIP completion GUID in a fresh
+owned profile; its binary evidence is flattened through the existing transport.
+The gallery count is checked separately
+from mounted items; article-local media visibility alone is not accepted as a
+complete attachment set. The photo-only result supplies no video, settings,
+post-close navigation, authenticated-X, or publication acceptance. See
+`inputs/README.md` for the exact selector and URL order. The external controller
+must admit the selected installed route before VM execution; this repository's
+selector cannot override its routing policy.
+
 The native regression suite under `validation/windows/` runs with
 `vp run test:e2e:native` after the project dependencies and Playwright Chromium
 are installed. Run `vp run verify` first to build the production artifacts:
