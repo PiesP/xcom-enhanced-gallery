@@ -446,7 +446,7 @@ export function assertDomPhotoSourceDetails(
   ]);
 }
 
-/** Context-level observation includes manager workers but admits only this owned X request. */
+/** Admit only this owned X request, independently of its observation channel. */
 export function photoProviderRequestMatches(source: URL, requestedId: string): boolean {
   if (
     source.origin !== 'https://x.com' ||
@@ -469,6 +469,24 @@ export function photoProviderRequestMatches(source: URL, requestedId: string): b
   } catch {
     return false;
   }
+}
+
+/** HTTP refusals are observed outcomes, not malformed successful metadata. */
+export function summarizeSuccessfulPhotoProviderResponse(
+  url: string,
+  status: number,
+  bodyText: string
+): PhotoProviderTrace | null {
+  assert(Buffer.byteLength(bodyText, 'utf8') <= 2_000_000, 'Provider body exceeds trace bound');
+  if (status !== 200) {
+    return null;
+  }
+  return summarizeTweetResultResponse(
+    url,
+    status,
+    JSON.parse(bodyText.replace(/^\uFEFF/u, '')),
+    40
+  );
 }
 
 /** Bind this selected scenario to the exact requested and completed native source. */
@@ -1077,11 +1095,10 @@ export async function runLivePhotoCollection({
               ? String(variables.tweetId)
               : null;
           providerStatuses.push({ requestedId, status: response.status() });
-          const observation = summarizeTweetResultResponse(
+          const observation = summarizeSuccessfulPhotoProviderResponse(
             response.url(),
             response.status(),
-            JSON.parse(bytes.toString('utf8')),
-            40
+            bytes.toString('utf8')
           );
           if (observation) {
             observations.push(observation);
@@ -1143,11 +1160,10 @@ export async function runLivePhotoCollection({
                   Buffer.byteLength(captured.bodyText, 'utf8') <= 2_000_000,
                   'GM provider body exceeded trace bound'
                 );
-                const observation = summarizeTweetResultResponse(
+                const observation = summarizeSuccessfulPhotoProviderResponse(
                   captured.url,
                   captured.status,
-                  JSON.parse(captured.bodyText.replace(/^\uFEFF/u, '')),
-                  40
+                  captured.bodyText
                 );
                 if (observation) {
                   observations.push(observation);
@@ -1273,6 +1289,19 @@ export async function runLivePhotoCollection({
         }
         assert.equal(captureErrors.length, 0, 'Provider trace capture failed');
         assert(!overflow, 'Provider trace exceeded observation budget');
+        if (!domObservation) {
+          assert(
+            providerStatuses.some(
+              (entry) => entry.requestedId === target.requested.statusId && entry.status === 200
+            ),
+            `Requested-owner API did not return HTTP 200; observed statuses: ${
+              providerStatuses
+                .filter((entry) => entry.requestedId === target.requested.statusId)
+                .map((entry) => entry.status)
+                .join(',') || 'none'
+            }`
+          );
+        }
         if (domObservation) {
           assert(
             providerStatuses.some(

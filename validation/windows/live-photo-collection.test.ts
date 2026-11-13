@@ -31,6 +31,7 @@ import {
   finishManagerPhotoApiCapture,
   runLivePhotoCollection,
   photoProviderRequestMatches,
+  summarizeSuccessfulPhotoProviderResponse,
   assertExactPhotoNativeSource,
   assertDomPhotoZipOutcome,
   parsePhotoCollectionSelector,
@@ -690,6 +691,25 @@ test('context API observation excludes foreign origins and other requested owner
   const malformed = new URL(url);
   malformed.searchParams.set('variables', '{');
   assert(!photoProviderRequestMatches(malformed, requested.statusId));
+});
+
+test('an empty HTTP refusal stays distinct from invalid successful provider JSON', () => {
+  const url = `https://x.com/i/api/graphql/frozen/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: requested.statusId }))}`;
+  for (const status of [403, 404, 429, 500]) {
+    assert.equal(summarizeSuccessfulPhotoProviderResponse(url, status, ''), null);
+    assert.equal(
+      summarizeSuccessfulPhotoProviderResponse(url, status, '<html>denied</html>'),
+      null
+    );
+  }
+  assert.throws(() => summarizeSuccessfulPhotoProviderResponse(url, 200, ''));
+  assert.throws(() => summarizeSuccessfulPhotoProviderResponse(url, 200, '<html>denied</html>'));
+  assert.throws(() => summarizeSuccessfulPhotoProviderResponse(url, 403, 'x'.repeat(2_000_001)));
+  const body = { data: {} };
+  assert.deepEqual(
+    summarizeSuccessfulPhotoProviderResponse(url, 200, `\uFEFF${JSON.stringify(body)}`),
+    summarizeTweetResultResponse(url, 200, body, 40)
+  );
 });
 
 test('fixture visit failures retain both owners and cleanup while public observation fails fast', async () => {

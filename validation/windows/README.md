@@ -119,6 +119,10 @@ can affect timing and supplies no performance result.
 Public A/B observations never use fixture server evidence. Only cookie-presence
 booleans are recorded for their owned fresh profile; authentication is not
 imported. Missing client responses remain unverified.
+An observed non-200 response, including an empty HTTP 403, is retained as an
+HTTP outcome rather than a JSON-decoding failure. Public API qualification still
+requires the requested owner's HTTP 200 and complete source-bound identities;
+visible DOM tiles alone cannot satisfy that requirement.
 The selected manager fixture adds three singles and three ZIPs to the existing
 fixture: browser event admission is bounded to 18 instead of the default 12, and
 failed native-file retention to 14 instead of 8. The 4 MiB per-file and 16 MiB
