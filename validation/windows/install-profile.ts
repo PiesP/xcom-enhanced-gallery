@@ -65,6 +65,7 @@ import {
 } from './live-page.ts';
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
 import { parsePhotoCollectionSelector, runLivePhotoCollection } from './live-photo-collection.ts';
+import { runInstalledLargePhotoFixture } from './installed-large-photo-fixture.ts';
 import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import { createLateImageLayoutProbe, type LateLayoutReceipt } from './late-image-layout.ts';
@@ -1126,6 +1127,7 @@ type InstallResult = {
   upgrade?: UpgradeReceipt;
   sameVersion?: Awaited<ReturnType<typeof runSameVersionAttribution>>;
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
+  largePhotoFixture?: Awaited<ReturnType<typeof runInstalledLargePhotoFixture>>;
   openingFeedback?: unknown;
   mediaDownloadRecovery?: unknown;
   videoSaveFormat?: unknown;
@@ -21773,6 +21775,7 @@ export async function run({
       browserName,
       headless,
       attachmentFilenameProbe,
+      photoCollectionFixture: photoCollection !== null,
     });
     if (reportedFilenameTarget === null && photoCollection === null) {
       return fixture;
@@ -22379,6 +22382,16 @@ export async function run({
           browserCdp,
           nativeLoopback
         );
+        if (photoCollection) {
+          result.largePhotoFixture = await runInstalledLargePhotoFixture({
+            context,
+            extensionId,
+            downloads,
+            output,
+            root,
+            installNative: ({ originals }) => nativeLoopback!.setLargePhotos(originals),
+          });
+        }
       }
     }
     await context.unrouteAll({ behavior: 'wait' });

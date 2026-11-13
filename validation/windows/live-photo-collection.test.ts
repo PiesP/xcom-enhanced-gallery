@@ -3,6 +3,13 @@
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
+import { join } from 'node:path';
+import { createInstalledLargePhotoFixture } from './installed-large-photo-fixture.ts';
+import { createExtensionNativeFixtureHandler } from './extension-native-loopback.ts';
+import { createUserscriptFixtureHandler } from './userscript-loopback.ts';
+import { summarizeTweetResultResponse } from './live-page.ts';
 import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
 import {
@@ -312,4 +319,161 @@ test('photo ZIP proof compares every owner and byte body independent of archive 
       }),
     /ZIP|CRC|byte count|Central entry/u
   );
+});
+
+const source = readFileSync(
+  join(import.meta.dirname, '../../test/e2e/fixtures/large-photo-narrow.jpg')
+);
+
+test('source-known 20/40 fixture has distinct marked JPEG references and pinned B then A ownership', () => {
+  const fixture = createInstalledLargePhotoFixture(source);
+  assert.equal(fixture.originals.size, 40);
+  assert.equal(
+    new Set([...fixture.originals.values()].map((bytes) => bytes.toString('hex'))).size,
+    40
+  );
+  for (const [url, bytes] of fixture.originals) {
+    assert(bytes.subarray(0, 2).equals(Buffer.from([0xff, 0xd8])));
+    assert(bytes.subarray(-2).equals(Buffer.from([0xff, 0xd9])));
+    assert.equal(bytes[2], 0xff);
+    assert.equal(bytes[3], 0xfe);
+    assert(url.endsWith('?format=jpg&name=orig'));
+  }
+  const { requested, directQuote, expected } = fixture.contract;
+  assert(directQuote);
+  assert.deepEqual(
+    parsePhotoCollectionSelector(
+      { scenario: 'photo-collection-20-40', requested, directQuote, expected },
+      'extension',
+      [
+        `https://x.com/${requested.handle}/status/${requested.statusId}`,
+        `https://x.com/${directQuote.handle}/status/${directQuote.statusId}`,
+      ]
+    ),
+    fixture.contract
+  );
+  assert.deepEqual(
+    expected.map((item) => item.ownerId),
+    [...Array(20).fill(directQuote.statusId), ...Array(20).fill(requested.statusId)]
+  );
+  const traces = [...fixture.apiResponses].map(([id, body]) => {
+    const summary = summarizeTweetResultResponse(
+      `https://x.com/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: id }))}`,
+      200,
+      JSON.parse(body.toString('utf8')),
+      40
+    );
+    assert(summary);
+    return summary;
+  });
+  const entries = fixture.photos.map((photo, index) => ({
+    index,
+    mediaId: photo.mediaId,
+    displayUrl: photo.displayUrl,
+  }));
+  const verified = verifyPhotoCollection(fixture.contract, traces, {
+    total: 40,
+    entries,
+    truncated: false,
+  });
+  const bOnly = verifyPhotoCollection(
+    { requested: directQuote, directQuote: null, expected: expected.slice(0, 20) },
+    traces,
+    { total: 20, entries: entries.slice(0, 20), truncated: false }
+  );
+  assert.equal(bOnly.length, 20);
+  assert.equal(bOnly[19]?.attachmentOrdinal, 19);
+  assert.equal(verified[19]?.owner.statusId, directQuote.statusId);
+  assert.equal(verified[20]?.owner.statusId, requested.statusId);
+  assert.equal(verified[39]?.attachmentOrdinal, 19);
+  assert(
+    fixture.pages
+      .get(`https://x.com/${requested.handle}/status/${requested.statusId}`)
+      ?.includes('data-testid="quoteTweet"')
+  );
+});
+
+async function readHosted(
+  handle: (request: IncomingMessage, response: ServerResponse) => void,
+  path: string,
+  host: string
+): Promise<{ status: number | undefined; bytes: Buffer }> {
+  const server = createServer(handle);
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  try {
+    return await new Promise((resolve, reject) => {
+      const outgoing = request(
+        { hostname: '127.0.0.1', port: address.port, path, headers: { Host: host } },
+        (incoming) => {
+          const chunks: Buffer[] = [];
+          incoming.on('data', (chunk: Buffer) => chunks.push(chunk));
+          incoming.once('error', reject);
+          incoming.once('end', () =>
+            resolve({ status: incoming.statusCode, bytes: Buffer.concat(chunks) })
+          );
+        }
+      );
+      outgoing.once('error', reject);
+      outgoing.end();
+    });
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve()))
+    );
+  }
+}
+
+test('both installed native transports serve exact original bytes and reject another quality', async () => {
+  const fixture = createInstalledLargePhotoFixture(source);
+  const base = Buffer.from('base');
+  const extension = createExtensionNativeFixtureHandler();
+  extension.setPayloads(
+    [base, base, base],
+    Object.fromEntries(
+      ['quote-one', 'quote-two', 'linked-four', 'quote-three', 'nested-c'].map((name) => [
+        name,
+        base,
+      ])
+    )
+  );
+  extension.setLargePhotos(fixture.originals);
+  const userscript = createUserscriptFixtureHandler(
+    Object.fromEntries(
+      ['normal', 'failure', 'partial', 'held'].map((name, cohort) => [
+        name,
+        [0, 1, 2].map(
+          (index) => `Abc${String(cohort).padStart(2, '0')}${String(index).padStart(2, '0')}123456`
+        ),
+      ])
+    ),
+    '/profile_images/123456789/public-avatar.jpg'
+  );
+  userscript.setImages([base, base, base]);
+  userscript.setLargePhotos(fixture.originals, fixture.apiResponses);
+  const selected = fixture.contract.expected[39]!;
+  const original = new URL(selected.originalUrl);
+  for (const transport of [extension, userscript]) {
+    assert.deepEqual(
+      await readHosted(transport.handle, original.pathname + original.search, original.hostname),
+      { status: 200, bytes: fixture.originals.get(selected.originalUrl) }
+    );
+    assert.equal(
+      (
+        await readHosted(
+          transport.handle,
+          original.pathname + '?format=jpg&name=large',
+          original.hostname
+        )
+      ).status,
+      404
+    );
+    assert.equal(transport.snapshot().unexpectedCount, 1);
+  }
+  const apiPath = `/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: fixture.contract.requested.statusId }))}`;
+  assert.deepEqual(await readHosted(userscript.handle, apiPath, 'x.com'), {
+    status: 200,
+    bytes: fixture.apiResponses.get(fixture.contract.requested.statusId),
+  });
 });

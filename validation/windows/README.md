@@ -72,6 +72,10 @@ for another, and none is a required CI lane.
 The focused `inputs/live-photo-collection.json` route is separate from the
 2-4-item full actual-site selector. It declares one 20-photo owner or a requested
 20-photo post and its direct 20-photo quote. Its installed distribution receipt
+first records a separate source-known 20/40 fixture with unique marked JPEG
+originals and native single/ZIP files. The fixture receipts are
+`installed-large-photo-fixture.json` and `installed-large-photo-collection.json`;
+their pass does not qualify the selected public posts. The later live receipt
 retains all 20/40 provider and gallery identities (including owner-local
 ordinals), actual completed native IDs, independent original hashes, and every
 ZIP member's verified CRC/name/hash. The userscript route additionally requires
