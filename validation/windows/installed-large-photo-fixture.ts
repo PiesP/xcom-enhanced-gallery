@@ -198,7 +198,14 @@ export function createInstalledLargePhotoFixture(source: Buffer) {
 
 type NativeFixture = ReturnType<typeof createInstalledLargePhotoFixture>;
 
-type FixtureRouteEvent = { kind: string; status: number; key?: string };
+type FixtureRouteEvent = {
+  kind: string;
+  status: number;
+  key?: string;
+  purpose?: string;
+  method?: string;
+  resourceType?: string;
+};
 type NativeSnapshot = {
   overflow: boolean;
   unexpectedCount: number;
@@ -211,8 +218,13 @@ type NativeSnapshot = {
 export function largePhotoFixtureMedia(
   photos: readonly FixturePhoto[],
   source: string,
-  resourceType: string
-): { purpose: 'original' | 'missing-original' | 'preview'; key: string; bytes: Buffer } {
+  resourceType: string,
+  method = 'GET'
+): {
+  purpose: 'display-original' | 'original' | 'missing-original' | 'preview';
+  key: string;
+  bytes: Buffer;
+} {
   const url = new URL(source);
   assert.equal(url.protocol, 'https:');
   assert.equal(url.hostname, 'pbs.twimg.com');
@@ -221,7 +233,11 @@ export function largePhotoFixtureMedia(
   const photo = photos.find((item) => item.reference.sourceKey === key);
   assert(photo, 'Undeclared large-photo source');
   if (source === photo.reference.originalUrl) {
-    return { purpose: 'original', key, bytes: photo.bytes };
+    return {
+      purpose: resourceType === 'image' && method === 'GET' ? 'display-original' : 'original',
+      key,
+      bytes: photo.bytes,
+    };
   }
   if (key.startsWith('XegDom') && url.search === '?format=webp&name=orig') {
     return { purpose: 'missing-original', key, bytes: Buffer.alloc(0) };
@@ -360,11 +376,15 @@ export async function runInstalledLargePhotoFixture({
       const media = largePhotoFixtureMedia(
         [...fixture.photos, ...fixture.dom.photos],
         url.href,
-        request.resourceType()
+        request.resourceType(),
+        request.method()
       );
       event.kind = 'media';
       event.key = media.key;
-      if (media.purpose !== 'preview') {
+      event.purpose = media.purpose;
+      event.method = request.method();
+      event.resourceType = request.resourceType();
+      if (media.purpose !== 'preview' && media.purpose !== 'display-original') {
         await requestRoute.continue();
       } else {
         event.status = 200;

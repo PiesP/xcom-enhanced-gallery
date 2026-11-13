@@ -82,7 +82,15 @@ the unknown-post-total disclosure. Preview bytes differ from originals and each
 owner's payload; no 60-item gallery is formed. Existing byte and request caps remain.
 The fixture receipts are `installed-large-photo-fixture.json`,
 `installed-large-photo-collection.json`, and `installed-dom-photo-collection.json`;
-their pass does not qualify the selected public posts. Fast native HEAD response
+their pass does not qualify the selected public posts. Declared rendered images,
+including original-URL image loads, use the fixture interceptor with exact pinned
+bytes. Original probes, fetches and native downloads still use the owned HTTPS
+server; the fixture grants no renderer loopback permission. Fresh public contexts
+retain no fixture routes or host mapping. GraphQL observation uses the owned browser
+context so installed manager worker requests remain visible, filters the exact X
+GraphQL endpoint and requested post, and records frame/worker origin and timestamps.
+Source failures retain bounded current-selection and expected-source diagnostics.
+Fast native HEAD response
 peaks are observations; separately held asynchronous source probes test the four-worker
 algorithmic bound. The DOM display URLs use query-WebP spelling with synthetic JPEG
 preview bytes and do not qualify real WebP display encoding. The later live receipt

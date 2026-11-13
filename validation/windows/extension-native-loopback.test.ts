@@ -774,3 +774,27 @@ for (const adjacentFirst of [false, true]) {
     }
   });
 }
+
+test('only rendered original images use fixture interception; probes and transfers keep native HTTPS', () => {
+  const fixture = createInstalledLargePhotoFixture(Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+  const item = fixture.photos[0]!;
+  const display = largePhotoFixtureMedia(
+    fixture.photos,
+    item.reference.originalUrl,
+    'image',
+    'GET'
+  );
+  assert.equal(display.purpose, 'display-original');
+  assert(display.bytes.equals(item.bytes));
+  assert(!display.bytes.equals(item.previewBytes));
+  for (const resource of ['fetch', 'other', 'document']) {
+    assert.equal(
+      largePhotoFixtureMedia(fixture.photos, item.reference.originalUrl, resource, 'GET').purpose,
+      'original'
+    );
+  }
+  assert.equal(
+    largePhotoFixtureMedia(fixture.photos, item.reference.originalUrl, 'image', 'HEAD').purpose,
+    'original'
+  );
+});
