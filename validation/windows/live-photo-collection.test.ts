@@ -16,6 +16,7 @@ import { createExtensionNativeFixtureHandler } from './extension-native-loopback
 import { createUserscriptFixtureHandler } from './userscript-loopback.ts';
 import {
   assertNoAdditionalIngressNotifications,
+  assertSourceDetailsSummary,
   requireVisibleArticleRecoveryNotification,
 } from './install-profile.ts';
 import { summarizeTweetResultResponse } from './live-page.ts';
@@ -36,6 +37,46 @@ import {
 
 const requested = { handle: 'shinchilla_', statusId: '2121025509215850557', count: 20 } as const;
 const directQuote = { handle: 'shinchilla_', statusId: '2121007970545017041', count: 20 } as const;
+
+test('source details require the exact unknown-total scope and selected quality', () => {
+  const scope = '2 collected items · the post may contain more';
+  assert.doesNotThrow(() =>
+    assertSourceDetailsSummary([scope, 'Original image could not be confirmed'], {
+      scope: 'unknown-total',
+      quality: 'retryable',
+      count: 2,
+    })
+  );
+  assert.throws(() =>
+    assertSourceDetailsSummary([], { scope: 'unknown-total', quality: 'verified', count: 2 })
+  );
+  assert.throws(() =>
+    assertSourceDetailsSummary([scope, 'Original image unavailable for saving'], {
+      scope: 'unknown-total',
+      quality: 'retryable',
+      count: 2,
+    })
+  );
+  assert.throws(() =>
+    assertSourceDetailsSummary(['1 collected items · the post may contain more'], {
+      scope: 'unknown-total',
+      quality: 'verified',
+      count: 2,
+    })
+  );
+});
+
+test('complete verified API results reject unexpected source details', () => {
+  assert.doesNotThrow(() =>
+    assertSourceDetailsSummary([], { scope: 'complete', quality: 'verified' })
+  );
+  assert.throws(() =>
+    assertSourceDetailsSummary(['2 collected items · the post may contain more'], {
+      scope: 'complete',
+      quality: 'verified',
+    })
+  );
+});
 
 function fixture(withQuote: boolean) {
   const media = (owner: 'A' | 'B') =>
