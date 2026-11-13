@@ -48,6 +48,11 @@ type FixtureEvent = {
   sha256: string | null;
   sourceUrl?: string;
   status?: number;
+  requestedId?: string;
+  host?: 'x.com';
+  operation?: 'TweetResultByRestId';
+  atMs?: number;
+  finishedAtMs?: number;
 };
 type RejectedIdShape = {
   type: string;
@@ -404,7 +409,7 @@ export function createUserscriptFixtureHandler(
       try {
         const url = new URL(path, 'https://x.com');
         tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
-        if (!url.pathname.endsWith('/TweetResultByRestId')) {
+        if (!/^\/i\/api\/graphql\/[^/]+\/TweetResultByRestId$/u.test(url.pathname)) {
           reject(response, 'graphql-path');
           return;
         }
@@ -414,7 +419,8 @@ export function createUserscriptFixtureHandler(
       }
       const largeId = typeof tweetId === 'string' ? tweetId : null;
       const largeBody = largeId ? largeApi.get(largeId) : undefined;
-      if (largeId === largeDomApiId && request.method === 'GET') {
+      if (largeId !== null && largeId === largeDomApiId && request.method === 'GET') {
+        const body = Buffer.from('{}');
         const event: FixtureEvent = {
           phase: 'large-dom-photo',
           cohort: 'large-dom-api',
@@ -424,24 +430,38 @@ export function createUserscriptFixtureHandler(
           result: 'started',
           bytes: 0,
           sha256: null,
+          requestedId: largeId,
+          host: 'x.com',
+          operation: 'TweetResultByRestId',
+          status: 403,
+          atMs: performance.now(),
         };
         events.push(event);
         active.add(response);
-        response.once('close', () => active.delete(response));
+        response.once('close', () => {
+          if (!response.writableFinished) {
+            event.result = 'aborted';
+          }
+          active.delete(response);
+        });
         response.once('finish', () => {
           event.result = 'http-403';
+          event.bytes = body.length;
+          event.sha256 = createHash('sha256').update(body).digest('hex');
+          event.finishedAtMs = performance.now();
         });
         response.writeHead(403, {
           'Content-Type': 'application/json',
-          'Content-Length': '2',
+          'Content-Length': String(body.length),
           'Cache-Control': 'no-store',
           'Access-Control-Allow-Origin': apiAllowedOrigin,
           'Access-Control-Allow-Credentials': 'true',
         });
-        response.end('{}');
+        response.end(body);
         return;
       }
       if (largeBody) {
+        assert(largeId !== null, 'Installed photo API owner is missing');
         if (request.method !== 'GET') {
           reject(response, 'large-api-method');
           return;
@@ -461,6 +481,11 @@ export function createUserscriptFixtureHandler(
           result: 'started',
           bytes: 0,
           sha256: null,
+          requestedId: largeId,
+          host: 'x.com',
+          operation: 'TweetResultByRestId',
+          status: 200,
+          atMs: performance.now(),
         };
         events.push(event);
         active.add(response);
@@ -474,6 +499,7 @@ export function createUserscriptFixtureHandler(
           event.result = 'served';
           event.bytes = largeBody.length;
           event.sha256 = createHash('sha256').update(largeBody).digest('hex');
+          event.finishedAtMs = performance.now();
         });
         response.writeHead(200, {
           'Content-Type': 'application/json',

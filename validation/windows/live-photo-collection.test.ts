@@ -27,6 +27,7 @@ import { summarizeTweetResultResponse } from './live-page.ts';
 import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
 import {
+  verifyFixtureServerApiResponses,
   runLivePhotoCollection,
   photoProviderRequestMatches,
   assertExactPhotoNativeSource,
@@ -821,4 +822,88 @@ test('independent DOM evidence requires all API pages closed and idle bounded tr
   assert.throws(() => assertPhotoFixtureIdle(failed, { ...idle, overflow: true }, false));
   assert.throws(() => assertPhotoFixtureIdle(failed, { ...idle, unexpectedCount: 1 }, false));
   assert.throws(() => assertPhotoFixtureIdle(failed, idle, true));
+});
+
+test('fixture API server evidence requires an exact finished response and never implies client receipt', () => {
+  const body = Buffer.from('{"data":{}}');
+  const event = {
+    requestedId: requested.statusId,
+    host: 'x.com',
+    operation: 'TweetResultByRestId',
+    method: 'GET',
+    purpose: 'metadata',
+    cohort: 'large-api',
+    status: 200,
+    result: 'served',
+    bytes: body.length,
+    sha256: createHash('sha256').update(body).digest('hex'),
+    atMs: 10,
+    finishedAtMs: 11,
+  };
+  assert.equal(verifyFixtureServerApiResponses([event], requested.statusId, body, 200).length, 1);
+  assert.deepEqual(
+    verifyFixtureServerApiResponses(
+      [{ ...event, requestedId: directQuote.statusId }],
+      requested.statusId,
+      body,
+      200
+    ),
+    []
+  );
+  assert.deepEqual(
+    verifyFixtureServerApiResponses(
+      [{ ...event, result: 'started', bytes: 0, sha256: null, finishedAtMs: undefined }],
+      requested.statusId,
+      body,
+      200
+    ),
+    []
+  );
+  assert.deepEqual(
+    verifyFixtureServerApiResponses(
+      [{ ...event, result: 'aborted', bytes: 0, sha256: null, finishedAtMs: undefined }],
+      requested.statusId,
+      body,
+      200
+    ),
+    []
+  );
+  for (const patch of [
+    { host: 'foreign.invalid' },
+    { operation: 'OtherOperation' },
+    { method: 'POST' },
+    { purpose: 'media' },
+    { cohort: 'other-api' },
+    { status: 403 },
+    { bytes: body.length - 1 },
+    { sha256: '0'.repeat(64) },
+    { finishedAtMs: undefined },
+    { finishedAtMs: 9 },
+  ]) {
+    assert.throws(() =>
+      verifyFixtureServerApiResponses([{ ...event, ...patch }], requested.statusId, body, 200)
+    );
+  }
+  assert.throws(() =>
+    verifyFixtureServerApiResponses(Array(13).fill(event), requested.statusId, body, 200)
+  );
+  const forbidden = Buffer.from('{}');
+  assert.equal(
+    verifyFixtureServerApiResponses(
+      [
+        {
+          ...event,
+          cohort: 'large-dom-api',
+          status: 403,
+          result: 'http-403',
+          bytes: 2,
+          sha256: createHash('sha256').update(forbidden).digest('hex'),
+        },
+      ],
+      requested.statusId,
+      forbidden,
+      403
+    ).length,
+    1
+  );
 });

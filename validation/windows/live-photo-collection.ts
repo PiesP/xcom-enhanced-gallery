@@ -381,6 +381,60 @@ export function verifyDomPhotoCollection(
   });
 }
 
+/** Synthetic-server receipt only: never proof that a client received an API payload. */
+export function verifyFixtureServerApiResponses(
+  events: readonly unknown[],
+  requestedId: string,
+  body: Buffer,
+  status: 200 | 403
+) {
+  assert(body.length > 0 && body.length <= 2_000_000, 'Fixture API body exceeds bounded trace');
+  const matching = events.filter((value): value is Record<string, unknown> =>
+    Boolean(
+      value &&
+      typeof value === 'object' &&
+      'requestedId' in value &&
+      value.requestedId === requestedId
+    )
+  );
+  assert(matching.length <= 12, 'Fixture API response observation exceeded budget');
+  return matching.flatMap((event) => {
+    assert.equal(event.host, 'x.com');
+    assert.equal(event.operation, 'TweetResultByRestId');
+    assert.equal(event.method, 'GET');
+    assert.equal(event.purpose, 'metadata');
+    assert.equal(event.cohort, status === 200 ? 'large-api' : 'large-dom-api');
+    assert.equal(event.status, status, 'Fixture server status conflicts with declared input');
+    if (event.result === 'started' || event.result === 'aborted') {
+      return [];
+    }
+    assert.equal(event.result, status === 200 ? 'served' : 'http-403');
+    assert.equal(event.bytes, body.length, 'Fixture server body size differs');
+    assert.equal(
+      event.sha256,
+      createHash('sha256').update(body).digest('hex'),
+      'Fixture server body hash differs'
+    );
+    assert(typeof event.atMs === 'number' && Number.isFinite(event.atMs));
+    assert(
+      typeof event.finishedAtMs === 'number' &&
+        Number.isFinite(event.finishedAtMs) &&
+        event.finishedAtMs >= event.atMs
+    );
+    return [
+      {
+        requestedId,
+        status,
+        method: 'GET',
+        bytes: body.length,
+        sha256: event.sha256,
+        atMs: event.atMs,
+        finishedAtMs: event.finishedAtMs,
+      },
+    ];
+  });
+}
+
 /** The installed DOM fixture runs in English; require scope and quality independently. */
 export function assertDomPhotoSourceDetails(
   observed: readonly string[],
@@ -796,9 +850,14 @@ export async function runLivePhotoCollection({
     retainedPrefix: string;
     scope: string;
     observation?: 'dom';
+    providerEvidence?: { snapshot(): readonly unknown[]; bodies: ReadonlyMap<string, Buffer> };
     nativeSnapshot?: () => DomNativeSnapshot;
   } | null;
 }) {
+  assert(
+    !fixture?.providerEvidence || managerObserver,
+    'Server API evidence is only admitted for owned manager fixtures'
+  );
   const receipt: Record<string, unknown> = {
     status: 'failed',
     startedAt: new Date().toISOString(),
@@ -824,6 +883,8 @@ export async function runLivePhotoCollection({
         owner.statusId === contract.requested.statusId
           ? contract
           : { requested: owner, directQuote: null, expected: contract.expected.slice(0, 20) };
+      const serverEventStart = fixture?.providerEvidence?.snapshot().length ?? 0;
+      const browserVisitSince = managerObserver?.snapshot() ?? 0;
       const page = await context.newPage();
       const visit: Record<string, unknown> = {
         statusId: owner.statusId,
@@ -831,7 +892,6 @@ export async function runLivePhotoCollection({
         startedAt: new Date().toISOString(),
       };
       visits.push(visit);
-      const browserVisitSince = managerObserver?.snapshot() ?? 0;
       const completedBrowserDownloads = new Set<string>();
       const productErrors: string[] = [];
       const pageErrors: string[] = [];
@@ -1011,6 +1071,65 @@ export async function runLivePhotoCollection({
         } else {
           await openCurrentStatusImage(page, url, visit);
         }
+        let fixtureApiApplied = false;
+        const refreshFixtureApi = () => {
+          const evidence = fixture?.providerEvidence;
+          if (!evidence) {
+            return;
+          }
+          const body = evidence.bodies.get(target.requested.statusId);
+          assert(body, 'Declared fixture API body is absent');
+          const status = domObservation ? 403 : 200;
+          const records = verifyFixtureServerApiResponses(
+            evidence.snapshot().slice(serverEventStart),
+            target.requested.statusId,
+            body,
+            status
+          );
+          if (records.length === 0) {
+            return;
+          }
+          assert(
+            !providerStatuses.some(
+              (item) => item.requestedId === target.requested.statusId && item.status !== status
+            ),
+            'Client and fixture server statuses conflict'
+          );
+          const trace = summarizeTweetResultResponse(
+            `https://x.com/i/api/graphql/owned-fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: target.requested.statusId }))}`,
+            status,
+            JSON.parse(body.toString('utf8')),
+            40
+          );
+          const clientTraces = observations.filter(
+            (item) => item.requestedTweetId === target.requested.statusId
+          );
+          for (const client of clientTraces) {
+            assert.deepEqual(
+              client,
+              trace,
+              'Client and source-known fixture payload summaries conflict'
+            );
+          }
+          visit.fixtureApiServerEvidence = {
+            channel: 'owned-loopback-server-sent',
+            clientPayloadObserved: false,
+            responses: records,
+          };
+          if (fixtureApiApplied) {
+            return;
+          }
+          if (clientTraces.length === 0) {
+            visit.apiObservationChannel =
+              'owned-loopback-server-sent (source-known fixture input; client payload unobserved)';
+            if (trace) {
+              observations.push(trace);
+            }
+          }
+          providerStatuses.push({ requestedId: target.requested.statusId, status });
+          fixtureApiApplied = true;
+        };
+        refreshFixtureApi();
         const providerDeadline = Date.now() + 10_000;
         while (
           !(domObservation
@@ -1026,8 +1145,10 @@ export async function runLivePhotoCollection({
           Date.now() < providerDeadline
         ) {
           await new Promise((done) => setTimeout(done, 100));
+          refreshFixtureApi();
         }
         await Promise.all([...pending]);
+        refreshFixtureApi();
         assert.equal(captureErrors.length, 0, 'Provider trace capture failed');
         assert(!overflow, 'Provider trace exceeded observation budget');
         if (domObservation) {

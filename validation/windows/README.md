@@ -94,9 +94,17 @@ their pass does not qualify the selected public posts. Declared rendered images,
 including original-URL image loads, use the fixture interceptor with exact pinned
 bytes. Original probes, fetches and native downloads still use the owned HTTPS
 server; the fixture grants no renderer loopback permission. Fresh public contexts
-retain no fixture routes or host mapping. GraphQL observation uses the owned browser
-context so installed manager worker requests remain visible, filters the exact X
-GraphQL endpoint and requested post, and records frame/worker origin and timestamps.
+retain no fixture routes or host mapping. Client GraphQL observation uses the owned browser context for visible frame/worker
+responses, with exact endpoint/owner filters and origin/timestamps. Manager GM
+HTTP can bypass that channel. Only the source-known installed manager fixture
+may instead bind a fresh, finished owned HTTPS server response to the exact
+declared owner/status/body length and SHA. Its receipt is marked
+`owned-loopback-server-sent`, with `clientPayloadObserved: false`; the frozen
+body remains fixture input, not a claim that the client received or used it.
+Conflicting client observations fail. Existing product owner IDs, sources,
+full collections, native files and ZIP bytes remain independently required.
+Public A/B observations never use fixture server evidence; missing client
+responses remain unverified.
 Source failures retain bounded current-selection and expected-source diagnostics.
 Fast native HEAD response
 peaks are observations; separately held asynchronous source probes test the four-worker

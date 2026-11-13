@@ -452,6 +452,14 @@ export async function runInstalledLargePhotoFixture({
         receiptFile: 'installed-large-photo-collection.json',
         retainedPrefix: 'installed-large-photo',
         scope: 'source-known installed photo fixture; not actual public X acceptance',
+        ...(managerObserver
+          ? {
+              providerEvidence: {
+                snapshot: () => nativeSnapshot().events ?? [],
+                bodies: fixture.apiResponses,
+              },
+            }
+          : {}),
       },
     });
     receipt.proof = proof;
@@ -473,6 +481,14 @@ export async function runInstalledLargePhotoFixture({
       managerObserver,
       fixture: {
         observation: 'dom',
+        ...(managerObserver
+          ? {
+              providerEvidence: {
+                snapshot: () => nativeSnapshot().events ?? [],
+                bodies: new Map([[fixture.dom.contract.requested.statusId, Buffer.from('{}')]]),
+              },
+            }
+          : {}),
         originals: fixture.dom.originals,
         receiptFile: 'installed-dom-photo-collection.json',
         retainedPrefix: 'installed-dom-photo',

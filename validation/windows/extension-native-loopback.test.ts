@@ -2,6 +2,7 @@
 // Copyright (c) 2026 PiesP
 
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { createServer, request } from 'node:http';
 import type { IncomingMessage } from 'node:http';
 import { test } from 'vite-plus/test';
@@ -340,6 +341,103 @@ test('installed manager DOM20 transport denies its fresh API owner and probes ex
       snapshot.events.some(
         (event) => event.cohort === 'large-dom-api' && event.result === 'http-403'
       )
+    );
+  } finally {
+    userscript.destroyActive();
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve()))
+    );
+  }
+});
+
+test('installed manager API40 receipt binds completed responses to both owners before DOM denial', async () => {
+  const image = Buffer.from([0xff, 0xd8, 0xff, 0xd9]);
+  const data = createInstalledLargePhotoFixture(image);
+  const userscript = createUserscriptFixtureHandler(
+    Object.fromEntries(
+      ['normal', 'failure', 'partial', 'held'].map((name, cohort) => [
+        name,
+        [0, 1, 2].map(
+          (index) => `Abc${String(cohort).padStart(2, '0')}${String(index).padStart(2, '0')}123456`
+        ),
+      ])
+    ),
+    '/profile_images/123456789/public-avatar.jpg'
+  );
+  userscript.setImages([image, image, image]);
+  userscript.setLargePhotos(data.originals, data.apiResponses);
+  const server = createServer(userscript.handle);
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  const read = (id: string, operationPath = '/i/api/graphql/fixture/TweetResultByRestId') =>
+    new Promise<{ status: number | undefined; bytes: Buffer }>((resolve, reject) => {
+      const path = `${operationPath}?variables=${encodeURIComponent(JSON.stringify({ tweetId: id }))}`;
+      const outgoing = request(
+        { hostname: '127.0.0.1', port: address.port, path, headers: { Host: 'x.com' } },
+        (incoming) => {
+          const parts: Buffer[] = [];
+          incoming.on('data', (part: Buffer) => parts.push(part));
+          incoming.once('error', reject);
+          incoming.once('end', () =>
+            resolve({ status: incoming.statusCode, bytes: Buffer.concat(parts) })
+          );
+        }
+      );
+      outgoing.once('error', reject);
+      outgoing.end();
+    });
+  try {
+    const owners = [data.contract.directQuote!, data.contract.requested];
+    for (const owner of owners) {
+      const expected = data.apiResponses.get(owner.statusId)!;
+      assert.deepEqual(await read(owner.statusId), { status: 200, bytes: expected });
+      const event = userscript.snapshot().events.at(-1)!;
+      assert.equal(event.cohort, 'large-api');
+      assert.equal(event.requestedId, owner.statusId);
+      assert.equal(event.host, 'x.com');
+      assert.equal(event.operation, 'TweetResultByRestId');
+      assert.equal(event.status, 200);
+      assert.equal(event.result, 'served');
+      assert.equal(event.bytes, expected.length);
+      assert.equal(event.sha256, createHash('sha256').update(expected).digest('hex'));
+      assert(Number.isFinite(event.atMs) && Number.isFinite(event.finishedAtMs));
+      assert(event.finishedAtMs! >= event.atMs!);
+      assert.equal(event.sourceUrl, undefined, 'API receipt retained a request URL');
+    }
+    const beforeWrongPath = userscript.snapshot().events.length;
+    const wrongPath = await read(
+      data.contract.requested.statusId,
+      '/i/api/graphql/fixture/extra/TweetResultByRestId'
+    );
+    assert.equal(wrongPath.status, 404);
+    assert.equal(
+      userscript.snapshot().events.length,
+      beforeWrongPath,
+      'Wrong GraphQL path produced provider evidence'
+    );
+    assert.equal(userscript.snapshot().rejectedReasons['graphql-path'], 1);
+    userscript.setLargeDomPhotos(data.dom.originals, data.dom.contract.requested.statusId);
+    assert.deepEqual(await read(data.dom.contract.requested.statusId), {
+      status: 403,
+      bytes: Buffer.from('{}'),
+    });
+    const denied = userscript.snapshot().events.at(-1)!;
+    assert.equal(denied.cohort, 'large-dom-api');
+    assert.equal(denied.requestedId, data.dom.contract.requested.statusId);
+    assert.equal(denied.host, 'x.com');
+    assert.equal(denied.operation, 'TweetResultByRestId');
+    assert.equal(denied.status, 403);
+    assert.equal(denied.result, 'http-403');
+    assert.equal(denied.bytes, 2);
+    assert.equal(denied.sha256, createHash('sha256').update('{}').digest('hex'));
+    assert(Number.isFinite(denied.atMs) && Number.isFinite(denied.finishedAtMs));
+    assert(denied.finishedAtMs! >= denied.atMs!);
+    assert.equal(denied.sourceUrl, undefined);
+    assert.equal(
+      userscript.snapshot().unexpectedCount,
+      1,
+      'Only the deliberate wrong-path request was rejected'
     );
   } finally {
     userscript.destroyActive();
