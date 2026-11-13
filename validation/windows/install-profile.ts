@@ -22506,6 +22506,7 @@ export async function run({
             output,
             root,
             installNative: ({ originals }) => nativeLoopback!.setLargePhotos(originals),
+            installDomNative: ({ dom }) => nativeLoopback!.setLargeDomPhotos(dom.originals),
             nativeSnapshot: () => nativeLoopback!.snapshot(),
           });
         }

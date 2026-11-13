@@ -5637,6 +5637,8 @@ export async function runUserscriptInstallation({
         managerObserver: observer,
         installNative: ({ originals, apiResponses }) =>
           loopback!.setLargePhotos(originals, apiResponses),
+        installDomNative: ({ dom }) =>
+          loopback!.setLargeDomPhotos(dom.originals, dom.contract.requested.statusId),
         nativeSnapshot: () => loopback!.snapshot(),
       });
     }

@@ -73,9 +73,19 @@ The focused `inputs/live-photo-collection.json` route is separate from the
 2-4-item full actual-site selector. It declares one 20-photo owner or a requested
 20-photo post and its direct 20-photo quote. Its installed distribution receipt
 first records a separate source-known 20/40 fixture with unique marked JPEG
-originals and native single/ZIP files. The fixture receipts are
-`installed-large-photo-fixture.json` and `installed-large-photo-collection.json`;
-their pass does not qualify the selected public posts. The later live receipt
+originals and native single/ZIP files. Both synthetic owners share one trailing-underscore
+handle and user ID, with distinct post IDs and owner-local ordinals. The fixture then
+retires those routes and opens a fresh, separate 20-tile DOM owner whose API returns
+403. It checks the late clicked item, ordinal 12 still pending before a single save,
+exact-source WebP 404 to JPEG 200 resolution, and all 20 ZIP originals while retaining
+the unknown-post-total disclosure. Preview bytes differ from originals and each
+owner's payload; no 60-item gallery is formed. Existing byte and request caps remain.
+The fixture receipts are `installed-large-photo-fixture.json`,
+`installed-large-photo-collection.json`, and `installed-dom-photo-collection.json`;
+their pass does not qualify the selected public posts. Fast native HEAD response
+peaks are observations; separately held asynchronous source probes test the four-worker
+algorithmic bound. The DOM display URLs use query-WebP spelling with synthetic JPEG
+preview bytes and do not qualify real WebP display encoding. The later live receipt
 retains all 20/40 provider and gallery identities (including owner-local
 ordinals), actual completed native IDs, independent original hashes, and every
 ZIP member's verified CRC/name/hash. The userscript route additionally requires
