@@ -1171,6 +1171,8 @@ type TrustedDownloadInputEvidence = {
   bytes?: number;
   sourceUrl?: string;
   notificationScope?: string;
+  openingNotificationObservation?: IngressNotificationSnapshot;
+  recoveryNotification?: IngressNotificationCall;
   downloadScope?: string;
   precondition?: unknown;
   before?: unknown;
@@ -1241,7 +1243,9 @@ declare global {
     | Promise<{ status: string; response?: unknown; error?: string }>
     | undefined;
   var __xegInstalledNotificationObserver: NativeNotificationState | undefined;
-  var __xegIngressNotifications: { calls: number; original: ChromeNotificationCreate } | undefined;
+  var __xegIngressNotifications:
+    | { calls: IngressNotificationCall[]; overflow: boolean; original: ChromeNotificationCreate }
+    | undefined;
   var __xegIngressPause: IngressPauseControl | undefined;
   var __xegDirectRestartObserver:
     | { state: DirectRestartState; listener: (item: ChromeDownloadItem) => void }
@@ -1270,6 +1274,46 @@ type ChromeNotificationCreate = (
   id: string,
   options?: { title?: string; message?: string }
 ) => Promise<string>;
+
+type IngressNotificationCall = { id: string; title: string | null; message: string | null };
+type IngressNotificationSnapshot = {
+  calls: IngressNotificationCall[];
+  overflow: boolean;
+};
+
+const VISIBLE_ARTICLE_BODY =
+  'Only currently available media was collected. The post may contain more; bulk download includes only collected items.';
+const OBSERVED_QUALITY_BODY =
+  'Source quality could not be verified for some items. Images need a verified original before saving; recovered videos use the observed source.';
+
+/** Only the selected 403 article recovery may create one opening notification. */
+export function requireVisibleArticleRecoveryNotification(
+  snapshot: IngressNotificationSnapshot
+): IngressNotificationCall {
+  assert.equal(snapshot.overflow, false, 'Ingress notification history overflowed');
+  assert.equal(snapshot.calls.length, 1, 'Exactly one article recovery notice is required');
+  const notice = snapshot.calls[0]!;
+  assert.match(notice.id, /^xeg-\d+-\d+$/u);
+  assert.equal(notice.title, 'Visible media only');
+  assert(
+    notice.message === VISIBLE_ARTICLE_BODY ||
+      notice.message === `${VISIBLE_ARTICLE_BODY} ${OBSERVED_QUALITY_BODY}`,
+    'Opening notice differs from visible-article recovery'
+  );
+  return notice;
+}
+
+export function assertNoAdditionalIngressNotifications(
+  snapshot: IngressNotificationSnapshot,
+  opening: IngressNotificationCall
+): void {
+  assert.equal(snapshot.overflow, false, 'Ingress notification history overflowed');
+  assert.deepEqual(
+    snapshot.calls,
+    [opening],
+    'Help, synthetic input or cancellation created another native notification'
+  );
+}
 
 declare const chrome: {
   settingsPrivate: {
@@ -2046,7 +2090,7 @@ async function verifyTrustedDownloadInput({
     sourceUrl,
     syntheticInputs: [],
     notificationScope:
-      'Persistent help uses the rendered panel; synthetic input must not cross the native notification boundary; delivery is suppressed',
+      'One exact visible-article recovery notice on API 403; help, synthetic input and cancellation create none; delivery is suppressed',
     downloadScope:
       'Real direct URL download held by bounded fixture body and asynchronous native onDeterminingFilename listener',
     cleanup: {},
@@ -2056,14 +2100,34 @@ async function verifyTrustedDownloadInput({
     nativeLoopback.armHold('pbs.twimg.com', `/media/${QUALITY_IMAGE_PATHS[0]}`);
     await worker.evaluate(() => {
       const original = chrome.notifications.create;
-      const state = { calls: 0, original };
+      const state: {
+        calls: IngressNotificationCall[];
+        overflow: boolean;
+        original: ChromeNotificationCreate;
+      } = { calls: [], overflow: false, original };
       globalThis.__xegIngressNotifications = state;
-      chrome.notifications.create = async (id) => {
-        state.calls += 1;
+      chrome.notifications.create = async (id, options) => {
+        if (state.calls.length >= 8) {
+          state.overflow = true;
+          return id;
+        }
+        state.calls.push({
+          id,
+          title: options?.title ?? null,
+          message: options?.message ?? null,
+        });
         return id;
       };
     });
     notificationSeamInstalled = true;
+    const readIngressNotifications = () =>
+      worker.evaluate(() => {
+        const state = globalThis.__xegIngressNotifications;
+        if (!state) {
+          throw new Error('Notification seam disappeared');
+        }
+        return { calls: state.calls, overflow: state.overflow };
+      });
     await extensionPage.evaluate(
       ({ oldIds, sourceUrl }: { oldIds: number[]; sourceUrl: string }) => {
         const state: IngressPauseState = {
@@ -2141,6 +2205,14 @@ async function verifyTrustedDownloadInput({
     await trigger.click();
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
+    const openingNotice = await waitForValue(async () => {
+      const snapshot = await readIngressNotifications();
+      evidence.openingNotificationObservation = snapshot;
+      return snapshot.calls.length
+        ? requireVisibleArticleRecoveryNotification(snapshot)
+        : undefined;
+    }, 'one identified visible-article recovery notice');
+    evidence.recoveryNotification = openingNotice;
     await page.keyboard.press('?');
     const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
     await helpPanel.waitFor({ state: 'visible' });
@@ -2148,17 +2220,7 @@ async function verifyTrustedDownloadInput({
       await gallery.locator('#keyboard-help-button').getAttribute('aria-expanded'),
       'true'
     );
-    assert.equal(
-      await worker.evaluate(() => {
-        const state = globalThis.__xegIngressNotifications;
-        if (!state) {
-          throw new Error('Notification seam disappeared');
-        }
-        return state.calls;
-      }),
-      0,
-      'Rendered help must not create a native notification'
-    );
+    assertNoAdditionalIngressNotifications(await readIngressNotifications(), openingNotice);
     await page.keyboard.press('Escape');
     await helpPanel.waitFor({ state: 'hidden' });
     assert.equal(await gallery.isVisible(), true, 'Help Escape must retain the gallery');
@@ -2314,17 +2376,7 @@ async function verifyTrustedDownloadInput({
       });
       assert.deepEqual(filenameGate, { downloadId, status: 'held' });
       assert.deepEqual(current.record, before.record);
-      assert.equal(
-        await worker.evaluate(() => {
-          const state = globalThis.__xegIngressNotifications;
-          if (!state) {
-            throw new Error('Notification seam disappeared');
-          }
-          return state.calls;
-        }),
-        0,
-        `${input}: synthetic input must not induce a notification`
-      );
+      assertNoAdditionalIngressNotifications(await readIngressNotifications(), openingNotice);
       assert.equal(
         await helpPanel.isVisible(),
         false,
@@ -2382,6 +2434,8 @@ async function verifyTrustedDownloadInput({
         (await readdir(downloads)).every((entry) => initialFiles.has(entry)) ? true : undefined,
       'cancelled task files to disappear'
     );
+    const afterNotifications = await readIngressNotifications();
+    assertNoAdditionalIngressNotifications(afterNotifications, openingNotice);
     evidence.after = {
       downloadId,
       state: terminal.download.state,
@@ -2389,13 +2443,7 @@ async function verifyTrustedDownloadInput({
       requestBinding: terminal.record,
       filesAdded: [],
       galleryDetached: true,
-      notificationCalls: await worker.evaluate(() => {
-        const state = globalThis.__xegIngressNotifications;
-        if (!state) {
-          throw new Error('Notification seam disappeared');
-        }
-        return state.calls;
-      }),
+      notificationCalls: afterNotifications.calls.length - 1,
     };
     assert.equal(evidence.after.notificationCalls, 0);
     evidence.status = 'passed';

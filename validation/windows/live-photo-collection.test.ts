@@ -14,6 +14,10 @@ import {
 } from './installed-large-photo-fixture.ts';
 import { createExtensionNativeFixtureHandler } from './extension-native-loopback.ts';
 import { createUserscriptFixtureHandler } from './userscript-loopback.ts';
+import {
+  assertNoAdditionalIngressNotifications,
+  requireVisibleArticleRecoveryNotification,
+} from './install-profile.ts';
 import { summarizeTweetResultResponse } from './live-page.ts';
 import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
@@ -143,12 +147,12 @@ test('photo collection checks all B-then-A identities and each owner-local ordin
   const verified = verifyPhotoCollection(contract, [trace], gallery);
   assert.equal(verified.length, 40);
   assert.deepEqual(
-    [0, 3, 4, 9, 12, 13, 19, 20, 23, 24, 29, 32, 33, 39].map((index) => ({
+    requiredPhotoPositions(40).map((index) => ({
       index,
       ownerId: verified[index]?.owner.statusId,
       ordinal: verified[index]?.attachmentOrdinal,
     })),
-    [0, 3, 4, 9, 12, 13, 19, 20, 23, 24, 29, 32, 33, 39].map((index) => ({
+    requiredPhotoPositions(40).map((index) => ({
       index,
       ownerId: index < 20 ? directQuote.statusId : requested.statusId,
       ordinal: index % 20,
@@ -191,7 +195,10 @@ test('boundary selection verifies the rendered source even when counter and mode
   const { contract, trace, gallery } = fixture(true);
   const expected = verifyPhotoCollection(contract, [trace], gallery);
   assert.deepEqual(requiredPhotoPositions(20), [0, 3, 4, 9, 11, 12, 19]);
-  assert.deepEqual(requiredPhotoPositions(40), [0, 3, 4, 9, 11, 12, 19, 20, 39]);
+  assert.deepEqual(
+    requiredPhotoPositions(40),
+    [0, 3, 4, 9, 11, 12, 19, 20, 23, 24, 29, 31, 32, 39]
+  );
   const selected: SelectedPhotoSnapshot = {
     total: 40,
     currentIndex: 20,
@@ -460,6 +467,38 @@ test('large-photo route and native budgets reject overflow instead of passing it
   assert.throws(() => assertLargePhotoNativeTransport(before, { ...before, overflow: true }));
   assert.throws(() => assertLargePhotoNativeTransport(before, { ...before, unexpectedCount: 3 }));
   assert.throws(() => assertLargePhotoNativeTransport(before, { ...before, activeCount: 1 }));
+});
+
+test('installed recovery notice permits one identified opening call and rejects later calls', () => {
+  const opening = {
+    id: 'xeg-123456789-1',
+    title: 'Visible media only',
+    message:
+      'Only currently available media was collected. The post may contain more; bulk download includes only collected items.',
+  };
+  const baseline = { calls: [opening], overflow: false };
+  assert.deepEqual(requireVisibleArticleRecoveryNotification(baseline), opening);
+  assert.doesNotThrow(() => assertNoAdditionalIngressNotifications(baseline, opening));
+  assert.throws(() => requireVisibleArticleRecoveryNotification({ ...baseline, calls: [] }));
+  assert.throws(() =>
+    requireVisibleArticleRecoveryNotification({ ...baseline, calls: [opening, opening] })
+  );
+  assert.throws(() =>
+    requireVisibleArticleRecoveryNotification({
+      ...baseline,
+      calls: [{ ...opening, title: 'Other notice' }],
+    })
+  );
+  assert.throws(() =>
+    requireVisibleArticleRecoveryNotification({
+      ...baseline,
+      calls: [{ ...opening, message: 'Other message' }],
+    })
+  );
+  assert.throws(() => requireVisibleArticleRecoveryNotification({ ...baseline, overflow: true }));
+  assert.throws(() =>
+    assertNoAdditionalIngressNotifications({ ...baseline, calls: [opening, opening] }, opening)
+  );
 });
 
 async function readHosted(
