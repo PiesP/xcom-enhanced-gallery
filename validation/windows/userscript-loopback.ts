@@ -46,6 +46,8 @@ type FixtureEvent = {
   result: string;
   bytes: number;
   sha256: string | null;
+  sourceUrl?: string;
+  status?: number;
 };
 type RejectedIdShape = {
   type: string;
@@ -215,8 +217,9 @@ export function createUserscriptFixtureHandler(
   assert.equal(avatarPath, '/profile_images/123456789/public-avatar.jpg');
   allowed.set(avatarPath, { cohort: 'avatar', index: 0 });
   let images: Buffer[] | undefined;
-  const largePhotos = new Map<string, { index: number; bytes: Buffer }>();
+  const largePhotos = new Map<string, { index: number; bytes: Buffer; status?: 404 }>();
   const largeApi = new Map<string, Buffer>();
+  let largeDomApiId: string | null = null;
   let largeServedBytes = 0;
   let largeApiServedBytes = 0;
   let phase = 'normal';
@@ -237,6 +240,8 @@ export function createUserscriptFixtureHandler(
   let rejectedIdShapeOverflow = 0;
   const events: FixtureEvent[] = [];
   const active = new Set<ServerResponse>();
+  let domProbeActive = 0;
+  let domProbePeak = 0;
   const reject = (response: ServerResponse, reason: string) => {
     unexpectedCount += 1;
     rejectedReasons[reason] = (rejectedReasons[reason] ?? 0) + 1;
@@ -281,25 +286,40 @@ export function createUserscriptFixtureHandler(
     const path = request.url ?? '';
     const largePhoto = host === HOST ? largePhotos.get(path) : undefined;
     if (largePhoto) {
-      if (request.method !== 'GET' || request.headers['sec-fetch-dest'] === 'image') {
+      if (
+        !['GET', 'HEAD'].includes(request.method ?? '') ||
+        request.headers['sec-fetch-dest'] === 'image'
+      ) {
         reject(response, 'large-photo-purpose');
         return;
       }
-      if (largeServedBytes + largePhoto.bytes.length > 1024 * 1024) {
+      const body =
+        request.method === 'HEAD' || largePhoto.status === 404 ? Buffer.alloc(0) : largePhoto.bytes;
+      if (largeServedBytes + body.length > 1024 * 1024) {
         overflow = true;
         response.destroy();
         return;
       }
-      largeServedBytes += largePhoto.bytes.length;
+      largeServedBytes += body.length;
+      if (request.method === 'HEAD' && path.startsWith('/media/XegDom')) {
+        domProbeActive += 1;
+        domProbePeak = Math.max(domProbePeak, domProbeActive);
+        response.once('close', () => {
+          domProbeActive -= 1;
+        });
+      }
       const event: FixtureEvent = {
         phase: 'large-photo',
         cohort: 'large-photo',
         index: largePhoto.index,
-        purpose: 'transfer',
-        method: 'GET',
+        purpose: request.method === 'HEAD' ? 'original-probe' : 'transfer',
+        method: request.method ?? '',
         result: 'started',
         bytes: 0,
         sha256: null,
+        ...(path.startsWith('/media/XegDom')
+          ? { sourceUrl: path, status: largePhoto.status ?? 200 }
+          : {}),
       };
       events.push(event);
       active.add(response);
@@ -310,18 +330,18 @@ export function createUserscriptFixtureHandler(
         active.delete(response);
       });
       response.once('finish', () => {
-        event.result = 'served';
-        event.bytes = largePhoto.bytes.length;
-        event.sha256 = createHash('sha256').update(largePhoto.bytes).digest('hex');
+        event.result = largePhoto.status === 404 ? 'http-404' : 'served';
+        event.bytes = body.length;
+        event.sha256 = body.length ? createHash('sha256').update(body).digest('hex') : null;
       });
-      response.writeHead(200, {
-        'Content-Type': 'image/jpeg',
-        'Content-Length': String(largePhoto.bytes.length),
+      response.writeHead(largePhoto.status ?? 200, {
+        ...(largePhoto.status === 404 ? {} : { 'Content-Type': 'image/jpeg' }),
+        'Content-Length': String(largePhoto.status === 404 ? 0 : largePhoto.bytes.length),
         'Cache-Control': 'no-store',
         'Access-Control-Allow-Origin': 'https://x.com',
         'Access-Control-Allow-Credentials': 'true',
       });
-      response.end(largePhoto.bytes);
+      response.end(body);
       return;
     }
     const apiAllowedOrigin =
@@ -394,6 +414,33 @@ export function createUserscriptFixtureHandler(
       }
       const largeId = typeof tweetId === 'string' ? tweetId : null;
       const largeBody = largeId ? largeApi.get(largeId) : undefined;
+      if (largeId === largeDomApiId && request.method === 'GET') {
+        const event: FixtureEvent = {
+          phase: 'large-dom-photo',
+          cohort: 'large-dom-api',
+          index: 0,
+          purpose: 'metadata',
+          method: 'GET',
+          result: 'started',
+          bytes: 0,
+          sha256: null,
+        };
+        events.push(event);
+        active.add(response);
+        response.once('close', () => active.delete(response));
+        response.once('finish', () => {
+          event.result = 'http-403';
+        });
+        response.writeHead(403, {
+          'Content-Type': 'application/json',
+          'Content-Length': '2',
+          'Cache-Control': 'no-store',
+          'Access-Control-Allow-Origin': apiAllowedOrigin,
+          'Access-Control-Allow-Credentials': 'true',
+        });
+        response.end('{}');
+        return;
+      }
       if (largeBody) {
         if (request.method !== 'GET') {
           reject(response, 'large-api-method');
@@ -703,6 +750,34 @@ export function createUserscriptFixtureHandler(
         largeApi.set(id, body);
       }
     },
+    setLargeDomPhotos(originals: ReadonlyMap<string, Buffer>, ownerId: string) {
+      assert(images && largePhotos.size === 40 && largeApi.size === 2);
+      assert.equal(originals.size, 20);
+      assert.match(ownerId, /^[1-9]\d{1,39}$/u);
+      assert(!largeApi.has(ownerId) && largeDomApiId === null);
+      assert.equal(active.size, 0, 'Photo fixture transport must be idle before DOM phase');
+      const additions = new Map<string, { index: number; bytes: Buffer; status?: 404 }>();
+      for (const [source, bytes] of originals) {
+        const url = new URL(source);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, HOST);
+        assert.match(url.pathname, /^\/media\/XegDom\d{2}$/u);
+        assert.equal(url.search, '?format=jpg&name=orig');
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_IMAGE_BYTES);
+        const jpeg = `${url.pathname}${url.search}`;
+        const webp = `${url.pathname}?format=webp&name=orig`;
+        assert(!largePhotos.has(jpeg) && !largePhotos.has(webp));
+        assert(!additions.has(jpeg) && !additions.has(webp));
+        additions.set(webp, { index: additions.size, bytes: Buffer.alloc(0), status: 404 });
+        additions.set(jpeg, { index: additions.size, bytes });
+      }
+      largePhotos.clear();
+      largeApi.clear();
+      for (const [path, entry] of additions) {
+        largePhotos.set(path, entry);
+      }
+      largeDomApiId = ownerId;
+    },
     setImages(next: Buffer[]) {
       assert(
         !images &&
@@ -793,6 +868,7 @@ export function createUserscriptFixtureHandler(
       largeApiServedBytes,
       apiServedBytes,
       activeCount: active.size,
+      domProbePeak,
       mediaRedirectArmed,
       mediaRedirectPending,
       events: events.map((event) => ({ ...event })),
