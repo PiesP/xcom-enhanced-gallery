@@ -928,6 +928,9 @@ describe('TweetMetadataReuse', () => {
       expect(items.map((item) => item.attachmentOrdinal)).toEqual(supportedOrdinals);
       expect(items.map((item) => item.tweetId)).toEqual(Array(20).fill('222'));
       const plan = planBulkDownload({ mediaItems: items });
+      expect(plan.items).toHaveLength(20);
+      expect(new Set(plan.items.map((item) => item.url)).size).toBe(20);
+      expect(new Set(plan.items.map((item) => item.desiredName)).size).toBe(20);
       for (const [index, ordinal] of supportedOrdinals.entries()) {
         const isPhoto = kind === 'mixed' && index % 2 === 0;
         const expectedUrl = isPhoto
