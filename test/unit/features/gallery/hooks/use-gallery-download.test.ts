@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
   setSingleDownloadOutcome: vi.fn(),
   setError: vi.fn(),
   applyObservedDownloadSources: vi.fn(),
+  resolveOriginals: vi.fn(),
   translate: vi.fn((key: string) => key),
   status: 'idle',
   bulkOutcome: null as object | null,
@@ -40,6 +41,15 @@ vi.mock('@shared/services/language-service', () => ({
 vi.mock('@shared/services/media-service', () => ({
   getGalleryMediaActions: () => ({ getDownloadMedia: state.getDownloadMedia }),
 }));
+vi.mock(
+  '@shared/services/media-extraction/extractors/dom-image-original',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@shared/services/media-extraction/extractors/dom-image-original')
+    >()),
+    resolveDomImagesForDownload: state.resolveOriginals,
+  })
+);
 vi.mock('@shared/state/signals/gallery.signals', () => ({
   gallerySignals: {
     get sessionRevision() {
@@ -101,6 +111,7 @@ describe('createDownloadHandler bulk resource limits', () => {
     state.singleOutcome = null;
     state.sessionRevision = 1;
     state.recoveryScope = null;
+    state.resolveOriginals.mockImplementation(async (items: MediaInfo[]) => [...items]);
     state.mediaItems = [
       { id: 'first', type: 'image', url: 'https://example.test/first.jpg' },
       { id: 'shown', type: 'image', url: 'https://example.test/shown.jpg' },
@@ -821,6 +832,158 @@ describe('createDownloadHandler bulk resource limits', () => {
       1,
       expect.any(Object)
     );
+  });
+
+  it('offers only the unresolved twentieth photo after a saved 19-entry ZIP and resolves its format before retry', async () => {
+    const source = 'https://pbs.twimg.com/media/LATE?format=webp&name=orig';
+    const saved = Array.from({ length: 19 }, (_, index): MediaInfo => ({
+      id: `saved-${index}`,
+      type: 'image',
+      url: `https://pbs.twimg.com/media/SAVED${index}.jpg`,
+      tweetId: '222',
+      tweetUsername: 'author',
+      attachmentOrdinal: index,
+    }));
+    const deferred: MediaInfo = {
+      id: 'late',
+      type: 'image',
+      url: 'https://pbs.twimg.com/media/LATE?format=webp&name=small',
+      originalUrl: source,
+      tweetId: '222',
+      tweetUsername: 'author',
+      attachmentOrdinal: 19,
+      downloadSource: { url: '', quality: 'unverified-original', provenance: 'dom' },
+      metadata: {
+        originalSourceResolution: {
+          requestedUrl: source,
+          selectedUrl: null,
+          attempts: [{ url: source, status: 403, mime: null }],
+          reason: 'probe-failed',
+        },
+      },
+    };
+    state.mediaItems = [...saved, deferred];
+    const committed = saved.map((_, index) => `author_222_${index}.jpg`);
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 20,
+      filesSuccessful: 19,
+      successfulFilenames: committed,
+      filename: 'gallery.zip',
+      code: 'SOURCE_UNAVAILABLE',
+      sourceUnavailable: true,
+      failedEntries: [
+        { index: 19, url: '', filename: 'author_222_19.webp', error: 'Unverified original' },
+      ],
+    });
+    state.downloadFailedEntries.mockResolvedValue({
+      success: true,
+      status: 'success',
+      filesProcessed: 1,
+      filesSuccessful: 1,
+      successfulFilenames: ['author_222_19.jpg'],
+      filename: 'gallery-missing.zip',
+      code: 'NONE',
+      failedEntries: [],
+    });
+    const selectedJpeg = source.replace('format=webp', 'format=jpg');
+    state.resolveOriginals
+      .mockImplementationOnce(async (items: MediaInfo[]) => [...items])
+      .mockImplementationOnce(async (items: MediaInfo[]) => [
+        {
+          ...items[0]!,
+          originalUrl: selectedJpeg,
+          downloadSource: { url: selectedJpeg, quality: 'cdn-original', provenance: 'dom' },
+          metadata: {
+            originalSourceResolution: {
+              requestedUrl: source,
+              selectedUrl: selectedJpeg,
+              attempts: [],
+            },
+          },
+        },
+      ]);
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    expect(state.bulkOutcome).toMatchObject({ recoverableCount: 1, included: 19, omitted: 1 });
+    await handler.recoverFailedEntries();
+    expect(state.downloadBulk).toHaveBeenCalledOnce();
+    expect(state.downloadFailedEntries).toHaveBeenCalledExactlyOnceWith(
+      [
+        expect.objectContaining({
+          index: 19,
+          unresolvedOriginal: true,
+          media: expect.objectContaining({
+            id: 'late',
+            originalUrl: selectedJpeg,
+            downloadSource: { url: selectedJpeg, quality: 'cdn-original', provenance: 'dom' },
+          }),
+        }),
+      ],
+      'gallery.zip',
+      1,
+      expect.objectContaining({
+        domOriginalsResolved: true,
+        reservedZipFilenames: committed,
+      })
+    );
+    expect(state.applyObservedDownloadSources).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not apply a late unresolved-source recovery after cancellation', async () => {
+    const source = 'https://pbs.twimg.com/media/LATE?format=webp&name=orig';
+    const deferred: MediaInfo = {
+      id: 'late',
+      type: 'image',
+      url: 'https://pbs.twimg.com/media/LATE?format=webp&name=small',
+      originalUrl: source,
+      tweetId: '222',
+      attachmentOrdinal: 1,
+      downloadSource: { url: '', quality: 'unverified-original', provenance: 'dom' },
+      metadata: {
+        originalSourceResolution: {
+          requestedUrl: source,
+          selectedUrl: null,
+          attempts: [{ url: source, status: 403, mime: null }],
+          reason: 'probe-failed',
+        },
+      },
+    };
+    state.mediaItems = [
+      { id: 'saved', type: 'image', url: 'https://pbs.twimg.com/media/SAVED.jpg' },
+      deferred,
+    ];
+    state.downloadBulk.mockResolvedValue({
+      success: true,
+      status: 'partial',
+      filesProcessed: 2,
+      filesSuccessful: 1,
+      successfulFilenames: ['saved.jpg'],
+      filename: 'gallery.zip',
+      code: 'SOURCE_UNAVAILABLE',
+      failedEntries: [{ index: 1, url: '', filename: 'late.jpg', error: 'Unverified original' }],
+    });
+    let finishProbe: ((items: MediaInfo[]) => void) | undefined;
+    state.resolveOriginals
+      .mockImplementationOnce(async (items: MediaInfo[]) => [...items])
+      .mockImplementationOnce(
+        () =>
+          new Promise<MediaInfo[]>((resolve) => {
+            finishProbe = resolve;
+          })
+      );
+    const handler = createDownloadHandler();
+    await handler.handleDownload('all');
+    const pending = handler.recoverFailedEntries();
+    await vi.waitFor(() => expect(finishProbe).toBeDefined());
+    handler.cancelDownloads();
+    finishProbe?.([
+      { ...deferred, downloadSource: { url: source, quality: 'cdn-original', provenance: 'dom' } },
+    ]);
+    await pending;
+    expect(state.downloadFailedEntries).not.toHaveBeenCalled();
+    expect(state.applyObservedDownloadSources).toHaveBeenCalledOnce();
   });
 
   it('does not create missing-entry recovery for an initially all-failed selection', async () => {

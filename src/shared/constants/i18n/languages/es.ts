@@ -193,6 +193,9 @@ export const es: LanguageStrings = {
         pending: 'La imagen original se comprobará al guardar',
         pendingDetail:
           'Esta imagen aún no se ha comprobado. Se verificará el origen antes de guardarla sola o en el ZIP.',
+        retryable: 'No se pudo confirmar la imagen original',
+        retryableDetail:
+          'La comprobación no confirmó si existe el original. Prueba a guardar de nuevo; no se usará una versión de menor calidad.',
       },
       entryFailureNext: 'Consulta este contenido en la publicación de X.',
       downloadFailureNext:

@@ -16,7 +16,10 @@ import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { downloadSingleFile } from '@shared/services/download/single-download';
-import { resolveDomImagesForDownload } from '@shared/services/media-extraction/extractors/dom-image-original';
+import {
+  getDomImageOriginalProbeUrl,
+  resolveDomImagesForDownload,
+} from '@shared/services/media-extraction/extractors/dom-image-original';
 import type {
   BulkDownloadResult,
   DownloadOptions,
@@ -30,12 +33,22 @@ import { ErrorCode } from '@shared/types/media.types';
 import { DownloadResourceLimitError, type OwnedBlob } from './live-byte-budget';
 import { getMediaDownloadUrl } from '@shared/utils/media/media-source';
 
-export interface FailedEntryRecovery {
-  readonly index: number;
-  readonly media: MediaInfo;
-  readonly url: string;
-  readonly filename: string;
-}
+export type FailedEntryRecovery =
+  | {
+      readonly index: number;
+      readonly media: MediaInfo;
+      readonly url: string;
+      readonly filename: string;
+      readonly unresolvedOriginal?: false;
+    }
+  | {
+      readonly index: number;
+      readonly media: MediaInfo;
+      /** A source decision is still pending; no filename is frozen yet. */
+      readonly unresolvedOriginal: true;
+      readonly url?: never;
+      readonly filename?: never;
+    };
 
 /** Preserve the first archive and label a second, failed-only ZIP clearly. */
 function supplementaryFilename(original: string, attempt: number): string {
@@ -244,6 +257,7 @@ export class DownloadOrchestrator {
             status: result.filesSuccessful === items.length ? 'success' : 'partial',
             filesProcessed: items.length,
             filesSuccessful: result.filesSuccessful,
+            successfulFilenames: result.successfulFilenames,
             filename,
             failures: result.failures,
             failedEntries: result.failedEntries,
@@ -296,19 +310,28 @@ export class DownloadOrchestrator {
       entries.some(
         (entry) =>
           !entry.media.id ||
-          !entry.filename ||
-          entry.media.downloadSource?.quality === 'unverified-original' ||
-          getMediaDownloadUrl(entry.media) !== entry.url
+          (entry.unresolvedOriginal
+            ? entry.media.downloadSource?.provenance !== 'dom' ||
+              !!entry.media.filename ||
+              (entry.media.downloadSource.quality === 'unverified-original'
+                ? !getDomImageOriginalProbeUrl(entry.media)
+                : entry.media.downloadSource.quality !== 'cdn-original')
+            : !entry.filename ||
+              entry.media.downloadSource?.quality === 'unverified-original' ||
+              getMediaDownloadUrl(entry.media) !== entry.url)
       )
     ) {
       return createErrorResponse('No eligible failed entries to recover', ErrorCode.EMPTY_INPUT, 0);
     }
-    const stems = entries.map((entry) => getFilenameStemKey(entry.filename));
+    const assigned = entries.filter((entry) => !entry.unresolvedOriginal);
+    const stems = assigned.map((entry) => getFilenameStemKey(entry.filename));
+    const reservedStems = new Set(options.reservedZipFilenames?.map(getFilenameStemKey));
     if (
-      entries.some(
+      assigned.some(
         (entry) => entry.filename !== finalizeFilename(entry.filename, { preserveTailUnits: 32 })
       ) ||
-      new Set(stems).size !== entries.length
+      new Set(stems).size !== assigned.length ||
+      stems.some((stem) => reservedStems.has(stem))
     ) {
       return createErrorResponse(
         'Failed entries have conflicting assigned filenames',
@@ -317,8 +340,16 @@ export class DownloadOrchestrator {
       );
     }
     return this.downloadBulk(
-      entries.map((entry) => ({ ...entry.media, filename: entry.filename })),
-      { ...options, zipFilename: supplementaryFilename(originalFilename, attempt) }
+      entries.map((entry) =>
+        entry.unresolvedOriginal ? entry.media : { ...entry.media, filename: entry.filename }
+      ),
+      {
+        ...options,
+        fixedZipFilenames: entries.map((entry) =>
+          entry.unresolvedOriginal ? undefined : entry.filename
+        ),
+        zipFilename: supplementaryFilename(originalFilename, attempt),
+      }
     );
   }
 

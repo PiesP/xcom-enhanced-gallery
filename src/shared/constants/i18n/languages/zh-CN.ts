@@ -175,6 +175,8 @@ export const zhCn: LanguageStrings = {
         unavailableDetail: '未找到已验证的原始图片。无法保存此项，也不会改用低画质版本。',
         pending: '保存时将检查原始图片',
         pendingDetail: '此图片尚未检查。单独保存或保存 ZIP 前会先验证原始来源。',
+        retryable: '未能确认原始图片',
+        retryableDetail: '来源检查未能确认原图是否存在。可以重试保存；不会使用低画质替代。',
       },
       entryFailureNext: '在 X 的帖子中查看此媒体。',
       downloadFailureNext: '在浏览器下载列表中检查保存状态，或返回 X 上的帖子。',

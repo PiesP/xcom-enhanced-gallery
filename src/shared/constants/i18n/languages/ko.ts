@@ -189,6 +189,9 @@ export const ko: LanguageStrings = {
         pending: '저장할 때 원본 이미지를 확인합니다',
         pendingDetail:
           '이 이미지는 아직 확인하지 않았습니다. 개별 또는 ZIP 저장 전에 원본 소스를 확인합니다.',
+        retryable: '원본 이미지를 확인하지 못함',
+        retryableDetail:
+          '원본의 존재 여부를 확인하지 못했습니다. 저장을 다시 시도할 수 있으며 낮은 화질로 대체하지 않습니다.',
       },
       entryFailureNext: 'X의 게시물에서 이 미디어를 확인하세요.',
       downloadFailureNext:
