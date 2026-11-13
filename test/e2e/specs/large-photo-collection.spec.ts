@@ -146,7 +146,11 @@ for (const count of [1, 4, 5, 10, 20, 40]) {
       'data-position',
       String(count)
     );
-    const indices = [...new Set([0, 3, 4, 9, 11, 12, 19, 20, 39].filter((index) => index < count))];
+    const indices = [
+      ...new Set(
+        [0, 3, 4, 9, 11, 12, 19, 20, 23, 24, 29, 31, 32, 39].filter((index) => index < count)
+      ),
+    ];
     for (const index of indices) {
       await select(page, index);
       await expect(
