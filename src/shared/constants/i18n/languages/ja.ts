@@ -189,6 +189,9 @@ export const ja: LanguageStrings = {
         pending: '保存時に元画像を確認します',
         pendingDetail:
           'この画像はまだ確認していません。単体または ZIP の保存前に元画像のソースを確認します。',
+        retryable: '元画像を確認できませんでした',
+        retryableDetail:
+          '元画像の有無を確認できませんでした。保存を再試行できます。低画質版では代用しません。',
       },
       entryFailureNext: 'X のポストでこのメディアを確認してください。',
       downloadFailureNext:

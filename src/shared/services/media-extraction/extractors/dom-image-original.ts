@@ -158,6 +158,18 @@ export async function resolveDomImageOriginal(
         requestedUrl: original,
         selectedUrl: selected,
         attempts: attempts.map(({ url, status, mime }) => ({ url, status, mime })),
+        ...(!selected
+          ? {
+              reason:
+                attempts.length === 3 &&
+                attempts.every(
+                  (attempt) =>
+                    attempt.sameSource && (attempt.status === 404 || attempt.status === 410)
+                )
+                  ? 'not-found'
+                  : 'probe-failed',
+            }
+          : {}),
       },
     },
   };

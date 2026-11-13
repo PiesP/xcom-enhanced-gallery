@@ -144,10 +144,23 @@ describe('current media source limitations', () => {
           requestedUrl: deferred.originalUrl,
           selectedUrl: null,
           attempts: [{ url: deferred.originalUrl, status: 403, mime: null }],
+          reason: 'probe-failed',
         },
       },
     };
     applyObservedDownloadSources([deferred], [checked], revision);
+    expect(host.querySelector('summary')?.textContent).toContain('msg.gal.sourceDetails.retryable');
+    expect(host.textContent).toContain('msg.gal.sourceDetails.retryableDetail');
+    const missing = {
+      ...checked,
+      metadata: {
+        originalSourceResolution: {
+          ...checked.metadata.originalSourceResolution,
+          reason: 'not-found',
+        },
+      },
+    };
+    applyObservedDownloadSources([checked], [missing], revision);
     expect(host.querySelector('summary')?.textContent).toContain(
       'msg.gal.sourceDetails.unavailable'
     );

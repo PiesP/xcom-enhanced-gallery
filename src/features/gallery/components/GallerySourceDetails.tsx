@@ -24,6 +24,12 @@ export function GallerySourceDetails(): JSXElement {
       ? resolution.reason === 'probe-limit'
       : false;
   };
+  const isRetryable = () => {
+    const resolution = displayedMedia()?.metadata?.originalSourceResolution;
+    return resolution && typeof resolution === 'object' && 'reason' in resolution
+      ? resolution.reason === 'probe-failed'
+      : false;
+  };
   const hasLimitation = () =>
     isPartial() || quality() === 'observed' || quality() === 'unverified-original';
 
@@ -68,7 +74,9 @@ export function GallerySourceDetails(): JSXElement {
                 {translate(
                   isDeferred()
                     ? 'msg.gal.sourceDetails.pending'
-                    : 'msg.gal.sourceDetails.unavailable'
+                    : isRetryable()
+                      ? 'msg.gal.sourceDetails.retryable'
+                      : 'msg.gal.sourceDetails.unavailable'
                 )}
               </span>
             </Show>
@@ -88,7 +96,9 @@ export function GallerySourceDetails(): JSXElement {
                 ? translate(
                     isDeferred()
                       ? 'msg.gal.sourceDetails.pendingDetail'
-                      : 'msg.gal.sourceDetails.unavailableDetail'
+                      : isRetryable()
+                        ? 'msg.gal.sourceDetails.retryableDetail'
+                        : 'msg.gal.sourceDetails.unavailableDetail'
                   )
                 : quality() === 'best-mp4'
                   ? translate('msg.gal.sourceDetails.bestMp4')

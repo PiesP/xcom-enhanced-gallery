@@ -186,6 +186,9 @@ export const en: LanguageStrings = {
         pending: 'Original image will be checked when saving',
         pendingDetail:
           'This image has not been checked yet. Saving it or the ZIP will check the original source first.',
+        retryable: 'Original image could not be confirmed',
+        retryableDetail:
+          'The source check did not confirm whether an original exists. Try saving again; no lower-quality replacement is used.',
       },
       entryFailureNext: 'Use the post on X to view this media.',
       downloadFailureNext:

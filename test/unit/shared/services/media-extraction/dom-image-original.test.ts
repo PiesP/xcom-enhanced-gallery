@@ -106,6 +106,7 @@ describe('DOM WebP original resolution', () => {
       quality: 'unverified-original',
       provenance: 'dom',
     });
+    expect(resolved.metadata?.originalSourceResolution).toMatchObject({ reason: 'probe-failed' });
   });
 
   it('stops on abort and ignores a late success callback', async () => {
@@ -297,5 +298,15 @@ describe('DOM WebP original resolution', () => {
     };
     expect((await resolveDomImagesForDownload([mismatched]))[0]).toBe(mismatched);
     expect(mock.request).toHaveBeenCalledTimes(2);
+  });
+
+  it('reports absence only when every same-source encoding is missing', async () => {
+    mock.request.mockImplementation((details) => {
+      queueMicrotask(() => details.onload?.(response(details.url, 404, 'text/html')));
+      return { abort: vi.fn() };
+    });
+    const resolved = await resolveDomImageOriginal(media);
+    expect(mock.request).toHaveBeenCalledTimes(3);
+    expect(resolved.metadata?.originalSourceResolution).toMatchObject({ reason: 'not-found' });
   });
 });

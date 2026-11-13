@@ -296,6 +296,8 @@ export interface LanguageStrings {
         readonly unavailableDetail: string;
         readonly pending: string;
         readonly pendingDetail: string;
+        readonly retryable: string;
+        readonly retryableDetail: string;
       };
       readonly video: {
         readonly playbackFallback: string;
