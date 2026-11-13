@@ -1224,19 +1224,8 @@ export async function runLivePhotoCollection({
         if (domObservation && fixture?.nativeSnapshot) {
           const afterDomZip = fixture.nativeSnapshot();
           for (let ordinal = 0; ordinal < 20; ordinal++) {
-            const source = `/media/XegDom${String(ordinal).padStart(2, '0')}?format=jpg&name=orig`;
-            assert(
-              afterDomZip.events.some(
-                (event) =>
-                  event.sourceUrl === source &&
-                  event.method === 'GET' &&
-                  event.status === 200 &&
-                  event.result === 'served'
-              ),
-              `DOM ZIP original ${ordinal} was not transferred`
-            );
+            verifyDomNativeProbes({ events: [] }, afterDomZip, ordinal, true);
           }
-          assert((afterDomZip.domProbePeak ?? Number.POSITIVE_INFINITY) <= 4);
           visit.zipDomProbePeak = afterDomZip.domProbePeak;
         }
         for (const item of verified) {
