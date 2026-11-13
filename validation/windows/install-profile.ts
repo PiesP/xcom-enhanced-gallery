@@ -1119,6 +1119,7 @@ type InstallResult = {
     hosts: string[];
     certificateScope: string;
     observations?: ReturnType<NativeLoopback['snapshot']>;
+    cleanupObservations?: ReturnType<NativeLoopback['snapshot']>;
   };
   browserVersion?: string;
   upgrade?: UpgradeReceipt;
@@ -22342,6 +22343,7 @@ export async function run({
       assert(result.fixtureTransport, 'Fixture transport receipt is missing');
       result.fixtureTransport.observations = nativeLoopback.snapshot();
       await nativeLoopback.close();
+      result.fixtureTransport.cleanupObservations = nativeLoopback.snapshot();
       nativeLoopback = undefined;
       result.cleanup.fixtureLoopbackClosed = true;
       context = await chromium.launchPersistentContext(profile, {
@@ -22454,6 +22456,7 @@ export async function run({
       result.fixtureTransport.observations = nativeLoopback.snapshot();
       try {
         await nativeLoopback.close();
+        result.fixtureTransport.cleanupObservations = nativeLoopback.snapshot();
         result.cleanup.fixtureLoopbackClosed = true;
       } catch (error) {
         cleanupErrors.push(error);

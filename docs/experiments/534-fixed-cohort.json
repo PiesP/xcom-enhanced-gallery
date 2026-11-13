@@ -1,0 +1,1424 @@
+{
+  "schemaVersion": 1,
+  "disposition": "RETAIN_CURRENT",
+  "scope": "frozen four-short-MP4 workload only; no WASM candidate",
+  "measuredHarness": "46105d696700b332b1b6ebcd6e34678986d86d60",
+  "core": "4638d703806b38734430a761104ee73512cbdf5c",
+  "browser": "installed Edge 157.0.4341.46",
+  "productContentJsSha256": "a8bb70a80c7113c454f7df36eabfbbd0bedccc335776ee8010f0516a95667859",
+  "productManifestSha256": "ad4c56c97793fd258901d6d141d20e373f151568ca78f1ab62b6b8c9051aa8c4",
+  "protocol": "fresh profile per invocation, first-use plus two fresh-page warm actions; idle HTTP release before click; no diagnostic/cache reuse",
+  "frozenPlanSha256": "c39dff0cb285787c3ac2db9697d6b6aa6273b05a6fb6caa01b4759baebdc009f",
+  "numericDisplay": "milliseconds rounded to six decimals; exact doubles remain in original receipts",
+  "summary": {
+    "first-use": {
+      "actionToOwnedBlobMs": {
+        "n": 5,
+        "medianMs": 89.6,
+        "madMs": 1.8,
+        "minMs": 85.1,
+        "maxMs": 102.4
+      },
+      "crcActiveMs": {
+        "n": 5,
+        "medianMs": 8.5,
+        "madMs": 0.6,
+        "minMs": 7.9,
+        "maxMs": 9.2
+      },
+      "crcActiveAndTableUnionMs": {
+        "n": 5,
+        "medianMs": 8.7,
+        "madMs": 0.6,
+        "minMs": 8.1,
+        "maxMs": 9.5
+      }
+    },
+    "warm": {
+      "actionToOwnedBlobMs": {
+        "n": 10,
+        "medianMs": 66.3,
+        "madMs": 2.2,
+        "minMs": 62.2,
+        "maxMs": 73.8
+      },
+      "crcActiveMs": {
+        "n": 10,
+        "medianMs": 8.25,
+        "madMs": 0.7,
+        "minMs": 7.4,
+        "maxMs": 9.9
+      },
+      "crcActiveAndTableUnionMs": {
+        "n": 10,
+        "medianMs": 8.55,
+        "madMs": 0.7,
+        "minMs": 7.6,
+        "maxMs": 10.2
+      }
+    }
+  },
+  "outputEquivalence": {
+    "bytes": 2993158,
+    "sha256": "413c292585c4ff05cc0720222286fa57b473fc6a881eb079224506582e9ed4e8",
+    "parsed": {
+      "bytes": 2993158,
+      "entryOrder": [
+        "crc_fixture_4666000000000000534_0.mp4",
+        "crc_fixture_4666000000000000534_1.mp4",
+        "crc_fixture_4666000000000000534_2.mp4",
+        "crc_fixture_4666000000000000534_3.mp4"
+      ],
+      "entries": [
+        {
+          "filename": "crc_fixture_4666000000000000534_0.mp4",
+          "offset": 0,
+          "crc32": 60206668,
+          "bytes": 2857140,
+          "sha256": "352daf37b350f50a069c3911b32248c5adb7684ade30b525f6c25685c3b80f5e"
+        },
+        {
+          "filename": "crc_fixture_4666000000000000534_1.mp4",
+          "offset": 2857207,
+          "crc32": 1061783258,
+          "bytes": 98399,
+          "sha256": "36dd064afeefde15ecceea49109fffee6b17cdf0962de6eb21e0255fdd0cb8f8"
+        },
+        {
+          "filename": "crc_fixture_4666000000000000534_2.mp4",
+          "offset": 2955673,
+          "crc32": 343181226,
+          "bytes": 5184,
+          "sha256": "de4c15ff513d41c964eadb5d45ce08030b2a94eea501e9f86edfd8a301e1411e"
+        },
+        {
+          "filename": "crc_fixture_4666000000000000534_3.mp4",
+          "offset": 2960924,
+          "crc32": 547711252,
+          "bytes": 31813,
+          "sha256": "c93c7e6c6102e36089ee5aa79d9fa9758be8b7f62ac1043247ebb22399770004"
+        }
+      ]
+    }
+  },
+  "outputCanonicalSha256": "d3404c1f547834668ea6d2b933d42594af379e8f96c9f5e5fef9188c2b2869aa",
+  "receipts": [
+    {
+      "invocation": 1,
+      "bundleSha256": "c1a8190dd8df0b2a2c835234a50eed6fff920640b4dbfc0e9f2fe2df83dca88c",
+      "resultSha256": "e4d3029dc4a84b965508caf546d0f85a9648f077a4c20f7f4e6881fa265ec384",
+      "collectionSha256": "6b9a21c1a7c9c4659529a4aa3da5e89d091c6303e71e3282db9e18f239205e26",
+      "profileSha256": "b13799442ace973bd1f37c993cd4d164edcf9003d637211d4d3b71a26d284fd3",
+      "installationSha256": "8a50c47b9dc171c067677c7d58d5a5a5e4da362f1d3d5e863f376bc7667b0b99",
+      "controllerSha256": "e1f11715f20bdb6fa0ea882c31ea7a696505cd2b53ea7ed5ab1bdc01180a81c9",
+      "packagerSha256": "5518e93ac858711084b650cf255f44be1bf770ccc6e9575297fbb45c74ae7049",
+      "acceptedSockets": 12,
+      "closedSockets": 12,
+      "peakActiveSockets": 7,
+      "droppedSockets": 0
+    },
+    {
+      "invocation": 2,
+      "bundleSha256": "c1a8190dd8df0b2a2c835234a50eed6fff920640b4dbfc0e9f2fe2df83dca88c",
+      "resultSha256": "7a3d5fefe713fb50c8097b3407fffcace2c9fca1977df30947433865c649927d",
+      "collectionSha256": "7c35322ec695c75d28c12c53a78a65197a98f4d3920b8cf25843c3675dcae1e4",
+      "profileSha256": "d01229ffd5f58fdf2df89b01c0085a54019c1502797b2729152ccaeaad5e147e",
+      "installationSha256": "7c29054508d175a3e36b8897efa44b21e1eb2eee12940bf25441fc311aa8f4f5",
+      "controllerSha256": "e1f11715f20bdb6fa0ea882c31ea7a696505cd2b53ea7ed5ab1bdc01180a81c9",
+      "packagerSha256": "5518e93ac858711084b650cf255f44be1bf770ccc6e9575297fbb45c74ae7049",
+      "acceptedSockets": 12,
+      "closedSockets": 12,
+      "peakActiveSockets": 7,
+      "droppedSockets": 0
+    },
+    {
+      "invocation": 3,
+      "bundleSha256": "c1a8190dd8df0b2a2c835234a50eed6fff920640b4dbfc0e9f2fe2df83dca88c",
+      "resultSha256": "96208473e87290a311f5497df514485f2005896020b3cc7fb1c4aae1f6167219",
+      "collectionSha256": "8140e98c0348f0f7227426d13758e55c8f77d9cf9e483d4d400bfc4e150dabfb",
+      "profileSha256": "f51ffbad042c947d8b21d57264a89142110b2bfe9a2bcdc0c992cd6e09d717cb",
+      "installationSha256": "9ba3a38bc1ffccc25b301eb2af4a8ef2cef6eadec74cf23c14cfa46bf471a35e",
+      "controllerSha256": "e1f11715f20bdb6fa0ea882c31ea7a696505cd2b53ea7ed5ab1bdc01180a81c9",
+      "packagerSha256": "5518e93ac858711084b650cf255f44be1bf770ccc6e9575297fbb45c74ae7049",
+      "acceptedSockets": 12,
+      "closedSockets": 12,
+      "peakActiveSockets": 7,
+      "droppedSockets": 0
+    },
+    {
+      "invocation": 4,
+      "bundleSha256": "c1a8190dd8df0b2a2c835234a50eed6fff920640b4dbfc0e9f2fe2df83dca88c",
+      "resultSha256": "0d07b58fc0bac6f8a2e93c725ab40fcf32170f603fdc2e4c822b67eef15a2bd1",
+      "collectionSha256": "394e910cb28f9846c901b13a1470369406cebb8961c704e369333ccf5580efd5",
+      "profileSha256": "45ff3a93d5db3c8952aae1a8b34ed82837308d3c729c5da7380b057ff636fb84",
+      "installationSha256": "ca232332ee53ab402303bd10c2c618a6f4ad582587e5c1074ba4c34eebb6a251",
+      "controllerSha256": "e1f11715f20bdb6fa0ea882c31ea7a696505cd2b53ea7ed5ab1bdc01180a81c9",
+      "packagerSha256": "5518e93ac858711084b650cf255f44be1bf770ccc6e9575297fbb45c74ae7049",
+      "acceptedSockets": 13,
+      "closedSockets": 13,
+      "peakActiveSockets": 8,
+      "droppedSockets": 0
+    },
+    {
+      "invocation": 5,
+      "bundleSha256": "c1a8190dd8df0b2a2c835234a50eed6fff920640b4dbfc0e9f2fe2df83dca88c",
+      "resultSha256": "fc39522fb642e7ef09ac94be8467955a883d776fa4125ee6f73c6ea6cfd12bff",
+      "collectionSha256": "4a168af6165b4e57f756b936cf2c16b120d3c898f940c61434231c4a311bd461",
+      "profileSha256": "66003fb9bb3a37e3453b99b39ffe7c8c862d633537175ba19d128e669cf2dcb5",
+      "installationSha256": "ae6e19af0d11a89ed3d12a2f776d746ddc5691a86f466a829651d7ba7b655732",
+      "controllerSha256": "e1f11715f20bdb6fa0ea882c31ea7a696505cd2b53ea7ed5ab1bdc01180a81c9",
+      "packagerSha256": "5518e93ac858711084b650cf255f44be1bf770ccc6e9575297fbb45c74ae7049",
+      "acceptedSockets": 13,
+      "closedSockets": 13,
+      "peakActiveSockets": 8,
+      "droppedSockets": 0
+    }
+  ],
+  "samples": [
+    {
+      "invocation": 1,
+      "sample": 0,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534.zip",
+      "condition": "first-use",
+      "actionToOwnedBlobMs": 91.4,
+      "crcActiveMs": 9.1,
+      "crcActiveAndTableUnionMs": 9.4,
+      "cacheConditionQualified": null,
+      "sourceTransfers": 4,
+      "phaseUnionsMs": {
+        "blob-create": 0.6,
+        "commit-queue-wait": 0,
+        "commit-total": 11.3,
+        "crc-active": 9.1,
+        "crc-table": 0.3,
+        "crc-yield": 0.4,
+        "entry-admission": 0.2,
+        "finalize": 0,
+        "local-header": 0.4,
+        "network-fetch": 51.7,
+        "precommit-yield": 2.3,
+        "worker-admission-wait": 60.2
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 60.9,
+          "endMs": 61.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 61.2,
+          "endMs": 65.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 65.5,
+          "endMs": 68.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 69.0,
+          "endMs": 70.5
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 76.6,
+          "endMs": 76.6
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 76.6,
+          "endMs": 76.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 83.7,
+          "endMs": 83.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 83.7,
+          "endMs": 83.7
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 89.9,
+          "endMs": 89.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 89.9,
+          "endMs": 90.0
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.3999999985098839
+      }
+    },
+    {
+      "invocation": 1,
+      "sample": 1,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (1).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 71,
+      "crcActiveMs": 8.8,
+      "crcActiveAndTableUnionMs": 9.1,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.8,
+        "commit-queue-wait": 0,
+        "commit-total": 10.1,
+        "crc-active": 8.8,
+        "crc-table": 0.3,
+        "crc-yield": 0.2,
+        "entry-admission": 0.4,
+        "finalize": 0.1,
+        "local-header": 0.7,
+        "network-fetch": 31.0,
+        "precommit-yield": 0.4,
+        "worker-admission-wait": 37.9
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 43.9,
+          "endMs": 44.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 44.2,
+          "endMs": 47.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 47.2,
+          "endMs": 49.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 49.4,
+          "endMs": 52.6
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 59.4,
+          "endMs": 59.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 59.4,
+          "endMs": 59.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 64.4,
+          "endMs": 64.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 64.4,
+          "endMs": 64.5
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 68.9,
+          "endMs": 68.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 68.9,
+          "endMs": 69.0
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.4000000022351742
+      }
+    },
+    {
+      "invocation": 1,
+      "sample": 2,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (2).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 66.4,
+      "crcActiveMs": 7.4,
+      "crcActiveAndTableUnionMs": 7.6,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.9,
+        "commit-queue-wait": 0,
+        "commit-total": 8.8,
+        "crc-active": 7.4,
+        "crc-table": 0.2,
+        "crc-yield": 0.2,
+        "entry-admission": 0.3,
+        "finalize": 0.1,
+        "local-header": 0.3,
+        "network-fetch": 28.8,
+        "precommit-yield": 0.3,
+        "worker-admission-wait": 35.0
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 41.6,
+          "endMs": 41.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 41.9,
+          "endMs": 44.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 44.6,
+          "endMs": 46.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 46.9,
+          "endMs": 49.3
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 56.8,
+          "endMs": 56.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 56.8,
+          "endMs": 57.0
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 61.0,
+          "endMs": 61.0
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 61.0,
+          "endMs": 61.0
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 64.4,
+          "endMs": 64.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 64.4,
+          "endMs": 64.5
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.30000000074505806
+      }
+    },
+    {
+      "invocation": 2,
+      "sample": 0,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534.zip",
+      "condition": "first-use",
+      "actionToOwnedBlobMs": 89.6,
+      "crcActiveMs": 8.5,
+      "crcActiveAndTableUnionMs": 8.7,
+      "cacheConditionQualified": null,
+      "sourceTransfers": 4,
+      "phaseUnionsMs": {
+        "blob-create": 1.2,
+        "commit-queue-wait": 0,
+        "commit-total": 9.8,
+        "crc-active": 8.5,
+        "crc-table": 0.2,
+        "crc-yield": 0.1,
+        "entry-admission": 0.2,
+        "finalize": 0.1,
+        "local-header": 0.4,
+        "network-fetch": 49.0,
+        "precommit-yield": 0.3,
+        "worker-admission-wait": 52.9
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 59.4,
+          "endMs": 59.6
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 59.6,
+          "endMs": 62.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 62.7,
+          "endMs": 66.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 66.4,
+          "endMs": 68.0
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 76.3,
+          "endMs": 76.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 76.3,
+          "endMs": 76.5
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 80.8,
+          "endMs": 80.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 80.8,
+          "endMs": 80.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 87.4,
+          "endMs": 87.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 87.4,
+          "endMs": 87.5
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.5
+      }
+    },
+    {
+      "invocation": 2,
+      "sample": 1,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (1).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 66.2,
+      "crcActiveMs": 9.6,
+      "crcActiveAndTableUnionMs": 9.8,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.7,
+        "commit-queue-wait": 0,
+        "commit-total": 13.7,
+        "crc-active": 9.6,
+        "crc-table": 0.2,
+        "crc-yield": 3.4,
+        "entry-admission": 0.3,
+        "finalize": 0,
+        "local-header": 0.1,
+        "network-fetch": 27.5,
+        "precommit-yield": 0.3,
+        "worker-admission-wait": 38.6
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 39.7,
+          "endMs": 39.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 39.9,
+          "endMs": 43.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 43.2,
+          "endMs": 47.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 50.6,
+          "endMs": 52.6
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 56.9,
+          "endMs": 56.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 57,
+          "endMs": 57.2
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 60.4,
+          "endMs": 60.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 60.4,
+          "endMs": 60.4
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 64.4,
+          "endMs": 64.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 64.4,
+          "endMs": 64.5
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.19999999925494194
+      }
+    },
+    {
+      "invocation": 2,
+      "sample": 2,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (2).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 73.8,
+      "crcActiveMs": 9.9,
+      "crcActiveAndTableUnionMs": 10.2,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 1.5,
+        "commit-queue-wait": 0,
+        "commit-total": 16.1,
+        "crc-active": 9.9,
+        "crc-table": 0.3,
+        "crc-yield": 4.8,
+        "entry-admission": 0.3,
+        "finalize": 0.2,
+        "local-header": 0.4,
+        "network-fetch": 28.7,
+        "precommit-yield": 0.4,
+        "worker-admission-wait": 40.9
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 41.7,
+          "endMs": 42.0
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 42.0,
+          "endMs": 44.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 45.0,
+          "endMs": 50.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 55.2,
+          "endMs": 56.6
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 62.2,
+          "endMs": 62.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 62.2,
+          "endMs": 62.4
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 65.7,
+          "endMs": 65.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 65.7,
+          "endMs": 65.7
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 70.9,
+          "endMs": 70.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 70.9,
+          "endMs": 71.0
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.30000000074505806
+      }
+    },
+    {
+      "invocation": 3,
+      "sample": 0,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534.zip",
+      "condition": "first-use",
+      "actionToOwnedBlobMs": 102.4,
+      "crcActiveMs": 9.2,
+      "crcActiveAndTableUnionMs": 9.5,
+      "cacheConditionQualified": null,
+      "sourceTransfers": 4,
+      "phaseUnionsMs": {
+        "blob-create": 0.7,
+        "commit-queue-wait": 0,
+        "commit-total": 10.7,
+        "crc-active": 9.2,
+        "crc-table": 0.3,
+        "crc-yield": 0.3,
+        "entry-admission": 0.4,
+        "finalize": 0.1,
+        "local-header": 0.4,
+        "network-fetch": 59.8,
+        "precommit-yield": 0.6,
+        "worker-admission-wait": 65.1
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 67.0,
+          "endMs": 67.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 67.3,
+          "endMs": 70.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 70.7,
+          "endMs": 72.6
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 72.6,
+          "endMs": 76.4
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 84.9,
+          "endMs": 84.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 84.9,
+          "endMs": 85.2
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 92.8,
+          "endMs": 92.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 92.8,
+          "endMs": 92.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 100.1,
+          "endMs": 100.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 100.1,
+          "endMs": 100.2
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.3999999985098839
+      }
+    },
+    {
+      "invocation": 3,
+      "sample": 1,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (1).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 68.9,
+      "crcActiveMs": 8.2,
+      "crcActiveAndTableUnionMs": 8.5,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.6,
+        "commit-queue-wait": 0,
+        "commit-total": 12.8,
+        "crc-active": 8.2,
+        "crc-table": 0.3,
+        "crc-yield": 3.5,
+        "entry-admission": 0.1,
+        "finalize": 0,
+        "local-header": 0.1,
+        "network-fetch": 25.8,
+        "precommit-yield": 0.1,
+        "worker-admission-wait": 36.6
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 45.2,
+          "endMs": 45.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 45.5,
+          "endMs": 48.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 48.7,
+          "endMs": 50.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 53.8,
+          "endMs": 57.0
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 61.9,
+          "endMs": 61.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 61.9,
+          "endMs": 62.0
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 64.8,
+          "endMs": 64.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 64.8,
+          "endMs": 64.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 67.6,
+          "endMs": 67.6
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 67.6,
+          "endMs": 67.7
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.30000000074505806
+      }
+    },
+    {
+      "invocation": 3,
+      "sample": 2,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (2).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 68.1,
+      "crcActiveMs": 8.3,
+      "crcActiveAndTableUnionMs": 8.6,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 1.0,
+        "commit-queue-wait": 0,
+        "commit-total": 12.2,
+        "crc-active": 8.3,
+        "crc-table": 0.3,
+        "crc-yield": 2.9,
+        "entry-admission": 0.3,
+        "finalize": 0.1,
+        "local-header": 0.2,
+        "network-fetch": 31.3,
+        "precommit-yield": 0.4,
+        "worker-admission-wait": 40.6
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 41.4,
+          "endMs": 41.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 41.7,
+          "endMs": 44.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 44.8,
+          "endMs": 48.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 51.2,
+          "endMs": 52.6
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 57.5,
+          "endMs": 57.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 57.5,
+          "endMs": 57.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 62.2,
+          "endMs": 62.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 62.2,
+          "endMs": 62.2
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 66.2,
+          "endMs": 66.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 66.2,
+          "endMs": 66.2
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.30000000074505806
+      }
+    },
+    {
+      "invocation": 4,
+      "sample": 0,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534.zip",
+      "condition": "first-use",
+      "actionToOwnedBlobMs": 85.1,
+      "crcActiveMs": 7.9,
+      "crcActiveAndTableUnionMs": 8.1,
+      "cacheConditionQualified": null,
+      "sourceTransfers": 4,
+      "phaseUnionsMs": {
+        "blob-create": 0.6,
+        "commit-queue-wait": 0,
+        "commit-total": 9.2,
+        "crc-active": 7.9,
+        "crc-table": 0.2,
+        "crc-yield": 0.3,
+        "entry-admission": 0.1,
+        "finalize": 0.1,
+        "local-header": 0.3,
+        "network-fetch": 50.6,
+        "precommit-yield": 0.2,
+        "worker-admission-wait": 53.4
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 58.7,
+          "endMs": 58.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 58.9,
+          "endMs": 61.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 61.9,
+          "endMs": 65.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 65.2,
+          "endMs": 66.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 71.7,
+          "endMs": 71.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 71.7,
+          "endMs": 71.9
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 76.3,
+          "endMs": 76.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 76.3,
+          "endMs": 76.4
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 83.4,
+          "endMs": 83.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 83.4,
+          "endMs": 83.4
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.30000000074505806
+      }
+    },
+    {
+      "invocation": 4,
+      "sample": 1,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (1).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 62.2,
+      "crcActiveMs": 7.4,
+      "crcActiveAndTableUnionMs": 7.6,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.7,
+        "commit-queue-wait": 0,
+        "commit-total": 8.6,
+        "crc-active": 7.4,
+        "crc-table": 0.2,
+        "crc-yield": 0.2,
+        "entry-admission": 0.2,
+        "finalize": 0,
+        "local-header": 0.2,
+        "network-fetch": 25.1,
+        "precommit-yield": 0.3,
+        "worker-admission-wait": 32.0
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 40.3,
+          "endMs": 40.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 40.5,
+          "endMs": 43.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 43.3,
+          "endMs": 46.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 46.3,
+          "endMs": 47.9
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 54.6,
+          "endMs": 54.6
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 54.6,
+          "endMs": 54.9
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 58.1,
+          "endMs": 58.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 58.1,
+          "endMs": 58.1
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 60.7,
+          "endMs": 60.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 60.7,
+          "endMs": 60.7
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.30000000074505806
+      }
+    },
+    {
+      "invocation": 4,
+      "sample": 2,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (2).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 63.5,
+      "crcActiveMs": 8.2,
+      "crcActiveAndTableUnionMs": 8.5,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.6,
+        "commit-queue-wait": 0,
+        "commit-total": 9.7,
+        "crc-active": 8.2,
+        "crc-table": 0.3,
+        "crc-yield": 0.3,
+        "entry-admission": 0.2,
+        "finalize": 0,
+        "local-header": 0.3,
+        "network-fetch": 27.4,
+        "precommit-yield": 0.5,
+        "worker-admission-wait": 34.1
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 40.8,
+          "endMs": 41.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 41.1,
+          "endMs": 44.0
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 44.2,
+          "endMs": 47.0
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 47.2,
+          "endMs": 49.4
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 54.0,
+          "endMs": 54.0
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 54.0,
+          "endMs": 54.2
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 57.8,
+          "endMs": 57.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 57.8,
+          "endMs": 57.9
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 62.0,
+          "endMs": 62.0
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 62.0,
+          "endMs": 62.0
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.30000000074505806
+      }
+    },
+    {
+      "invocation": 5,
+      "sample": 0,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534.zip",
+      "condition": "first-use",
+      "actionToOwnedBlobMs": 87.9,
+      "crcActiveMs": 8.5,
+      "crcActiveAndTableUnionMs": 8.7,
+      "cacheConditionQualified": null,
+      "sourceTransfers": 4,
+      "phaseUnionsMs": {
+        "blob-create": 0.9,
+        "commit-queue-wait": 0,
+        "commit-total": 10.0,
+        "crc-active": 8.5,
+        "crc-table": 0.2,
+        "crc-yield": 0.2,
+        "entry-admission": 0.2,
+        "finalize": 0.1,
+        "local-header": 0.5,
+        "network-fetch": 48.5,
+        "precommit-yield": 0.4,
+        "worker-admission-wait": 53.0
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 60.7,
+          "endMs": 60.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 61.0,
+          "endMs": 64.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 64.4,
+          "endMs": 67.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 67.9,
+          "endMs": 69.5
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 74.4,
+          "endMs": 74.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 74.4,
+          "endMs": 74.5
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 78.8,
+          "endMs": 78.8
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 78.8,
+          "endMs": 78.8
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 85.5,
+          "endMs": 85.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 85.5,
+          "endMs": 85.6
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.5
+      }
+    },
+    {
+      "invocation": 5,
+      "sample": 1,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (1).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 65.9,
+      "crcActiveMs": 7.4,
+      "crcActiveAndTableUnionMs": 7.7,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.7,
+        "commit-queue-wait": 0.1,
+        "commit-total": 8.8,
+        "crc-active": 7.4,
+        "crc-table": 0.3,
+        "crc-yield": 0.2,
+        "entry-admission": 0.4,
+        "finalize": 0,
+        "local-header": 0.1,
+        "network-fetch": 28.9,
+        "precommit-yield": 0.2,
+        "worker-admission-wait": 34.7
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 41.3,
+          "endMs": 41.6
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 41.6,
+          "endMs": 44.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 44.4,
+          "endMs": 47.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 47.2,
+          "endMs": 48.9
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 55.7,
+          "endMs": 55.7
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 55.7,
+          "endMs": 56.0
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 60.2,
+          "endMs": 60.2
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 60.2,
+          "endMs": 60.2
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 64.4,
+          "endMs": 64.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 64.4,
+          "endMs": 64.5
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.3999999985098839
+      }
+    },
+    {
+      "invocation": 5,
+      "sample": 2,
+      "actualNativeArchiveFilename": "crc_fixture_4666000000000000534 (2).zip",
+      "condition": "warm",
+      "actionToOwnedBlobMs": 64.5,
+      "crcActiveMs": 8.4,
+      "crcActiveAndTableUnionMs": 8.6,
+      "cacheConditionQualified": true,
+      "sourceTransfers": 0,
+      "phaseUnionsMs": {
+        "blob-create": 0.8,
+        "commit-queue-wait": 0,
+        "commit-total": 9.8,
+        "crc-active": 8.4,
+        "crc-table": 0.2,
+        "crc-yield": 0.1,
+        "entry-admission": 0.2,
+        "finalize": 0.2,
+        "local-header": 0.7,
+        "network-fetch": 26.2,
+        "precommit-yield": 0.4,
+        "worker-admission-wait": 33.8
+      },
+      "crcIntervalsRelativeMs": [
+        {
+          "phase": "crc-table",
+          "startMs": 39.9,
+          "endMs": 40.1
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 40.1,
+          "endMs": 42.9
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 43.0,
+          "endMs": 46.4
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 46.4,
+          "endMs": 48.4
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 56.5,
+          "endMs": 56.5
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 56.5,
+          "endMs": 56.6
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 59.3,
+          "endMs": 59.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 59.3,
+          "endMs": 59.3
+        },
+        {
+          "phase": "crc-table",
+          "startMs": 62.3,
+          "endMs": 62.3
+        },
+        {
+          "phase": "crc-active",
+          "startMs": 62.3,
+          "endMs": 62.4
+        }
+      ],
+      "savedOutputVerified": true,
+      "pageClosed": true,
+      "postBoundaryTimerPairCalibration": {
+        "iterations": 1000,
+        "elapsedMs": 0.19999999925494194
+      }
+    }
+  ]
+}

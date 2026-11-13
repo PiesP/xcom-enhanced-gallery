@@ -1,5 +1,26 @@
 # Windows stable-browser gallery validation
 
+The bounded [CRC Phase 0 experiment](../../docs/experiments/534-transport-followup.md)
+concluded RETAIN_CURRENT. Product instrumentation, the CRC selector and its
+executable profile were removed. Its exact tested source can be reconstructed
+from the inert evidence patch described in that record; ordinary installed
+preparation has no CRC MP4 prerequisite.
+
+For a source-bound transport diagnostic, the existing native fixture factory
+accepts an optional `observeTransport` argument. Its `snapshot().transport`
+records bounded TCP admission/drop, TLS, first HTTP, owner timeout and close
+events with explicit clocks and effective settings. Normal installed runs keep
+this observation opt-in off. `releaseIdleConnections()` delegates to Node's idle
+HTTP connection close API without changing the eight-connection cap or active
+response ownership. It is not automatically applied to other scenarios. Use
+observations only within the selected source/fixture contract; server write
+completion does not prove browser receipt/cache completion. The installation
+receipt retains a separate post-close cleanup snapshot. No HTTP `clientError` or
+server/request/response timeout listener replaces Node's default handling.
+Connection labels correlate currently live endpoint tuples; they do not assert
+TLS/raw socket object identity. An unavailable match remains null. Pre-HTTP
+drops require browser-side evidence before assigning an exact request URL.
+
 This optional validation has four separate evidence tiers. None substitutes
 for another, and none is a required CI lane.
 

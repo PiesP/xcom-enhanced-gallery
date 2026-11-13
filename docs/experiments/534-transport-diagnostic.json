@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "harness": "931165b833df70dc8bd62b118e8e133ea69021ae",
+  "productContentJsSha256": "a8bb70a80c7113c454f7df36eabfbbd0bedccc335776ee8010f0516a95667859",
+  "purpose": "single initial transport diagnostic, excluded from performance",
+  "status": "failed",
+  "reason": "three actual action fetch ERR_CONNECTION_ABORTED console errors; no whitelist",
+  "listenerSettings": {
+    "maxConnections": 8,
+    "headersTimeout": 5000,
+    "requestTimeout": 5000,
+    "keepAliveTimeout": 1000,
+    "keepAliveTimeoutBuffer": 1000,
+    "timeout": 20000,
+    "clientErrorListenerCount": 0
+  },
+  "transportCounts": {
+    "accepted": 9,
+    "active": 0,
+    "peakActive": 8,
+    "drop": 3,
+    "secure": 9,
+    "tlsClientError": 0,
+    "httpRequests": 13,
+    "timeout": 0,
+    "closed": 9,
+    "eventOverflow": 0
+  },
+  "directNetlogEndpointJoins": 2,
+  "timeOnlyJoinWithoutEndpoint": 1,
+  "clocks": "Node performance.timeOrigin+atMs; NetLog timeTickOffset+event.time; browser request timing may be unavailable/zero. Exact offsets and endpoints stay private.",
+  "savedArchive": {
+    "bytes": 2993158,
+    "sha256": "413c292585c4ff05cc0720222286fa57b473fc6a881eb079224506582e9ed4e8",
+    "allFourMembersVerified": true
+  },
+  "performanceSampleCount": 0,
+  "receiptDigests": {
+    "bundle.json": "b50a2d5388203a6c14cc1796d606e5eb9c91aebabb5911fb13d2399586db6ab7",
+    "collection.json": "d6942c042ea0fdd7b525889f122f5be725862e6f4b66c6a213a47f475926d834",
+    "output/result.json": "5f8a58e5b24539a0b85216a742c76dc75bb1acf774d273c77f6e0e71c154737d",
+    "output/zip-crc-profile.json": "fa4f1703993b220161aca2475442f7d1504a51b29516ecdfa17a02bb2628d309",
+    "output/installation-result.json": "fca32cd334ba5ded67f6e73fde0d4b4fb4b5061ba2a539338bae0272ae556210",
+    "output/zip-crc-netlog.json": "59b969bbcc54a7466dea32881a8a294b7dbcc8feb9c98facdede9f672597fe9e"
+  },
+  "limits": "Direct matches establish listener admission for two reproduced connections only; not every historical failure. Server finish is OS write completion, not browser receipt/cache proof."
+}

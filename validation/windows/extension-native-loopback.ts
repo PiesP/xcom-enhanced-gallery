@@ -617,19 +617,31 @@ export function createExtensionNativeFixtureHandler() {
   };
 }
 
-export async function startExtensionNativeFixtureLoopback(helperPath: string) {
+export async function startExtensionNativeFixtureLoopback(
+  helperPath: string,
+  observeTransport = false
+) {
   const certificate = await generateFixtureCertificate(helperPath, undefined, true, true);
   const fixture = createExtensionNativeFixtureHandler();
   const server = createServer(
     { key: certificate.keyPem, cert: certificate.certPem, maxHeaderSize: 4_096 },
     fixture.handle
   );
-  const lifecycle = await startHttpsLoopback(server, 'extension-native-loopback-unavailable');
+  const lifecycle = await startHttpsLoopback(
+    server,
+    'extension-native-loopback-unavailable',
+    observeTransport
+  );
   return {
     ...fixture,
     port: lifecycle.port,
     spkiSha256: certificate.spkiSha256,
-    snapshot: () => ({ ...fixture.snapshot(), serverError: lifecycle.serverError() }),
+    releaseIdleConnections: () => lifecycle.releaseIdleConnections(),
+    snapshot: () => ({
+      ...fixture.snapshot(),
+      serverError: lifecycle.serverError(),
+      transport: lifecycle.transportSnapshot(),
+    }),
     close: () => lifecycle.close(fixture.destroyActive),
   };
 }
