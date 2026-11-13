@@ -13,12 +13,13 @@ import type {
 interface GMMockOptions {
   readonly persistentStorage?: boolean;
   readonly downloadApi?: boolean;
+  readonly mediaResponses?: Readonly<Record<string, readonly number[]>>;
   readonly apiResponses?: Readonly<Record<string, string>>;
 }
 
 /** Install the userscript host contract used by behavior-level browser tests. */
 export async function installGMMock(page: Page, options: GMMockOptions = {}): Promise<void> {
-  await page.evaluate(({ persistentStorage, downloadApi, apiResponses }) => {
+  await page.evaluate(({ persistentStorage, downloadApi, apiResponses, mediaResponses }) => {
     const host = window as unknown as Record<string, unknown>;
     const storageKey = '__xeg_e2e_gm_storage';
     let storage = new Map<string, unknown>();
@@ -98,6 +99,33 @@ export async function installGMMock(page: Page, options: GMMockOptions = {}): Pr
       document.body.append(marker);
     };
     host.GM_xmlhttpRequest = (details: GMXMLHttpRequestDetails) => {
+      const media = mediaResponses?.[details.url];
+      if (media) {
+        const bytes = Uint8Array.from(media);
+        let aborted = false;
+        queueMicrotask(() => {
+          if (!aborted) {
+            details.onload?.({
+              finalUrl: details.url,
+              readyState: 4,
+              status: 200,
+              statusText: 'Fixture',
+              responseHeaders: `content-type: image/jpeg\r\ncontent-length: ${bytes.byteLength}`,
+              response:
+                details.responseType === 'blob'
+                  ? new Blob([bytes], { type: 'image/jpeg' })
+                  : bytes.buffer,
+              responseText: '',
+              context: details.context,
+            });
+          }
+        });
+        return {
+          abort: () => {
+            aborted = true;
+          },
+        };
+      }
       const url = apiResponses ? new URL(details.url) : null;
       if (
         apiResponses &&

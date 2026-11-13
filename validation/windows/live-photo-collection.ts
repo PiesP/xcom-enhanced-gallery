@@ -1207,6 +1207,12 @@ export async function runLivePhotoCollection({
           const beforeSingle = new Set(
             (await queryDownloads(extensionPage, extensionId)).map((item) => item.id)
           );
+          visit.singleSaveAttempt = {
+            index: selectedIndex,
+            mediaId: selected.mediaId,
+            ownerId: selected.owner.statusId,
+            ordinal: selected.attachmentOrdinal,
+          };
           const cdpSingleSince = managerObserver?.snapshot() ?? 0;
           await toolbar.locator('button[aria-label="Download"]').click();
           const singleProgress: Array<{
@@ -1453,6 +1459,20 @@ export async function runLivePhotoCollection({
           .locator('[data-xeg-gallery-container]')
           .waitFor({ state: 'detached', timeout: 10_000 });
       } catch (error) {
+        visit.operationError =
+          error instanceof Error ? error.message.slice(0, 1000) : String(error).slice(0, 1000);
+        visit.ownedDownloadsAtFailure = await queryDownloads(extensionPage, extensionId)
+          .then((items) =>
+            items.slice(-20).map(({ id, state, bytesReceived, totalBytes, exists, error }) => ({
+              id,
+              state,
+              bytesReceived,
+              totalBytes,
+              exists,
+              error,
+            }))
+          )
+          .catch(() => null);
         visit.selectionAtFailure = await page
           .evaluate(() => {
             const gallery = document.querySelector('[data-xeg-gallery-container]');
@@ -1482,6 +1502,19 @@ export async function runLivePhotoCollection({
               }
             }
             return {
+              downloadStatus:
+                toolbar
+                  ?.querySelector('[data-download-status]')
+                  ?.getAttribute('data-download-status') ?? null,
+              downloadStatusText:
+                toolbar
+                  ?.querySelector('[data-download-status]')
+                  ?.textContent?.trim()
+                  .slice(0, 300) ?? null,
+              downloadButtonBusy:
+                toolbar
+                  ?.querySelector('button[aria-label="Download"]')
+                  ?.getAttribute('aria-busy') ?? null,
               total: counter?.getAttribute('data-total') ?? null,
               position: counter?.getAttribute('data-position') ?? null,
               currentIndex: index ?? null,

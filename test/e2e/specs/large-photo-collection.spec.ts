@@ -329,7 +329,7 @@ test('installed photo fixture API20 and API40 open through the strict selected-i
       route.request().resourceType(),
       route.request().method()
     );
-    expect(['preview', 'display-original']).toContain(media.purpose);
+    expect(['preview', 'display-original', 'original']).toContain(media.purpose);
     await route.fulfill({ status: 200, contentType: 'image/jpeg', body: media.bytes });
   });
   await page.route('https://x.com/**', async (route) => {
@@ -344,6 +344,10 @@ test('installed photo fixture API20 and API40 open through the strict selected-i
     const url = `https://x.com/${owner.handle}/status/${owner.statusId}`;
     await page.goto(url);
     await installGMMock(page, {
+      downloadApi: false,
+      mediaResponses: Object.fromEntries(
+        fixture.photos.map((photo) => [photo.reference.originalUrl, [...photo.bytes]])
+      ),
       apiResponses: Object.fromEntries(
         [...fixture.apiResponses].map(([id, bytes]) => [id, bytes.toString('utf8')])
       ),
@@ -375,6 +379,17 @@ test('installed photo fixture API20 and API40 open through the strict selected-i
     );
     const selections = await verifyBoundaryPhotoSelections(page, verified);
     expect(selections.visits).toHaveLength(count === 40 ? 14 : 7);
+    const selectedIndex = count === 40 ? 20 : 19;
+    await select(page, selectedIndex);
+    const saved = page.waitForEvent('download');
+    await page.locator('[data-gallery-element="toolbar"] button[aria-label="Download"]').click();
+    const download = await saved;
+    const expected = contract.expected[selectedIndex]!;
+    expect(download.suggestedFilename()).toBe(expected.filename);
+    const path = await download.path();
+    expect(path).not.toBeNull();
+    const bytes = await readExactDownloadFile(path!, expected.bytes);
+    expect(createHash('sha256').update(bytes.bytes).digest('hex')).toBe(expected.sha256);
     await test.info().attach(`source-known-click-${count}`, {
       body: JSON.stringify(observation),
       contentType: 'application/json',
