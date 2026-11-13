@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
-import type { BrowserContext, Page } from '@playwright/test';
+import type { BrowserContext, Page, Request, Response } from '@playwright/test';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import {
   inspectLiveStoredZip,
@@ -380,6 +380,31 @@ export function assertDomPhotoSourceDetails(
     '20 collected items · the post may contain more',
     ...(quality === 'pending' ? ['Original image will be checked when saving'] : []),
   ]);
+}
+
+/** Context-level observation includes manager workers but admits only this owned X request. */
+export function photoProviderRequestMatches(source: URL, requestedId: string): boolean {
+  if (
+    source.origin !== 'https://x.com' ||
+    source.username ||
+    source.password ||
+    source.port ||
+    source.hash ||
+    !/^\/i\/api\/graphql\/[^/]+\/TweetResultByRestId$/u.test(source.pathname)
+  ) {
+    return false;
+  }
+  try {
+    const variables: unknown = JSON.parse(source.searchParams.get('variables') ?? '{}');
+    return Boolean(
+      variables &&
+      typeof variables === 'object' &&
+      'tweetId' in variables &&
+      variables.tweetId === requestedId
+    );
+  } catch {
+    return false;
+  }
 }
 
 /** Bind this selected scenario to the exact requested and completed native source. */
@@ -763,6 +788,7 @@ export async function runLivePhotoCollection({
 }) {
   const receipt: Record<string, unknown> = {
     status: 'failed',
+    startedAt: new Date().toISOString(),
     scope:
       fixture?.scope ??
       'installed extension public photo collection and native single/ZIP bytes only',
@@ -785,10 +811,41 @@ export async function runLivePhotoCollection({
           ? contract
           : { requested: owner, directQuote: null, expected: contract.expected.slice(0, 20) };
       const page = await context.newPage();
-      const visit: Record<string, unknown> = { statusId: owner.statusId, status: 'failed' };
+      const visit: Record<string, unknown> = {
+        statusId: owner.statusId,
+        status: 'failed',
+        startedAt: new Date().toISOString(),
+      };
       visits.push(visit);
       const productErrors: string[] = [];
       const pageErrors: string[] = [];
+      const sourceRequestFailures: Array<Record<string, unknown>> = [];
+      const sourceHttpNonSuccess: Array<Record<string, unknown>> = [];
+      visit.sourceRequestFailures = sourceRequestFailures;
+      visit.sourceHttpNonSuccess = sourceHttpNonSuccess;
+      const isExpectedSource = (source: URL) =>
+        source.hostname === 'pbs.twimg.com' &&
+        source.pathname.startsWith('/media/') &&
+        target.expected.some((item) => item.sourceKey === stem(source.href));
+      const onRequestFailed = (request: Request) => {
+        const source = new URL(request.url());
+        if (!isExpectedSource(source)) {
+          return;
+        }
+        if (sourceRequestFailures.length >= 40) {
+          visit.sourceRequestFailureOverflow = true;
+          return;
+        }
+        sourceRequestFailures.push({
+          path: source.pathname.slice(0, 160),
+          format: source.searchParams.get('format')?.slice(0, 20) ?? null,
+          name: source.searchParams.get('name')?.slice(0, 20) ?? null,
+          method: request.method(),
+          resourceType: request.resourceType(),
+          error: request.failure()?.errorText.slice(0, 240) ?? null,
+        });
+      };
+      context.on('requestfailed', onRequestFailed);
       visit.productErrors = productErrors;
       visit.pageErrors = pageErrors;
       page.on('console', (message) => {
@@ -833,19 +890,50 @@ export async function runLivePhotoCollection({
       const pending = new Set<Promise<void>>();
       const captureErrors: unknown[] = [];
       let overflow = false;
-      const onResponse = (response: {
-        url(): string;
-        status(): number;
-        headers(): Record<string, string>;
-        body(): Promise<Buffer>;
-      }) => {
-        if (!new URL(response.url()).pathname.endsWith('/TweetResultByRestId')) {
+      const providerChannels: Array<Record<string, unknown>> = [];
+      visit.providerChannels = providerChannels;
+      visit.apiObservationChannel = 'owned-browser-context (frame and service-worker responses)';
+      const onResponse = (response: Response) => {
+        const source = new URL(response.url());
+        if (isExpectedSource(source) && response.status() >= 400) {
+          if (sourceHttpNonSuccess.length >= 40) {
+            visit.sourceHttpObservationOverflow = true;
+          } else {
+            sourceHttpNonSuccess.push({
+              path: source.pathname.slice(0, 160),
+              format: source.searchParams.get('format')?.slice(0, 20) ?? null,
+              name: source.searchParams.get('name')?.slice(0, 20) ?? null,
+              status: response.status(),
+            });
+          }
+        }
+        if (!photoProviderRequestMatches(source, target.requested.statusId)) {
           return;
         }
+        const requestedId = target.requested.statusId;
         if (pending.size + observations.length >= 12) {
           overflow = true;
           return;
         }
+        const request = response.request();
+        const worker = request.serviceWorker();
+        let producerOrigin: string | null = null;
+        try {
+          const producer = new URL(worker ? worker.url() : request.frame().url());
+          producerOrigin =
+            producer.protocol === 'chrome-extension:'
+              ? `chrome-extension://${producer.host}`
+              : producer.origin;
+        } catch {
+          /* Keep unavailable producer origin explicit. */
+        }
+        providerChannels.push({
+          requestedId,
+          observedAt: new Date().toISOString(),
+          status: response.status(),
+          kind: worker ? 'service-worker' : 'frame',
+          origin: producerOrigin,
+        });
         const capture = (async () => {
           const length = Number(response.headers()['content-length']);
           assert(
@@ -877,7 +965,7 @@ export async function runLivePhotoCollection({
         pending.add(capture);
         void capture.finally(() => pending.delete(capture));
       };
-      page.on('response', onResponse);
+      context.on('response', onResponse);
       try {
         const url = `https://x.com/${owner.handle}/status/${owner.statusId}`;
         const response = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
@@ -1338,17 +1426,67 @@ export async function runLivePhotoCollection({
           productErrors.length === 0 &&
             pageErrors.length === 0 &&
             !visit.productErrorOverflow &&
-            !visit.pageErrorOverflow,
-          'Photo collection introduced product or page errors'
+            !visit.pageErrorOverflow &&
+            !visit.sourceRequestFailureOverflow &&
+            !visit.sourceHttpObservationOverflow,
+          'Photo collection introduced product/page errors or lost source diagnostics'
         );
         await page.keyboard.press('Escape');
         await page
           .locator('[data-xeg-gallery-container]')
           .waitFor({ state: 'detached', timeout: 10_000 });
+      } catch (error) {
+        visit.selectionAtFailure = await page
+          .evaluate(() => {
+            const gallery = document.querySelector('[data-xeg-gallery-container]');
+            const toolbar = gallery?.querySelector('[data-gallery-element="toolbar"]');
+            const counter = gallery?.querySelector('#xeg-toolbar-counter');
+            const index = toolbar?.getAttribute('data-current-index');
+            const item = gallery?.querySelector(
+              `[data-gallery-element="item"][data-index="${index}"]`
+            );
+            const image = item?.querySelector('img');
+            let source: Record<string, unknown> | null = null;
+            if (image instanceof HTMLImageElement) {
+              try {
+                const url = new URL(image.currentSrc || image.src);
+                source = {
+                  protocol: url.protocol,
+                  host: url.hostname,
+                  path:
+                    url.protocol === 'https:' && url.hostname === 'pbs.twimg.com'
+                      ? url.pathname.slice(0, 160)
+                      : null,
+                  format: url.searchParams.get('format')?.slice(0, 20) ?? null,
+                  name: url.searchParams.get('name')?.slice(0, 20) ?? null,
+                };
+              } catch {
+                source = { invalid: true };
+              }
+            }
+            return {
+              total: counter?.getAttribute('data-total') ?? null,
+              position: counter?.getAttribute('data-position') ?? null,
+              currentIndex: index ?? null,
+              focusedIndex: toolbar?.getAttribute('data-focused-index') ?? null,
+              counterCurrentIndex: counter?.getAttribute('data-current-index') ?? null,
+              counterFocusedIndex: counter?.getAttribute('data-focused-index') ?? null,
+              loaded: item?.getAttribute('data-media-loaded') ?? null,
+              active: item?.getAttribute('data-media-active') ?? null,
+              focused: item?.getAttribute('data-media-focused') ?? null,
+              complete: image instanceof HTMLImageElement ? image.complete : null,
+              naturalWidth: image instanceof HTMLImageElement ? image.naturalWidth : null,
+              source,
+            };
+          })
+          .catch(() => null);
+        throw error;
       } finally {
-        page.off('response', onResponse);
+        context.off('requestfailed', onRequestFailed);
+        context.off('response', onResponse);
         await page.close();
         visit.pageClosed = true;
+        visit.finishedAt = new Date().toISOString();
       }
       visit.status = 'observed';
     }
@@ -1359,6 +1497,7 @@ export async function runLivePhotoCollection({
     try {
       await extensionPage.close();
       receipt.extensionPageClosed = true;
+      receipt.finishedAt = new Date().toISOString();
     } catch (error) {
       receipt.status = 'failed';
       receipt.extensionPageCloseError = error instanceof Error ? error.message : String(error);

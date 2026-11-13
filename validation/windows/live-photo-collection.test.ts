@@ -23,6 +23,7 @@ import { summarizeTweetResultResponse } from './live-page.ts';
 import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
 import {
+  photoProviderRequestMatches,
   assertExactPhotoNativeSource,
   assertDomPhotoZipOutcome,
   parsePhotoCollectionSelector,
@@ -666,4 +667,17 @@ test('DOM ZIP status reports all collected items saved with unknown post total',
   ]) {
     assert.throws(() => assertDomPhotoZipOutcome('ZIP handed off to browser', changed, body));
   }
+});
+
+test('context API observation excludes foreign origins and other requested owners', () => {
+  const url = new URL('https://x.com/i/api/graphql/frozen/TweetResultByRestId');
+  url.searchParams.set('variables', JSON.stringify({ tweetId: requested.statusId }));
+  assert(photoProviderRequestMatches(url, requested.statusId));
+  assert(!photoProviderRequestMatches(url, directQuote.statusId));
+  const foreign = new URL(url);
+  foreign.hostname = 'unrelated.invalid';
+  assert(!photoProviderRequestMatches(foreign, requested.statusId));
+  const malformed = new URL(url);
+  malformed.searchParams.set('variables', '{');
+  assert(!photoProviderRequestMatches(malformed, requested.statusId));
 });
