@@ -9,8 +9,16 @@ import {
   readExactDownloadFile,
   expectedStoredZipBytes,
 } from '../../../validation/windows/download-memory';
-import { inspectLiveStoredZip } from '../../../validation/windows/live-acceptance';
-import { createInstalledLargePhotoFixture } from '../../../validation/windows/installed-large-photo-fixture';
+import {
+  inspectLiveStoredZip,
+  openCurrentStatusImage,
+} from '../../../validation/windows/live-acceptance';
+import {
+  createInstalledLargePhotoFixture,
+  largePhotoFixtureMedia,
+} from '../../../validation/windows/installed-large-photo-fixture';
+import { installGMMock } from '../fixtures/gm-mock';
+import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 import {
   LARGE_PHOTO_OWNERS,
   photoExpectations,
@@ -299,5 +307,55 @@ test('installed narrow-photo fixture actions own a real hit-tested click surface
         admitted: true,
       });
     }
+  }
+});
+
+test('installed photo fixture API20 and API40 open through the strict selected-image verifier', async ({
+  page,
+}) => {
+  const fixture = createInstalledLargePhotoFixture(
+    readFileSync(resolve(import.meta.dirname, '../fixtures/large-photo-narrow.jpg'))
+  );
+  await page.route('https://pbs.twimg.com/**', async (route) => {
+    const media = largePhotoFixtureMedia(
+      fixture.photos,
+      route.request().url(),
+      route.request().resourceType(),
+      route.request().method()
+    );
+    expect(['preview', 'display-original']).toContain(media.purpose);
+    await route.fulfill({ status: 200, contentType: 'image/jpeg', body: media.bytes });
+  });
+  await page.route('https://x.com/**', async (route) => {
+    const html = fixture.pages.get(route.request().url());
+    expect(html).toBeDefined();
+    await route.fulfill({ status: 200, contentType: 'text/html', body: html! });
+  });
+  for (const [owner, count] of [
+    [fixture.contract.directQuote!, 20],
+    [fixture.contract.requested, 40],
+  ] as const) {
+    const url = `https://x.com/${owner.handle}/status/${owner.statusId}`;
+    await page.goto(url);
+    await installGMMock(page, {
+      apiResponses: Object.fromEntries(
+        [...fixture.apiResponses].map(([id, bytes]) => [id, bytes.toString('utf8')])
+      ),
+    });
+    await page.evaluate(() => {
+      document.cookie = 'ct0=source-known-fixture; path=/';
+    });
+    await injectDevUserscript(page);
+    await waitForGalleryApp(page);
+    const observation: Record<string, unknown> = {};
+    await openCurrentStatusImage(page, url, observation);
+    await expect(page.locator('[data-gallery-element="source-details"]')).toHaveCount(0);
+    await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-total', String(count));
+    await test.info().attach(`source-known-click-${count}`, {
+      body: JSON.stringify(observation),
+      contentType: 'application/json',
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-xeg-gallery-container]')).toHaveCount(0);
   }
 });
