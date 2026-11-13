@@ -15,6 +15,7 @@ import { generateFixtureCertificate } from './userscript-loopback.ts';
 import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 
 const MAX_REQUESTS = 128;
+const LARGE_PHOTO_MAX_REQUESTS = 512;
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_SERVED_BYTES = 16 * 1024 * 1024;
 const IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
@@ -76,6 +77,7 @@ function allowedVideos(payloads: Record<string, Buffer>) {
 export function createExtensionNativeFixtureHandler() {
   const allowed = new Map<string, NativeRoute>();
   let requestCount = 0;
+  let largePhotosInstalled = false;
   let unexpectedCount = 0;
   let servedBytes = 0;
   let reservedBytes = 0;
@@ -105,7 +107,8 @@ export function createExtensionNativeFixtureHandler() {
   };
   const handle = (request: IncomingMessage, response: ServerResponse) => {
     requestCount += 1;
-    if (requestCount > MAX_REQUESTS || events.length >= MAX_REQUESTS) {
+    const requestLimit = largePhotosInstalled ? LARGE_PHOTO_MAX_REQUESTS : MAX_REQUESTS;
+    if (requestCount > requestLimit || events.length >= requestLimit) {
       overflow = true;
       response.destroy();
       return;
@@ -361,6 +364,22 @@ export function createExtensionNativeFixtureHandler() {
       for (const [path, bytes] of allowedVideos(videoPayloads)) {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
       }
+    },
+    setLargePhotos(originals: ReadonlyMap<string, Buffer>) {
+      assert(allowed.size > 0 && !largePhotosInstalled, 'Install base native fixture first');
+      assert.equal(originals.size, 40, 'Large photo fixture requires forty originals');
+      for (const [source, bytes] of originals) {
+        const url = new URL(source);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, 'pbs.twimg.com');
+        assert.match(url.pathname, /^\/media\/XegLarge[AB]\d{2}\.jpg$/u);
+        assert.equal(url.search, '?format=jpg&name=orig');
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+        const key = `${url.hostname}${url.pathname}${url.search}`;
+        assert(!allowed.has(key), 'Large photo original already installed');
+        allowed.set(key, { bytes, host: url.hostname, path: url.pathname });
+      }
+      largePhotosInstalled = true;
     },
     setExperienceImages(images: Buffer[]) {
       assert.equal(allowed.size > 0, true, 'Install native fixture payloads first');

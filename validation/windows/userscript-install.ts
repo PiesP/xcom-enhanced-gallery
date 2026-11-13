@@ -30,6 +30,7 @@ import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import { isLiveFilenameOriginal, type LiveFilenameTarget } from './live-filename-target.ts';
 import { runLivePhotoCollection, type PhotoCollectionContract } from './live-photo-collection.ts';
+import { runInstalledLargePhotoFixture } from './installed-large-photo-fixture.ts';
 import {
   inspectHitTestedAction,
   inspectLiveCandidateDocument,
@@ -458,6 +459,7 @@ type UserscriptInstallationResult = {
     productionBudget: string;
   };
   fixture?: FixtureResult;
+  largePhotoFixture?: Awaited<ReturnType<typeof runInstalledLargePhotoFixture>>;
   failedNativeRetention?: Awaited<ReturnType<typeof retainFailedLiveNativeFiles>>;
   error?: string;
 };
@@ -5464,6 +5466,7 @@ export async function runUserscriptInstallation({
   browserName,
   headless,
   attachmentFilenameProbe = false,
+  photoCollectionFixture = false,
 }: {
   chromium: BrowserType;
   root: string;
@@ -5471,6 +5474,7 @@ export async function runUserscriptInstallation({
   browserName: string;
   headless: boolean;
   attachmentFilenameProbe?: boolean;
+  photoCollectionFixture?: boolean;
 }) {
   assert(
     ['chrome', 'msedge'].includes(browserName),
@@ -5623,6 +5627,18 @@ export async function runUserscriptInstallation({
       result.sourceSha256,
       attachmentFilenameProbe
     );
+    if (photoCollectionFixture) {
+      result.largePhotoFixture = await runInstalledLargePhotoFixture({
+        context,
+        extensionId: managerId,
+        downloads,
+        output,
+        root,
+        managerObserver: observer,
+        installNative: ({ originals, apiResponses }) =>
+          loopback!.setLargePhotos(originals, apiResponses),
+      });
+    }
     result.status = 'passed';
   } catch (error) {
     caughtPrimaryError = true;

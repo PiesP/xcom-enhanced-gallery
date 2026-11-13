@@ -361,6 +361,14 @@ Pass the exact public `--live-url` values in requested-then-quote order with
 Chrome/Edge profile. The selected profile/controller must explicitly admit
 this installation selector and URL tuple; the historical userscript filename
 selector does not admit it.
+Before the selected public visits, both installed routes exercise a separate
+source-known fixture in their owned profiles: B with 20 photos and A with a
+direct B quote for 40. Each original is a unique marked JPEG served by the
+task-owned HTTPS fixture. The fixture saves one ZIP and one selected single per
+visit, checking native IDs, owned file bytes, every owner-local ZIP name and
+member CRC. Its `installed-large-photo-fixture.json` and
+`installed-large-photo-collection.json` receipts remain separate from
+`live-photo-collection.json`; a fixture pass never qualifies the public posts.
 The verifier visits the quoted post and requested post separately. For the
 userscript it installs the production script through the maintained manager
 UI in a fresh owned profile after the controlled fixture. It checks

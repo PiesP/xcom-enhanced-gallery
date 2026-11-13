@@ -12,6 +12,7 @@ import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 const execFileAsync = promisify(execFile);
 const HOST = 'pbs.twimg.com';
 const MAX_REQUESTS = 64;
+const LARGE_PHOTO_MAX_REQUESTS = 512;
 const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 const MAX_API_SERVED_BYTES = 3 * 1024 * 1024;
@@ -214,6 +215,10 @@ export function createUserscriptFixtureHandler(
   assert.equal(avatarPath, '/profile_images/123456789/public-avatar.jpg');
   allowed.set(avatarPath, { cohort: 'avatar', index: 0 });
   let images: Buffer[] | undefined;
+  const largePhotos = new Map<string, { index: number; bytes: Buffer }>();
+  const largeApi = new Map<string, Buffer>();
+  let largeServedBytes = 0;
+  let largeApiServedBytes = 0;
   let phase = 'normal';
   let heldArmed = false;
   let heldPending: { response: ServerResponse; event: FixtureEvent; body: Buffer } | null = null;
@@ -267,13 +272,58 @@ export function createUserscriptFixtureHandler(
   };
   const handle = (request: IncomingMessage, response: ServerResponse) => {
     requestCount += 1;
-    if (requestCount > MAX_REQUESTS) {
+    if (requestCount > (largePhotos.size ? LARGE_PHOTO_MAX_REQUESTS : MAX_REQUESTS)) {
       overflow = true;
       response.destroy();
       return;
     }
     const host = request.headers.host?.replace(/:443$/u, '');
     const path = request.url ?? '';
+    const largePhoto = host === HOST ? largePhotos.get(path) : undefined;
+    if (largePhoto) {
+      if (request.method !== 'GET' || request.headers['sec-fetch-dest'] === 'image') {
+        reject(response, 'large-photo-purpose');
+        return;
+      }
+      if (largeServedBytes + largePhoto.bytes.length > 1024 * 1024) {
+        overflow = true;
+        response.destroy();
+        return;
+      }
+      largeServedBytes += largePhoto.bytes.length;
+      const event: FixtureEvent = {
+        phase: 'large-photo',
+        cohort: 'large-photo',
+        index: largePhoto.index,
+        purpose: 'transfer',
+        method: 'GET',
+        result: 'started',
+        bytes: 0,
+        sha256: null,
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = 'served';
+        event.bytes = largePhoto.bytes.length;
+        event.sha256 = createHash('sha256').update(largePhoto.bytes).digest('hex');
+      });
+      response.writeHead(200, {
+        'Content-Type': 'image/jpeg',
+        'Content-Length': String(largePhoto.bytes.length),
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+      });
+      response.end(largePhoto.bytes);
+      return;
+    }
     const apiAllowedOrigin =
       request.headers.origin === 'https://mobile.x.com' ? 'https://mobile.x.com' : 'https://x.com';
     const isAllowedReceiver = host === HOST && path === '/xeg-metadata-allowed.json';
@@ -340,6 +390,52 @@ export function createUserscriptFixtureHandler(
         }
       } catch {
         reject(response, 'graphql-variables');
+        return;
+      }
+      const largeId = typeof tweetId === 'string' ? tweetId : null;
+      const largeBody = largeId ? largeApi.get(largeId) : undefined;
+      if (largeBody) {
+        if (request.method !== 'GET') {
+          reject(response, 'large-api-method');
+          return;
+        }
+        if (largeApiServedBytes + largeBody.length > 4 * 1024 * 1024) {
+          overflow = true;
+          response.destroy();
+          return;
+        }
+        largeApiServedBytes += largeBody.length;
+        const event: FixtureEvent = {
+          phase: 'large-photo',
+          cohort: 'large-api',
+          index: largeId?.endsWith('1') ? 0 : 1,
+          purpose: 'metadata',
+          method: 'GET',
+          result: 'started',
+          bytes: 0,
+          sha256: null,
+        };
+        events.push(event);
+        active.add(response);
+        response.once('close', () => {
+          if (!response.writableFinished) {
+            event.result = 'aborted';
+          }
+          active.delete(response);
+        });
+        response.once('finish', () => {
+          event.result = 'served';
+          event.bytes = largeBody.length;
+          event.sha256 = createHash('sha256').update(largeBody).digest('hex');
+        });
+        response.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Content-Length': String(largeBody.length),
+          'Cache-Control': 'no-store',
+          'Access-Control-Allow-Origin': apiAllowedOrigin,
+          'Access-Control-Allow-Credentials': 'true',
+        });
+        response.end(largeBody);
         return;
       }
       const defaultKind =
@@ -584,6 +680,29 @@ export function createUserscriptFixtureHandler(
   };
   return {
     handle,
+    setLargePhotos(
+      originals: ReadonlyMap<string, Buffer>,
+      apiResponses: ReadonlyMap<string, Buffer>
+    ) {
+      assert(images && largePhotos.size === 0 && largeApi.size === 0, 'Install base images first');
+      assert.equal(originals.size, 40);
+      assert.equal(apiResponses.size, 2);
+      for (const [source, bytes] of originals) {
+        const url = new URL(source);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, HOST);
+        assert.match(url.pathname, /^\/media\/XegLarge[AB]\d{2}\.jpg$/u);
+        assert.equal(url.search, '?format=jpg&name=orig');
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_IMAGE_BYTES);
+        assert(!largePhotos.has(`${url.pathname}${url.search}`));
+        largePhotos.set(`${url.pathname}${url.search}`, { index: largePhotos.size, bytes });
+      }
+      for (const [id, body] of apiResponses) {
+        assert.match(id, /^[1-9]\d{1,39}$/u);
+        assert(Buffer.isBuffer(body) && body.length > 0 && body.length <= 512 * 1024);
+        largeApi.set(id, body);
+      }
+    },
     setImages(next: Buffer[]) {
       assert(
         !images &&
@@ -670,6 +789,8 @@ export function createUserscriptFixtureHandler(
       upgradeDenialEnabled,
       overflow,
       servedBytes,
+      largeServedBytes,
+      largeApiServedBytes,
       apiServedBytes,
       activeCount: active.size,
       mediaRedirectArmed,

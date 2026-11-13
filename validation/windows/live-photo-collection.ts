@@ -579,6 +579,7 @@ export async function runLivePhotoCollection({
   downloads,
   output,
   managerObserver = null,
+  fixture = null,
 }: {
   context: BrowserContext;
   extensionId: string;
@@ -600,10 +601,18 @@ export async function runLivePhotoCollection({
       filePath?: string | null;
     }>;
   } | null;
+  fixture?: {
+    originals: ReadonlyMap<string, Buffer>;
+    receiptFile: string;
+    retainedPrefix: string;
+    scope: string;
+  } | null;
 }) {
   const receipt: Record<string, unknown> = {
     status: 'failed',
-    scope: 'installed extension public photo collection and native single/ZIP bytes only',
+    scope:
+      fixture?.scope ??
+      'installed extension public photo collection and native single/ZIP bytes only',
     requested: contract.requested.statusId,
     directQuote: contract.directQuote?.statusId ?? null,
     visits: [],
@@ -655,7 +664,7 @@ export async function runLivePhotoCollection({
           retainedTotal <= 64 * 1024 * 1024,
           'Owned photo evidence exceeds flat-stage transfer budget'
         );
-        const name = `photo-collection-${owner.statusId}-${kind}.bin`;
+        const name = `${fixture?.retainedPrefix ?? 'photo-collection'}-${owner.statusId}-${kind}.bin`;
         const path = join(output, name);
         await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
         const retained = await readFile(path);
@@ -826,7 +835,10 @@ export async function runLivePhotoCollection({
           );
           const format = new URL(item.expected.originalUrl).searchParams.get('format');
           assert(format);
-          const original = await fetchBoundedLiveOriginal(item.expected.originalUrl, format);
+          const original = fixture
+            ? { bytes: fixture.originals.get(item.expected.originalUrl) }
+            : await fetchBoundedLiveOriginal(item.expected.originalUrl, format);
+          assert(original.bytes, 'Synthetic fixture original is absent');
           referenceTotal += original.bytes.length;
           assert(
             referenceTotal + zipBytes.length <= 128 * 1024 * 1024,
@@ -1010,10 +1022,14 @@ export async function runLivePhotoCollection({
       receipt.status = 'failed';
       receipt.extensionPageCloseError = error instanceof Error ? error.message : String(error);
     }
-    await writeFile(join(output, 'live-photo-collection.json'), JSON.stringify(receipt, null, 2), {
-      flag: 'wx',
-      mode: 0o600,
-    });
+    await writeFile(
+      join(output, fixture?.receiptFile ?? 'live-photo-collection.json'),
+      JSON.stringify(receipt, null, 2),
+      {
+        flag: 'wx',
+        mode: 0o600,
+      }
+    );
   }
   return receipt;
 }
