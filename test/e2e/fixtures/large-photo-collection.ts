@@ -14,7 +14,16 @@ export const LARGE_PHOTO_OWNERS = [
   '9000000000000000002',
   '9000000000000000003',
 ] as const;
+// Synthetic 54x1080 RGB pattern (r=x*4,g=y/8,b=x+y modulo256), Pillow JPEG quality85.
 const jpeg = readFileSync(resolve(import.meta.dirname, 'large-photo-narrow.jpg'));
+
+function previewBytes(original: Buffer): Buffer {
+  const marker = Buffer.from('fixture-preview-only');
+  const header = Buffer.alloc(4);
+  header.writeUInt16BE(0xfffe, 0);
+  header.writeUInt16BE(marker.length + 2, 2);
+  return Buffer.concat([original.subarray(0, 2), header, marker, original.subarray(2)]);
+}
 
 export type PhotoExpectation = {
   ownerId: string;
@@ -123,7 +132,9 @@ export async function setupLargePhotoFixture(
       .split('/')
       .at(-1)!
       .replace(/\.jpg$/u, '');
-    const body = bySource.get(key);
+    const original = bySource.get(key);
+    const body =
+      original && (url.searchParams.get('name') === 'orig' ? original : previewBytes(original));
     const missingWebp =
       options.domFallback &&
       url.searchParams.get('name') === 'orig' &&
