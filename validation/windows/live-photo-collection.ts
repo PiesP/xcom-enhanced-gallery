@@ -2129,6 +2129,7 @@ export async function runLivePhotoCollection({
             } catch {
               visit.status = 'failed';
               visit.transportProbeNetworkDetachError = true;
+              visit.operationError = 'Transport probe network observer did not detach';
             } finally {
               visit.transportProbeNetwork = transportNetwork.snapshot();
             }
