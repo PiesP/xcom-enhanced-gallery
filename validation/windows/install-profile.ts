@@ -613,6 +613,11 @@ async function assertSourceDetails(
     );
   }
   await details.locator('summary').click();
+  assert.equal(
+    await details.getAttribute('open'),
+    null,
+    'Source details must close after inspection'
+  );
   return summary;
 }
 
