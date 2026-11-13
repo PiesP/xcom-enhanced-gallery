@@ -487,7 +487,7 @@ test.describe('X.com Enhanced Gallery E2E', () => {
         'Visible media only'
       );
       await expect(page.locator('[data-gm-notification]').last()).toContainText(
-        'Bulk download includes only the items shown.'
+        'The post may contain more; bulk download includes only collected items.'
       );
       await gallery.getByRole('button', { name: 'Download', exact: true }).click();
       const download = page.locator('[data-gm-download="true"]');
