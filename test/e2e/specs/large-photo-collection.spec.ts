@@ -19,11 +19,14 @@ import {
 } from '../../../validation/windows/installed-large-photo-fixture';
 import {
   observePhotoGallery,
+  finishManagerPhotoApiCapture,
   verifyDomPhotoCollection,
   verifyPhotoCollection,
   verifyBoundaryPhotoSelections,
 } from '../../../validation/windows/live-photo-collection';
 import { summarizeTweetResultResponse } from '../../../validation/windows/live-page';
+import { createManagerPhotoApiObserver } from '../../../validation/windows/userscript-install';
+import { DEV_USERSCRIPT_PATH } from '../fixtures/artifacts';
 import { installGMMock } from '../fixtures/gm-mock';
 import { injectDevUserscript, waitForGalleryApp } from '../fixtures/userscript-harness';
 import {
@@ -318,7 +321,7 @@ test('installed narrow-photo fixture actions own a real hit-tested click surface
   }
 });
 
-test('installed photo fixture API20 and API40 open through the strict selected-image verifier', async ({
+test('source-known photo fixture API20 and API40 open through the strict selected-image verifier', async ({
   page,
 }) => {
   const fixture = createInstalledLargePhotoFixture(
@@ -359,24 +362,65 @@ test('installed photo fixture API20 and API40 open through the strict selected-i
     });
     await injectDevUserscript(page);
     await waitForGalleryApp(page);
+    const body = fixture.apiResponses.get(owner.statusId)!;
+    const observedSummaries: NonNullable<ReturnType<typeof summarizeTweetResultResponse>>[] = [];
+    const managerApiObserver = createManagerPhotoApiObserver(
+      page.context(),
+      'a'.repeat(32),
+      readFileSync(DEV_USERSCRIPT_PATH, 'utf8')
+    );
+    const managerApiTrace = await managerApiObserver(page, owner.statusId, (response) => {
+      const summary = summarizeTweetResultResponse(
+        response.url,
+        response.status,
+        JSON.parse(response.bodyText) as unknown,
+        40
+      );
+      if (summary) {
+        observedSummaries.push(summary);
+      }
+    });
     const observation: Record<string, unknown> = {};
-    await openCurrentStatusImage(page, url, observation);
+    let apiTraceSnapshot: ReturnType<typeof managerApiTrace.snapshot>;
+    try {
+      await openCurrentStatusImage(page, url, observation);
+      apiTraceSnapshot = await finishManagerPhotoApiCapture(
+        managerApiTrace,
+        Date.now() + 10_000,
+        async () => {}
+      );
+    } finally {
+      await managerApiTrace.stop();
+    }
+    expect(apiTraceSnapshot.sourceBinding).toMatchObject({
+      installedSha256: createHash('sha256').update(readFileSync(DEV_USERSCRIPT_PATH)).digest('hex'),
+      scriptId: expect.any(String),
+      executionContextId: expect.any(Number),
+    });
+    expect(apiTraceSnapshot.responses).toEqual([
+      {
+        requestedId: owner.statusId,
+        status: 200,
+        bytes: body.length,
+        sha256: createHash('sha256').update(body).digest('hex'),
+      },
+    ]);
     await expect(page.locator('[data-gallery-element="source-details"]')).toHaveCount(0);
     await expect(page.locator('#xeg-toolbar-counter')).toHaveAttribute('data-total', String(count));
     const contract =
       count === 40
         ? fixture.contract
         : { requested: owner, directQuote: null, expected: fixture.contract.expected.slice(0, 20) };
-    const body = fixture.apiResponses.get(owner.statusId)!;
-    const trace = summarizeTweetResultResponse(
+    const expectedSummary = summarizeTweetResultResponse(
       `https://x.com/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: owner.statusId }))}`,
       200,
       JSON.parse(body.toString('utf8')),
       40
     )!;
+    expect(observedSummaries).toEqual([expectedSummary]);
     const verified = verifyPhotoCollection(
       contract,
-      [trace],
+      observedSummaries,
       await observePhotoGallery(page, count)
     );
     const selections = await verifyBoundaryPhotoSelections(page, verified);
