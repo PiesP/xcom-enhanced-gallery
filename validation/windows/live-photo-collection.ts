@@ -9,7 +9,6 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { readOwnedNativeBytes } from './firefox-install.ts';
 import {
   inspectLiveStoredZip,
-  nativeSingleSourceMatchesDocument,
   openCurrentStatusImage,
   queryDownloads,
   readOwnedFile,
@@ -19,6 +18,7 @@ import { summarizeTweetResultResponse } from './live-page.ts';
 import { fetchBoundedLiveOriginal } from './live-original-fetch.ts';
 
 declare const chrome: {
+  runtime: { id: string };
   downloads: {
     search(query: { id: number }): Promise<
       Array<{
@@ -379,6 +379,35 @@ export function assertDomPhotoSourceDetails(
   assert.deepEqual(observed, [
     '20 collected items · the post may contain more',
     ...(quality === 'pending' ? ['Original image will be checked when saving'] : []),
+  ]);
+}
+
+/** Bind this selected scenario to the exact requested and completed native source. */
+export function assertExactPhotoNativeSource(
+  source: { url: string | null; finalUrl: string | null } | null,
+  expectedSource: string
+): void {
+  assert(source, 'Native single source observation is unavailable');
+  assert.equal(source.url, expectedSource, 'Native single requested another original URL');
+  assert.equal(
+    source.finalUrl,
+    expectedSource,
+    'Native single final URL differs from its original'
+  );
+}
+
+/** Saved bytes and the user-visible collected/saved/omitted result are separate obligations. */
+export function assertDomPhotoZipOutcome(
+  title: string,
+  paragraphs: readonly string[],
+  partialBody: string
+): void {
+  assert.equal(title, 'ZIP handed off to browser');
+  assert.deepEqual(paragraphs, [
+    'ZIP includes 20; left out 0.',
+    'Scope: 20 media items shown in this gallery.',
+    partialBody,
+    'The browser accepted the ZIP request. Completion on disk is not confirmed.',
   ]);
 }
 
@@ -1089,14 +1118,21 @@ export async function runLivePhotoCollection({
             singleProgress
           );
           if (!managerObserver) {
-            assert(
-              await extensionPage.evaluate(nativeSingleSourceMatchesDocument, {
-                id: singleItem.id,
-                extensionId,
-                expectedSource: references[selectedIndex]!.sourceUrl,
-              }),
-              'Native single used another public source'
+            const nativeSource = await extensionPage.evaluate(
+              async ({ id, extensionId }) => {
+                if (chrome.runtime.id !== extensionId) {
+                  return null;
+                }
+                const matches = await chrome.downloads.search({ id });
+                const item = matches.length === 1 ? matches[0] : null;
+                return item?.id === id && item.byExtensionId === extensionId
+                  ? { url: item.url ?? null, finalUrl: item.finalUrl ?? null }
+                  : null;
+              },
+              { id: singleItem.id, extensionId }
             );
+            assertExactPhotoNativeSource(nativeSource, references[selectedIndex]!.sourceUrl);
+            visit.extensionSingleSource = nativeSource;
           } else {
             const nativeSource = await extensionPage.evaluate(
               async ({ id, managerId }) => {
@@ -1114,14 +1150,12 @@ export async function runLivePhotoCollection({
                 nativeSource.url.startsWith('blob:https://x.com/'),
               'Manager single native URL is not the selected original or owned Blob'
             );
-            if (
-              nativeSource.finalUrl &&
-              nativeSource.url === references[selectedIndex]!.sourceUrl
-            ) {
-              assert.equal(
-                nativeSource.finalUrl,
-                references[selectedIndex]!.sourceUrl,
-                'Manager single redirected to another source'
+            if (nativeSource.url === references[selectedIndex]!.sourceUrl) {
+              assertExactPhotoNativeSource(nativeSource, references[selectedIndex]!.sourceUrl);
+            } else {
+              assert(
+                nativeSource.finalUrl === null || nativeSource.finalUrl === nativeSource.url,
+                'Owned manager Blob redirected to another source'
               );
             }
             visit.managerSingleSource = nativeSource;
@@ -1240,10 +1274,27 @@ export async function runLivePhotoCollection({
             '[data-xeg-gallery-container] [data-gallery-element="bulk-download-outcome"]'
           );
           await outcome.waitFor({ state: 'visible', timeout: 10_000 });
-          const paragraphs = await outcome.locator('p').allTextContents();
+          await page.waitForFunction(
+            () =>
+              document
+                .querySelector('[data-gallery-element="bulk-download-outcome"] strong')
+                ?.textContent?.trim() === 'ZIP handed off to browser',
+            undefined,
+            { timeout: 10_000 }
+          );
+          const title = (await outcome.locator('strong').textContent())?.trim() ?? '';
+          const paragraphs = (await outcome.locator('p').allTextContents()).map((text) =>
+            text.trim()
+          );
           const partialBody = (visit.unknownTotal as { partialBody: string }).partialBody;
-          assert(paragraphs.includes(partialBody), 'ZIP outcome lost the unknown post total');
-          visit.unknownTotalZip = paragraphs;
+          assertDomPhotoZipOutcome(title, paragraphs, partialBody);
+          assert.equal(
+            await outcome
+              .getByRole('button', { name: /Download [0-9]+ missing items as a separate ZIP/u })
+              .count(),
+            0
+          );
+          visit.unknownTotalZip = { title, paragraphs };
         }
         const { singleItem, singleBytes, singleProgress, cdpSingle } =
           earlySingle ?? (await saveSelected());

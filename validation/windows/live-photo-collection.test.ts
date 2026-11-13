@@ -23,6 +23,8 @@ import { summarizeTweetResultResponse } from './live-page.ts';
 import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
 import {
+  assertExactPhotoNativeSource,
+  assertDomPhotoZipOutcome,
   parsePhotoCollectionSelector,
   requiredPhotoPositions,
   verifyPhotoCollection,
@@ -625,4 +627,43 @@ test('both installed native transports serve exact original bytes and reject ano
     status: 200,
     bytes: fixture.apiResponses.get(fixture.contract.requested.statusId),
   });
+});
+
+test('native single binds the exact original query and observed final URL', () => {
+  const url = 'https://pbs.twimg.com/media/PIN.jpg?format=jpg&name=orig';
+  assert.doesNotThrow(() => assertExactPhotoNativeSource({ url, finalUrl: url }, url));
+  for (const source of [
+    null,
+    { url: url.replace('format=jpg', 'format=webp'), finalUrl: url },
+    { url: `${url}&extra=1`, finalUrl: url },
+    { url, finalUrl: url.replace('name=orig', 'name=small') },
+    { url, finalUrl: null },
+  ]) {
+    assert.throws(() => assertExactPhotoNativeSource(source, url));
+  }
+});
+
+test('DOM ZIP status reports all collected items saved with unknown post total', () => {
+  const body =
+    'Only currently available media was collected. The post may contain more; bulk download includes only collected items.';
+  const paragraphs = [
+    'ZIP includes 20; left out 0.',
+    'Scope: 20 media items shown in this gallery.',
+    body,
+    'The browser accepted the ZIP request. Completion on disk is not confirmed.',
+  ];
+  assert.doesNotThrow(() =>
+    assertDomPhotoZipOutcome('ZIP handed off to browser', paragraphs, body)
+  );
+  assert.throws(() => assertDomPhotoZipOutcome('No ZIP handed off', paragraphs, body));
+  for (const changed of [
+    paragraphs.map((text, index) => (index === 0 ? 'ZIP includes 19; left out 1.' : text)),
+    paragraphs.map((text, index) =>
+      index === 1 ? 'Scope: 4 media items shown in this gallery.' : text
+    ),
+    paragraphs.filter((_, index) => index !== 2),
+    paragraphs.map((text, index) => (index === 3 ? 'No ZIP was handed off to the browser.' : text)),
+  ]) {
+    assert.throws(() => assertDomPhotoZipOutcome('ZIP handed off to browser', changed, body));
+  }
 });
