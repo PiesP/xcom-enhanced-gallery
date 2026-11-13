@@ -550,27 +550,74 @@ function assertOpeningAbsent(
   assert.deepEqual(snapshot.opening, [], `${label}: stale opening status must be removed`);
 }
 
+type SourceDetailsExpectation =
+  | {
+      scope: 'complete';
+      quality: 'verified' | 'observed' | 'unavailable' | 'pending' | 'retryable';
+    }
+  | {
+      scope: 'unknown-total' | 'known-subset';
+      quality: 'verified' | 'observed' | 'unavailable' | 'pending' | 'retryable';
+      count: number;
+    };
+
+/** Compare every summary part so a scope warning cannot mask a wrong source warning. */
+export function assertSourceDetailsSummary(
+  observed: readonly string[],
+  expected: SourceDetailsExpectation
+): void {
+  if (expected.scope !== 'complete') {
+    assert(Number.isSafeInteger(expected.count) && expected.count > 0);
+  }
+  const scope =
+    expected.scope === 'unknown-total'
+      ? `${expected.count} collected items · the post may contain more`
+      : expected.scope === 'known-subset'
+        ? `${expected.count} supported items · some observed media cannot be saved`
+        : null;
+  const quality = {
+    verified: null,
+    observed: 'Video save quality is unverified',
+    unavailable: 'Original image unavailable for saving',
+    pending: 'Original image will be checked when saving',
+    retryable: 'Original image could not be confirmed',
+  }[expected.quality];
+  assert.deepEqual(
+    observed,
+    [scope, quality].filter((part) => part !== null)
+  );
+}
+
 async function assertSourceDetails(
   gallery: Locator,
-  expected: 'absent' | 'visible-tile' | 'observed' | 'unverified-original'
+  expected: SourceDetailsExpectation
 ): Promise<string | null> {
   const details = gallery.locator('[data-gallery-element="source-details"]');
-  if (expected === 'absent') {
+  if (expected.scope === 'complete' && expected.quality === 'verified') {
     assert.equal(await details.count(), 0, 'Verified full-scope media must not show a limitation');
     return null;
   }
   await details.waitFor({ state: 'visible' });
-  const summary = (await details.locator('summary').textContent())?.trim() ?? '';
-  const pattern = {
-    'visible-tile': /recovered from this tile only/u,
-    observed: /Video save quality is unverified/u,
-    'unverified-original': /Original image unavailable for saving/u,
-  }[expected];
-  assert.match(summary, pattern);
+  const parts = (await details.locator('summary span').allTextContents()).map((text) =>
+    text.trim()
+  );
+  assertSourceDetailsSummary(parts, expected);
+  const summary = parts.join(' · ');
   await details.locator('summary').click();
   assert.equal(await details.getAttribute('open'), '');
   assert.match((await details.textContent()) ?? '', /Media and save details/u);
+  if (expected.scope === 'unknown-total') {
+    assert.match(
+      (await details.textContent()) ?? '',
+      /Only currently available media was collected/u
+    );
+  }
   await details.locator('summary').click();
+  assert.equal(
+    await details.getAttribute('open'),
+    null,
+    'Source details must close after inspection'
+  );
   return summary;
 }
 
@@ -5227,7 +5274,7 @@ async function runPublicFixtureCycle({
     'Public fixture must request TweetResultByRestId once'
   );
   assert.equal(apiResponses.at(-1)?.status, 403, 'Public fixture API route must return 403');
-  await assertSourceDetails(gallery, 'absent');
+  await assertSourceDetails(gallery, { scope: 'unknown-total', quality: 'verified', count: 2 });
   await page.screenshot({ path: join(output, 'public-dom-gallery.png') });
 
   await page.keyboard.press('Escape');
@@ -13584,7 +13631,7 @@ async function runSourceQualityCycle({
     selectedSource.originalUrl,
     'A healthy API result must render its verified original source'
   );
-  await assertSourceDetails(gallery, 'absent');
+  await assertSourceDetails(gallery, { scope: 'complete', quality: 'verified' });
   const selectedImage = await gallery
     .locator('[data-gallery-element="item"][data-index="1"] img')
     .evaluate((element) => {
@@ -14981,7 +15028,7 @@ async function runOriginalAvailabilityCycles({
         path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
       });
       assert.equal(selection.source, original);
-      await assertSourceDetails(gallery, 'absent');
+      await assertSourceDetails(gallery, { scope: 'complete', quality: 'verified' });
       await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
       const selectedImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
       const decodedImage = () =>
@@ -16328,8 +16375,11 @@ async function runMediaDownloadRecoveryProbe({
     await tileGallery.waitFor({ state: 'visible' });
     assert.equal(await tileGallery.locator('[data-gallery-element="item"]').count(), 1);
     await page.waitForTimeout(5_250);
-    const tileSummary = await assertSourceDetails(tileGallery, 'visible-tile');
-    await assertSourceDetails(tileGallery, 'unverified-original');
+    const tileSummary = await assertSourceDetails(tileGallery, {
+      scope: 'unknown-total',
+      quality: 'unavailable',
+      count: 1,
+    });
     const tileKnownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     await tileGallery
       .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
@@ -16393,7 +16443,11 @@ async function runMediaDownloadRecoveryProbe({
       await videoGallery.waitFor({ state: 'visible' });
       assert.equal(await videoGallery.locator('[data-gallery-element="item"]').count(), 1);
       await page.waitForTimeout(5_250);
-      const observedSummary = await assertSourceDetails(videoGallery, 'observed');
+      const observedSummary = await assertSourceDetails(videoGallery, {
+        scope: 'unknown-total',
+        quality: 'observed',
+        count: 1,
+      });
       assert.equal(
         deniedVideoApi.length,
         1,
@@ -16414,8 +16468,11 @@ async function runMediaDownloadRecoveryProbe({
       const mixedGallery = page.locator('[data-xeg-gallery-container]');
       await mixedGallery.waitFor({ state: 'visible' });
       assert.equal(await mixedGallery.locator('[data-gallery-element="item"]').count(), 2);
-      const mixedSummary = await assertSourceDetails(mixedGallery, 'observed');
-      assert(!mixedSummary?.includes('recovered from this tile only'));
+      await assertSourceDetails(mixedGallery, {
+        scope: 'unknown-total',
+        quality: 'observed',
+        count: 2,
+      });
       const videoPosition = Number(
         await mixedGallery.locator('#xeg-toolbar-counter').getAttribute('data-position')
       );
@@ -16427,16 +16484,24 @@ async function runMediaDownloadRecoveryProbe({
         type: 'image',
         path: '/media/QQuoteOnePhoto.jpg',
       });
-      await assertSourceDetails(mixedGallery, 'absent');
+      await assertSourceDetails(mixedGallery, {
+        scope: 'unknown-total',
+        quality: 'verified',
+        count: 2,
+      });
       await mixedGallery
         .locator(`button[aria-label="${towardImage === 'Next' ? 'Previous' : 'Next'}"]`)
         .click();
-      await assertSourceDetails(mixedGallery, 'observed');
+      await assertSourceDetails(mixedGallery, {
+        scope: 'unknown-total',
+        quality: 'observed',
+        count: 2,
+      });
       observations.x03MixedSaveQuality = {
         observedVideoPosition: videoPosition,
-        verifiedImageHasNoWarning: true,
+        verifiedImageHasNoQualityWarning: true,
         displayedItemDetailsUpdated: true,
-        noFalseTileScope: true,
+        unknownTotalScopeShown: true,
         deniedApi: deniedVideoApi.slice(1),
       };
       assert.equal(deniedVideoApi.length, 2, 'Each video fixture must make one provider request');
@@ -17706,8 +17771,11 @@ async function runUxDetailsProbe({
     await gallery.waitFor({ state: 'visible' });
     assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 1);
     await page.waitForTimeout(5_250);
-    await assertSourceDetails(gallery, 'visible-tile');
-    await assertSourceDetails(gallery, 'unverified-original');
+    await assertSourceDetails(gallery, {
+      scope: 'unknown-total',
+      quality: 'unavailable',
+      count: 1,
+    });
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
     const settingsButton = toolbar.locator('#settings-button');
     await settingsButton.click();
