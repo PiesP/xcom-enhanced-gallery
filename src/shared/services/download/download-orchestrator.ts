@@ -16,6 +16,7 @@ import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
 import { getUserCancelledAbortErrorFromSignal, isAbortError } from '@shared/error/cancellation';
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { downloadSingleFile } from '@shared/services/download/single-download';
+import { resolveDomImagesForDownload } from '@shared/services/media-extraction/extractors/dom-image-original';
 import type {
   BulkDownloadResult,
   DownloadOptions,
@@ -161,8 +162,15 @@ export class DownloadOrchestrator {
         return createErrorResponse('No download method', ErrorCode.ALL_FAILED, mediaItems.length);
       }
 
+      const resolvedMediaItems = options.domOriginalsResolved
+        ? mediaItems
+        : await resolveDomImagesForDownload(mediaItems, mergedSignal);
+      if (mergedSignal.aborted) {
+        const abortError = getUserCancelledAbortErrorFromSignal(mergedSignal);
+        return createErrorResponse(normalizeErrorMessage(abortError), ErrorCode.CANCELLED, 0);
+      }
       const plan = planBulkDownload({
-        mediaItems,
+        mediaItems: resolvedMediaItems,
         cachedBlobs: options.cachedBlobs,
         mediaBlobProvider: options.mediaBlobProvider,
         zipFilename: options.zipFilename,

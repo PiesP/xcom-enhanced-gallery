@@ -176,7 +176,8 @@ export const ko: LanguageStrings = {
     gal: {
       sourceDetails: {
         title: '미디어와 저장 정보',
-        shown: '표시된 {count}개 항목 · 이 타일에서만 복구됨',
+        shown: '수집된 {count}개 항목 · 게시물에는 더 있을 수 있음',
+        knownSubset: '지원되는 {count}개 항목 · 일부 미디어는 저장할 수 없음',
         cdnOriginal: '저장 소스: X CDN에서 확인된 원본 이미지.',
         bestMp4: '저장 소스: X에서 제공된 최선의 MP4.',
         observed: '동영상 저장 화질을 확인하지 못함',
@@ -185,6 +186,9 @@ export const ko: LanguageStrings = {
         unavailable: '저장할 원본 이미지를 사용할 수 없음',
         unavailableDetail:
           '확인된 원본 이미지를 찾지 못했습니다. 이 항목은 저장할 수 없으며 낮은 화질로 대체하지 않습니다.',
+        pending: '저장할 때 원본 이미지를 확인합니다',
+        pendingDetail:
+          '이 이미지는 아직 확인하지 않았습니다. 개별 또는 ZIP 저장 전에 원본 소스를 확인합니다.',
       },
       entryFailureNext: 'X의 게시물에서 이 미디어를 확인하세요.',
       downloadFailureNext:
@@ -197,11 +201,15 @@ export const ko: LanguageStrings = {
       },
       observedQuality: {
         title: '복구한 소스의 품질',
-        body: '일부 항목의 소스 품질을 확인하지 못했습니다. 원본을 확인하지 못한 이미지는 저장할 수 없으며, 복구한 동영상은 화면에서 관찰한 소스로 저장합니다.',
+        body: '일부 항목의 소스 품질을 확인하지 못했습니다. 이미지를 저장하려면 원본 확인이 필요하며, 복구한 동영상은 화면에서 관찰한 소스로 저장합니다.',
       },
       partialRecovery: {
         title: '보이는 미디어만 복구했습니다',
-        body: '이 타일의 미디어만 복구했습니다. 일괄 다운로드에는 표시된 항목만 포함됩니다.',
+        body: '현재 확인 가능한 미디어만 수집했습니다. 게시물에는 더 있을 수 있으며, 일괄 다운로드에는 수집된 항목만 포함됩니다.',
+      },
+      knownSubset: {
+        title: '일부 미디어는 저장할 수 없습니다',
+        body: '소스에 지원되지 않는 미디어가 있습니다. 갤러리와 ZIP에는 수집된 지원 항목만 포함됩니다.',
       },
       emptyT: '미디어 없음',
       emptyD: '표시할 이미지 또는 동영상이 없습니다.',

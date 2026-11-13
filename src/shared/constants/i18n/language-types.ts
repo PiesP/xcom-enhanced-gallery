@@ -287,12 +287,15 @@ export interface LanguageStrings {
       readonly sourceDetails: {
         readonly title: string;
         readonly shown: string;
+        readonly knownSubset: string;
         readonly cdnOriginal: string;
         readonly bestMp4: string;
         readonly observed: string;
         readonly observedDetail: string;
         readonly unavailable: string;
         readonly unavailableDetail: string;
+        readonly pending: string;
+        readonly pendingDetail: string;
       };
       readonly video: {
         readonly playbackFallback: string;
@@ -301,8 +304,13 @@ export interface LanguageStrings {
         readonly title: string;
         readonly body: string;
       };
-      /** Article-less DOM recovery includes only the visible tile's accessible media. */
+      /** DOM recovery observes only the currently available article or tile. */
       readonly partialRecovery: {
+        readonly title: string;
+        readonly body: string;
+      };
+      /** API reported supported and recognized unsupported media separately. */
+      readonly knownSubset: {
         readonly title: string;
         readonly body: string;
       };

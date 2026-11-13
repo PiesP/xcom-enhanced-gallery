@@ -52,7 +52,7 @@ interface GallerySessionState {
   readonly focusedIndex: number | null;
   readonly currentVideoElement: HTMLVideoElement | null;
   readonly error: string | null;
-  readonly recoveryScope: 'visible-tile' | null;
+  readonly recoveryScope: 'visible-tile' | 'visible-article' | 'api-supported-subset' | null;
 }
 
 export interface GalleryNavigateCompletePayload {
@@ -96,7 +96,9 @@ export const galleryIndexEvents = {
 const [isOpenSig, setIsOpenSig] = createSignal<boolean>(INITIAL_STATE.isOpen);
 const [mediaItemsSig, setMediaItems] = createSignal<readonly MediaInfo[]>(INITIAL_STATE.mediaItems);
 const [sessionRevisionSig, setSessionRevision] = createSignal(0);
-const [recoveryScopeSig, setRecoveryScope] = createSignal<'visible-tile' | null>(null);
+const [recoveryScopeSig, setRecoveryScope] = createSignal<
+  'visible-tile' | 'visible-article' | 'api-supported-subset' | null
+>(null);
 const [currentIndexSig, setCurrentIndex] = createSignal<number>(INITIAL_STATE.currentIndex);
 const [focusedIndexSig, _setFocusedIndex] = createSignal<number | null>(null);
 
@@ -153,6 +155,44 @@ export const gallerySignals = {
   },
 };
 
+/** Commit a source check only to the same live media objects in this session. */
+export function applyObservedDownloadSources(
+  original: readonly MediaInfo[],
+  resolved: readonly MediaInfo[],
+  sessionRevision: number
+): void {
+  if (
+    !isOpenSig() ||
+    sessionRevisionSig() !== sessionRevision ||
+    original.length !== resolved.length
+  ) {
+    return;
+  }
+  const current = mediaItemsSig();
+  if (
+    current.length !== original.length ||
+    current.some((media, index) => media !== original[index])
+  ) {
+    return;
+  }
+  let changed = false;
+  const next = current.map((media, index) => {
+    const replacement = resolved[index];
+    if (
+      media.downloadSource?.quality === 'unverified-original' &&
+      replacement &&
+      replacement !== media
+    ) {
+      changed = true;
+      return replacement;
+    }
+    return media;
+  });
+  if (changed) {
+    setMediaItems(next);
+  }
+}
+
 /**
  * Sets or clears the gallery error message.
  * Pass `null` to clear a previously set error.
@@ -192,7 +232,7 @@ function applyGallerySessionUpdate(state: GallerySessionState): void {
 export function openGallery(
   items: readonly MediaInfo[],
   startIndex = 0,
-  recoveryScope: 'visible-tile' | null = null
+  recoveryScope: 'visible-tile' | 'visible-article' | 'api-supported-subset' | null = null
 ): void {
   const validIndex = clampIndex(startIndex, items.length);
   applyGallerySessionUpdate({

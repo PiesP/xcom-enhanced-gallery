@@ -180,7 +180,8 @@ export const es: LanguageStrings = {
     gal: {
       sourceDetails: {
         title: 'Detalles del contenido y guardado',
-        shown: '{count} elementos mostrados · recuperados solo de este bloque',
+        shown: '{count} elementos recopilados · la publicación puede contener más',
+        knownSubset: '{count} elementos compatibles · algunos medios no se pueden guardar',
         cdnOriginal: 'Origen de guardado: imagen original verificada de la CDN de X.',
         bestMp4: 'Origen de guardado: mejor MP4 disponible en X.',
         observed: 'No se ha verificado la calidad del vídeo guardado',
@@ -189,6 +190,9 @@ export const es: LanguageStrings = {
         unavailable: 'Imagen original no disponible para guardar',
         unavailableDetail:
           'No se encontró una imagen original verificada. Este elemento no se puede guardar ni se sustituye por una versión de menor calidad.',
+        pending: 'La imagen original se comprobará al guardar',
+        pendingDetail:
+          'Esta imagen aún no se ha comprobado. Se verificará el origen antes de guardarla sola o en el ZIP.',
       },
       entryFailureNext: 'Consulta este contenido en la publicación de X.',
       downloadFailureNext:
@@ -201,11 +205,15 @@ export const es: LanguageStrings = {
       },
       observedQuality: {
         title: 'Calidad de la fuente recuperada',
-        body: 'No se pudo verificar la calidad de algunos elementos. Las imágenes sin un original verificado no se pueden guardar; los vídeos recuperados usan la fuente observada.',
+        body: 'No se pudo verificar la calidad de algunos elementos. Las imágenes necesitan un original verificado antes de guardarse; los vídeos recuperados usan la fuente observada.',
       },
       partialRecovery: {
         title: 'Solo los medios visibles',
-        body: 'Solo se recuperaron los medios de este recuadro. La descarga masiva incluye solo los elementos mostrados.',
+        body: 'Solo se recopiló el contenido disponible ahora. La publicación puede contener más; la descarga masiva incluye solo los elementos recopilados.',
+      },
+      knownSubset: {
+        title: 'Algunos medios no se pueden guardar',
+        body: 'La fuente incluye medios no compatibles. La galería y el ZIP contienen solo los elementos compatibles recopilados.',
       },
       emptyT: 'Sin medios disponibles',
       emptyD: 'No hay imágenes ni videos para mostrar.',

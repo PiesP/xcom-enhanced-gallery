@@ -176,7 +176,8 @@ export const ja: LanguageStrings = {
     gal: {
       sourceDetails: {
         title: 'メディアと保存の詳細',
-        shown: '表示中の{count}件 · このタイルからのみ復旧',
+        shown: '収集した{count}件 · 投稿にはほかにもある可能性があります',
+        knownSubset: '対応する{count}件 · 一部のメディアは保存できません',
         cdnOriginal: '保存元: X の CDN で確認された元画像。',
         bestMp4: '保存元: X で利用可能な最良の MP4。',
         observed: '動画の保存画質を確認できません',
@@ -185,6 +186,9 @@ export const ja: LanguageStrings = {
         unavailable: '元画像を保存できません',
         unavailableDetail:
           '確認済みの元画像が見つかりません。この項目は保存できず、低画質版で代用しません。',
+        pending: '保存時に元画像を確認します',
+        pendingDetail:
+          'この画像はまだ確認していません。単体または ZIP の保存前に元画像のソースを確認します。',
       },
       entryFailureNext: 'X のポストでこのメディアを確認してください。',
       downloadFailureNext:
@@ -197,11 +201,15 @@ export const ja: LanguageStrings = {
       },
       observedQuality: {
         title: '復元したソースの品質',
-        body: '一部の項目のソース品質を確認できませんでした。元画像を確認できない画像は保存できません。復元した動画は画面で確認したソースで保存されます。',
+        body: '一部の項目のソース品質を確認できませんでした。画像の保存前に元画像を確認します。復元した動画は画面で確認したソースで保存されます。',
       },
       partialRecovery: {
         title: '表示中のメディアのみ',
-        body: 'このタイルのメディアのみを復元しました。一括ダウンロードには表示中の項目のみが含まれます。',
+        body: '現在確認できるメディアのみを収集しました。投稿にはほかにもある可能性があり、一括ダウンロードには収集した項目のみが含まれます。',
+      },
+      knownSubset: {
+        title: '一部のメディアは保存できません',
+        body: 'ソースには未対応のメディアがあります。ギャラリーと ZIP には収集した対応項目のみが含まれます。',
       },
       emptyT: 'メディアがありません',
       emptyD: '表示する画像や動画がありません。',

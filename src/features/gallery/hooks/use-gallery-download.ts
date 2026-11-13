@@ -17,7 +17,9 @@ import {
 import type { BulkDownloadResult } from '@shared/services/download/types';
 import { getLanguageService } from '@shared/services/language-service';
 import { getGalleryMediaActions } from '@shared/services/media-service';
+import { resolveDomImagesForDownload } from '@shared/services/media-extraction/extractors/dom-image-original';
 import {
+  applyObservedDownloadSources,
   gallerySignals,
   getDisplayedMediaIndex,
   setError,
@@ -60,6 +62,8 @@ function snapshotMedia(media: MediaInfo): MediaInfo {
     quotedUsername: media.quotedUsername,
     quotedTweetId: media.quotedTweetId,
     sourceLocation: media.sourceLocation,
+    attachmentOrdinal: media.attachmentOrdinal,
+    attachmentSourceKey: media.attachmentSourceKey,
   };
 }
 
@@ -167,6 +171,11 @@ export function createDownloadHandler() {
     const controller = abortController;
     const signal = controller.signal;
     const bulkTotal = type === 'all' ? gallerySignals.mediaItems.length : 0;
+    const unknownPostTotal =
+      type === 'all' &&
+      (gallerySignals.recoveryScope === 'visible-tile' ||
+        gallerySignals.recoveryScope === 'visible-article');
+    const knownSubset = type === 'all' && gallerySignals.recoveryScope === 'api-supported-subset';
     const sessionRevision = gallerySignals.sessionRevision;
     const operationId = ++operationGeneration;
     const isCurrentOperation = (): boolean =>
@@ -212,9 +221,22 @@ export function createDownloadHandler() {
         const displayedIndex = getDisplayedMediaIndex();
         const currentMedia = displayedIndex === null ? undefined : mediaItems[displayedIndex];
         if (currentMedia) {
+          const resolved =
+            (await resolveDomImagesForDownload([currentMedia], signal))[0] ?? currentMedia;
+          if (!isCurrentOperation()) {
+            return;
+          }
+          if (displayedIndex !== null && resolved !== currentMedia) {
+            const updated = [...mediaItems];
+            updated[displayedIndex] = resolved;
+            applyObservedDownloadSources(mediaItems, updated, sessionRevision);
+          }
           // Single downloads are already demand-driven through the platform
           // adapter. Avoid a duplicate Blob fetch that would delay GM_download.
-          const result = await downloadService.downloadSingle(currentMedia, { signal });
+          const result = await downloadService.downloadSingle(resolved, {
+            signal,
+            domOriginalsResolved: true,
+          });
           if (!isCurrentOperation()) {
             return;
           }
@@ -259,14 +281,20 @@ export function createDownloadHandler() {
           );
         }
       } else {
-        const snapshot = mediaItems.map(snapshotMedia);
-        const result = await downloadService.downloadBulk([...mediaItems], {
+        const resolvedMediaItems = await resolveDomImagesForDownload(mediaItems, signal);
+        if (!isCurrentOperation()) {
+          return;
+        }
+        applyObservedDownloadSources(mediaItems, resolvedMediaItems, sessionRevision);
+        const snapshot = resolvedMediaItems.map(snapshotMedia);
+        const result = await downloadService.downloadBulk(resolvedMediaItems, {
           mediaBlobProvider: Object.assign(
             (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
               mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
             { supports: (item: MediaInfo) => item.type === 'image' }
           ),
           signal,
+          domOriginalsResolved: true,
         });
         if (!isCurrentOperation()) {
           return;
@@ -289,6 +317,8 @@ export function createDownloadHandler() {
         const included = handedOff ? result.filesSuccessful : 0;
         setBulkDownloadOutcome({
           total: bulkTotal,
+          ...(unknownPostTotal ? { unknownPostTotal: true } : {}),
+          ...(knownSubset ? { knownSubset: true } : {}),
           included,
           omitted: Math.max(0, bulkTotal - included),
           handedOff,
@@ -389,6 +419,8 @@ export function createDownloadHandler() {
       if (type === 'all') {
         setBulkDownloadOutcome({
           total: bulkTotal,
+          ...(unknownPostTotal ? { unknownPostTotal: true } : {}),
+          ...(knownSubset ? { knownSubset: true } : {}),
           included: 0,
           omitted: bulkTotal,
           handedOff: false,
@@ -478,6 +510,8 @@ export function createDownloadHandler() {
       const included = handedOff ? result.filesSuccessful : 0;
       setBulkDownloadOutcome({
         total: job.entries.length,
+        ...(previousOutcome?.unknownPostTotal ? { unknownPostTotal: true } : {}),
+        ...(previousOutcome?.knownSubset ? { knownSubset: true } : {}),
         included,
         omitted: job.entries.length - included,
         handedOff,

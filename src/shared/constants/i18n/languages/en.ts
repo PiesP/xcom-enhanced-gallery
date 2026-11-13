@@ -173,7 +173,8 @@ export const en: LanguageStrings = {
     gal: {
       sourceDetails: {
         title: 'Media and save details',
-        shown: '{count} shown items · recovered from this tile only',
+        shown: '{count} collected items · the post may contain more',
+        knownSubset: '{count} supported items · some observed media cannot be saved',
         cdnOriginal: 'Save source: verified original image from X’s CDN.',
         bestMp4: 'Save source: best available MP4 from X.',
         observed: 'Video save quality is unverified',
@@ -182,6 +183,9 @@ export const en: LanguageStrings = {
         unavailable: 'Original image unavailable for saving',
         unavailableDetail:
           'A verified original image was not found. This item cannot be saved; no lower-quality replacement is used.',
+        pending: 'Original image will be checked when saving',
+        pendingDetail:
+          'This image has not been checked yet. Saving it or the ZIP will check the original source first.',
       },
       entryFailureNext: 'Use the post on X to view this media.',
       downloadFailureNext:
@@ -194,11 +198,15 @@ export const en: LanguageStrings = {
       },
       observedQuality: {
         title: 'Recovered source quality',
-        body: 'Source quality could not be verified for some items. Images without a verified original cannot be saved; recovered videos use the observed source.',
+        body: 'Source quality could not be verified for some items. Images need a verified original before saving; recovered videos use the observed source.',
       },
       partialRecovery: {
         title: 'Visible media only',
-        body: 'Recovered media from this tile only. Bulk download includes only the items shown.',
+        body: 'Only currently available media was collected. The post may contain more; bulk download includes only collected items.',
+      },
+      knownSubset: {
+        title: 'Some media cannot be saved',
+        body: 'The source included unsupported media. The gallery and ZIP contain only the supported items collected.',
       },
       emptyT: 'No media available',
       emptyD: 'There are no images or videos to display.',

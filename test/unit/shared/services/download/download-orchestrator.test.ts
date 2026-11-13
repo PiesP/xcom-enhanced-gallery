@@ -1,10 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import type { HttpRequestDetails, HttpRequestResponse } from '@platform/types';
+import { markDomImageOriginalProbeLimit } from '@shared/services/media-extraction/extractors/dom-image-original';
 
 const state = vi.hoisted(() => ({
   downloadBlob: vi.fn(),
+  headRequest: vi.fn(),
 }));
 
 vi.mock('@platform/index', () => ({
+  getHttpRequestAdapter: () => ({ request: state.headRequest }),
   getDownloadAdapter: () => ({
     download: vi.fn(),
     downloadBlob: state.downloadBlob,
@@ -36,11 +40,72 @@ afterEach(() => {
 
 describe('DownloadOrchestrator bulk resource limits', () => {
   beforeEach(() => {
+    state.headRequest.mockReset();
     state.downloadBlob
       .mockReset()
       .mockImplementation(async (_blob, _filename, _signal, released) => {
         released?.();
       });
+  });
+
+  it('resolves a deferred JPEG before ZIP filename planning and preserves both owner entries', async () => {
+    const original = 'https://pbs.twimg.com/media/SHARED?format=webp&name=orig';
+    const deferred = (id: string, tweetId: string, ordinal: number): MediaInfo =>
+      markDomImageOriginalProbeLimit(
+        {
+          id,
+          tweetId,
+          tweetUsername: 'shinchilla_',
+          attachmentOrdinal: ordinal,
+          type: 'image',
+          url: 'https://pbs.twimg.com/media/SHARED?format=webp&name=small',
+          originalUrl: original,
+          downloadSource: { url: original, quality: 'cdn-original', provenance: 'dom' },
+        },
+        original
+      );
+    state.headRequest.mockImplementation((details: HttpRequestDetails) => {
+      const isWebp = new URL(details.url).searchParams.get('format') === 'webp';
+      const response: HttpRequestResponse = {
+        finalUrl: details.url,
+        readyState: 4,
+        status: isWebp ? 404 : 200,
+        statusText: '',
+        responseHeaders: `Content-Type: ${isWebp ? 'text/html' : 'image/jpeg'}`,
+        response: '',
+        responseText: '',
+        readable: true,
+      };
+      queueMicrotask(() => details.onload?.(response));
+      return { abort: vi.fn() };
+    });
+    let saved: Buffer | undefined;
+    state.downloadBlob.mockImplementation(async (blob: Blob, _name, _signal, released) => {
+      saved = Buffer.from(await blob.arrayBuffer());
+      released?.();
+    });
+    const provider = vi.fn(async (item: MediaInfo) =>
+      ownedBlob(new Blob([`bytes-${item.tweetId}`]))
+    );
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const result = await orchestrator.downloadBulk(
+      [deferred('B', '222', 0), deferred('A', '111', 19)],
+      { mediaBlobProvider: provider, retries: 0 }
+    );
+    expect(result).toMatchObject({ success: true, filesSuccessful: 2, filesProcessed: 2 });
+    expect(state.headRequest).toHaveBeenCalledTimes(2);
+    expect(
+      provider.mock.calls.map(([item]) => [item.id, item.tweetId, item.attachmentOrdinal])
+    ).toEqual([
+      ['B', '222', 0],
+      ['A', '111', 19],
+    ]);
+    verifyStoredZip(saved!, [
+      { filename: 'shinchilla__222_0.jpg', bytes: Buffer.from('bytes-222') },
+      { filename: 'shinchilla__111_19.jpg', bytes: Buffer.from('bytes-111') },
+    ]);
+    orchestrator.destroy();
   });
 
   it('does not invoke a provider, fetch a substitute, or save a ZIP for unverified original photos', async () => {
