@@ -15,14 +15,20 @@ import {
 
 const A: PhotoOwner = { handle: 'fixture_a', statusId: '9666600000000000001', count: 20 };
 const B: PhotoOwner = { handle: 'fixture_b', statusId: '9666600000000000002', count: 20 };
+const PHOTO_WIDTH = 54;
+const PHOTO_HEIGHT = 1080;
 const ownerUrl = (owner: PhotoOwner) => `https://x.com/${owner.handle}/status/${owner.statusId}`;
 const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
 /** A JPEG comment changes source bytes without changing image decodability. */
-export function markedLargePhotoJpeg(source: Buffer, marker: string): Buffer {
+export function markedLargePhotoJpeg(
+  source: Buffer,
+  marker: string,
+  variant: 'original' | 'preview' = 'original'
+): Buffer {
   assert(source.length >= 4 && source[0] === 0xff && source[1] === 0xd8);
   assert(/^[AB](?:0[0-9]|1[0-9])$/u.test(marker));
-  const comment = Buffer.from(`XEG installed large photo ${marker}`, 'ascii');
+  const comment = Buffer.from(`XEG installed large photo ${marker} ${variant}`, 'ascii');
   const segment = Buffer.alloc(comment.length + 4);
   segment[0] = 0xff;
   segment[1] = 0xfe;
@@ -38,11 +44,12 @@ type FixturePhoto = {
   displayUrl: string;
   reference: PhotoExpectedReference;
   bytes: Buffer;
+  previewBytes: Buffer;
 };
 
 function photoHtml(item: FixturePhoto): string {
   const href = `/${item.owner.handle}/status/${item.owner.statusId}/photo/${item.ordinal + 1}`;
-  return `<div data-testid="tweetPhoto" class="photo"><a href="${href}"><img src="${item.displayUrl.replaceAll('&', '&amp;')}" alt="Installed photo ${item.owner.handle} ${item.ordinal + 1}" width="320" height="180" tabindex="0"></a></div>`;
+  return `<div data-testid="tweetPhoto" class="photo"><a href="${href}"><img src="${item.displayUrl.replaceAll('&', '&amp;')}" alt="Installed photo ${item.owner.handle} ${item.ordinal + 1}" width="${PHOTO_WIDTH}" height="${PHOTO_HEIGHT}" tabindex="0"></a></div>`;
 }
 
 function pageHtml(
@@ -52,7 +59,7 @@ function pageHtml(
 ): string {
   return `<!doctype html><html lang="en"><head><meta charset="UTF-8"><title>Installed large photo fixture</title><style>
     body{margin:0;padding:20px;background:#000;color:#e7e9ea;font-family:Segoe UI,sans-serif}
-    main{max-width:600px;margin:auto}.photo{margin:8px 0}.photo img{display:block;width:320px;height:180px}
+    main{max-width:600px;margin:auto}.photo{margin:8px 0}.photo img{display:block;max-width:54px;width:auto;height:auto}
     [data-testid="quoteTweet"]{margin:12px;padding:12px;border:1px solid #555}
   </style></head><body><main><article data-testid="tweet">
     <a href="/${owner.handle}/status/${owner.statusId}"><time datetime="2026-11-13T00:00:00Z">Fixture post</time></a>
@@ -84,7 +91,7 @@ function providerTweet(owner: PhotoOwner, photos: readonly FixturePhoto[], quote
           media_key: `3_${item.mediaId}`,
           media_url_https: `https://pbs.twimg.com/media/${item.reference.sourceKey}.jpg`,
           expanded_url: `${ownerUrl(owner)}/photo/${item.ordinal + 1}`,
-          original_info: { width: 320, height: 180 },
+          original_info: { width: PHOTO_WIDTH, height: PHOTO_HEIGHT },
         })),
       },
     },
@@ -99,6 +106,7 @@ export function createInstalledLargePhotoFixture(source: Buffer) {
       const sourceKey = `XegLarge${marker}`;
       const originalUrl = `https://pbs.twimg.com/media/${sourceKey}.jpg?format=jpg&name=orig`;
       const bytes = markedLargePhotoJpeg(source, marker);
+      const previewBytes = markedLargePhotoJpeg(source, marker, 'preview');
       return {
         owner,
         ordinal,
@@ -114,6 +122,7 @@ export function createInstalledLargePhotoFixture(source: Buffer) {
           sha256: hash(bytes),
         },
         bytes,
+        previewBytes,
       };
     });
   const requested = make(A, 'A');
@@ -156,6 +165,72 @@ export function createInstalledLargePhotoFixture(source: Buffer) {
 
 type NativeFixture = ReturnType<typeof createInstalledLargePhotoFixture>;
 
+type FixtureRouteEvent = { kind: string; status: number; key?: string };
+type NativeSnapshot = { overflow: boolean; unexpectedCount: number; activeCount: number };
+
+/** Resolve display and original responses from the same identity but different bytes. */
+export function largePhotoFixtureMedia(
+  photos: readonly FixturePhoto[],
+  source: string,
+  resourceType: string
+): { purpose: 'original' | 'preview'; key: string; bytes: Buffer } {
+  const url = new URL(source);
+  assert.equal(url.protocol, 'https:');
+  assert.equal(url.hostname, 'pbs.twimg.com');
+  assert.match(url.pathname, /^\/media\/XegLarge[AB]\d{2}\.jpg$/u);
+  const key = url.pathname.slice('/media/'.length, -'.jpg'.length);
+  const photo = photos.find((item) => item.reference.sourceKey === key);
+  assert(photo, 'Undeclared large-photo source');
+  if (source === photo.reference.originalUrl) {
+    return { purpose: 'original', key, bytes: photo.bytes };
+  }
+  assert.deepEqual([...url.searchParams.keys()], ['format', 'name']);
+  assert.equal(url.searchParams.get('format'), 'jpg');
+  assert(
+    ['large', 'medium', 'small', 'thumb'].includes(url.searchParams.get('name') ?? ''),
+    'Undeclared large-photo preview'
+  );
+  assert.equal(resourceType, 'image', 'Large-photo preview has another request purpose');
+  return { purpose: 'preview', key, bytes: photo.previewBytes };
+}
+
+/** Every routed request consumes one bounded slot before it can be served. */
+export function createInstalledLargePhotoRouteBudget(limit = 512) {
+  assert(Number.isSafeInteger(limit) && limit > 0 && limit <= 512);
+  const events: FixtureRouteEvent[] = [];
+  let overflow = false;
+  return {
+    events,
+    get overflow() {
+      return overflow;
+    },
+    async admit(route: Pick<Route, 'abort'>): Promise<FixtureRouteEvent | null> {
+      if (events.length >= limit) {
+        overflow = true;
+        await route.abort();
+        return null;
+      }
+      const event: FixtureRouteEvent = { kind: 'pending', status: 0 };
+      events.push(event);
+      return event;
+    },
+  };
+}
+
+/** Compare this phase with its own preflight, preserving earlier controlled faults. */
+export function assertLargePhotoNativeTransport(
+  before: NativeSnapshot,
+  after: NativeSnapshot
+): void {
+  assert.equal(after.overflow, false, 'Large-photo HTTPS fixture overflowed');
+  assert.equal(
+    after.unexpectedCount,
+    before.unexpectedCount,
+    'Large-photo HTTPS fixture received an undeclared request'
+  );
+  assert.equal(after.activeCount, 0, 'Large-photo HTTPS fixture retained an active response');
+}
+
 /** Runs inside the already installed distribution and its fresh owned profile. */
 export async function runInstalledLargePhotoFixture({
   context,
@@ -164,6 +239,7 @@ export async function runInstalledLargePhotoFixture({
   output,
   root,
   installNative,
+  nativeSnapshot,
   managerObserver = null,
 }: {
   context: BrowserContext;
@@ -172,26 +248,36 @@ export async function runInstalledLargePhotoFixture({
   output: string;
   root: string;
   installNative: (fixture: NativeFixture) => void;
+  nativeSnapshot: () => NativeSnapshot;
   managerObserver?: Parameters<typeof runLivePhotoCollection>[0]['managerObserver'];
 }) {
   const fixture = createInstalledLargePhotoFixture(
     await readFile(join(root, 'test/e2e/fixtures/large-photo-narrow.jpg'))
   );
+  const readNative = (): NativeSnapshot => {
+    const { overflow, unexpectedCount, activeCount } = nativeSnapshot();
+    return { overflow, unexpectedCount, activeCount };
+  };
+  const beforeNative = readNative();
   installNative(fixture);
-  const bytesByStem = new Map(fixture.photos.map((item) => [item.reference.sourceKey, item.bytes]));
-  const requests: Array<{ kind: string; status: number; key?: string }> = [];
-  let overflow = false;
+  const budget = createInstalledLargePhotoRouteBudget();
   const route = async (requestRoute: Route) => {
+    const event = await budget.admit(requestRoute);
+    if (!event) {
+      return;
+    }
     const request = requestRoute.request();
     const url = new URL(request.url());
     if (url.protocol === 'chrome-extension:') {
+      event.kind = 'extension';
       await requestRoute.continue();
       return;
     }
     const page = fixture.pages.get(url.href);
     if (page && request.isNavigationRequest() && request.method() === 'GET') {
+      event.kind = 'document';
+      event.status = 200;
       await requestRoute.fulfill({ status: 200, contentType: 'text/html', body: page });
-      requests.push({ kind: 'document', status: 200 });
       return;
     }
     if (url.hostname === 'x.com' && url.pathname.endsWith('/TweetResultByRestId')) {
@@ -206,42 +292,37 @@ export async function runInstalledLargePhotoFixture({
       }
       const body = id ? fixture.apiResponses.get(id) : undefined;
       assert(body && request.method() === 'GET', 'Undeclared large-photo API request');
+      event.kind = 'api';
+      event.status = 200;
       await requestRoute.fulfill({ status: 200, contentType: 'application/json', body });
-      requests.push({ kind: 'api', status: 200 });
       return;
     }
     if (
       url.hostname === 'pbs.twimg.com' &&
       /^\/media\/XegLarge[AB]\d{2}\.jpg$/u.test(url.pathname)
     ) {
-      const key = url.pathname.slice('/media/'.length, -'.jpg'.length);
-      const bytes = bytesByStem.get(key);
-      assert(bytes, 'Undeclared large-photo source');
-      if (url.search === '?format=jpg&name=orig') {
+      const media = largePhotoFixtureMedia(fixture.photos, url.href, request.resourceType());
+      event.kind = 'media';
+      event.key = media.key;
+      if (media.purpose === 'original') {
         await requestRoute.continue();
       } else {
-        assert(
-          ['large', 'medium', 'small', 'thumb'].some(
-            (name) => url.search === `?format=jpg&name=${name}`
-          ) && request.resourceType() === 'image',
-          'Undeclared large-photo preview'
-        );
-        await requestRoute.fulfill({ status: 200, contentType: 'image/jpeg', body: bytes });
-      }
-      if (requests.length < 512) {
-        requests.push({ kind: 'media', status: 200, key });
-      } else {
-        overflow = true;
+        event.status = 200;
+        await requestRoute.fulfill({ status: 200, contentType: 'image/jpeg', body: media.bytes });
       }
       return;
     }
     if (url.hostname === 'x.com' && url.pathname === '/favicon.ico') {
+      event.kind = 'favicon';
+      event.status = 204;
       await requestRoute.fulfill({ status: 204, body: '' });
       return;
     }
     if (url.hostname === 'x.com' || url.hostname === 'pbs.twimg.com') {
+      event.kind = 'unexpected';
       throw new Error('Undeclared large-photo fixture request');
     }
+    event.kind = 'blocked';
     await requestRoute.abort();
   };
   const receipt: Record<string, unknown> = {
@@ -274,13 +355,20 @@ export async function runInstalledLargePhotoFixture({
     });
     receipt.proof = proof;
     assert.equal(proof.status, 'observed', 'Installed 20/40 fixture proof is incomplete');
+    assert.equal(budget.overflow, false, 'Large-photo fixture route budget exceeded');
+    const afterNative = readNative();
+    receipt.nativeTransport = { before: beforeNative, after: afterNative };
+    assertLargePhotoNativeTransport(beforeNative, afterNative);
     receipt.status = 'passed';
   } catch (error) {
     primaryError = error;
     receipt.error = error instanceof Error ? error.message : String(error);
   } finally {
-    receipt.requests = requests;
-    receipt.requestOverflow = overflow;
+    receipt.requests = budget.events;
+    receipt.requestOverflow = budget.overflow;
+    if (!receipt.nativeTransport) {
+      receipt.nativeTransport = { before: beforeNative, after: readNative() };
+    }
     try {
       await context.unroute('**/*', route);
       receipt.routeRemoved = true;

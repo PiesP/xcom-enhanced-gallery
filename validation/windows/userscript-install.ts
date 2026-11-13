@@ -5637,6 +5637,7 @@ export async function runUserscriptInstallation({
         managerObserver: observer,
         installNative: ({ originals, apiResponses }) =>
           loopback!.setLargePhotos(originals, apiResponses),
+        nativeSnapshot: () => loopback!.snapshot(),
       });
     }
     result.status = 'passed';

@@ -22390,6 +22390,7 @@ export async function run({
             output,
             root,
             installNative: ({ originals }) => nativeLoopback!.setLargePhotos(originals),
+            nativeSnapshot: () => nativeLoopback!.snapshot(),
           });
         }
       }
