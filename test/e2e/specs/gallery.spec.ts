@@ -260,7 +260,12 @@ test.describe('X.com Enhanced Gallery E2E', () => {
     }) => {
       await page.setViewportSize({ width: 800, height: 600 });
       const body = readFileSync(
-        resolve(import.meta.dirname, '../fixtures/installed-quote-one.mp4')
+        resolve(
+          import.meta.dirname,
+          count === 20
+            ? '../fixtures/installed-recovery-intent.mp4'
+            : '../fixtures/installed-quote-one.mp4'
+        )
       );
       const mediaRequests = new Map<string, number>();
       await page.route('https://pbs.twimg.com/**', (route) =>
@@ -358,6 +363,16 @@ test.describe('X.com Enhanced Gallery E2E', () => {
           return video.getAttribute('src');
         });
       expect(focusResult).toBe(urls[count - 1]);
+      await expect(gallery.locator('#xeg-toolbar-counter')).toHaveAttribute(
+        'data-position',
+        String(count)
+      );
+      await expect(gallery.locator('[data-gallery-element="toolbar"]')).toHaveAttribute(
+        'data-current-index',
+        String(count - 1)
+      );
+      await expect(rows.nth(count - 1)).toHaveAttribute('data-media-active', 'true');
+      await expect(rows.nth(count - 1)).toHaveAttribute('data-media-focused', 'true');
       await expect.poll(() => mediaRequests.get(urls[count - 1]!) ?? 0).toBeGreaterThan(0);
       await expect(rows.nth(count - 1)).toHaveAttribute('data-media-display-url', urls[count - 1]!);
       await expect(rows.nth(count - 1)).toHaveAttribute('data-video-admitted', 'true');
