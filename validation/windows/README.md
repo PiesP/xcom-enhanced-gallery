@@ -73,7 +73,15 @@ The focused `inputs/live-photo-collection.json` route is separate from the
 2-4-item full actual-site selector. It declares one 20-photo owner or a requested
 20-photo post and its direct 20-photo quote. Its installed distribution receipt
 first records a separate source-known 20/40 fixture with unique marked JPEG
-originals and native single/ZIP files. Both synthetic owners share one trailing-underscore
+originals and native single/ZIP files. Each visit saves its selected single before
+preparing the ZIP, preserving independently verified single evidence if ZIP
+preparation fails. A source-known owner failure is retained while the next owner
+is inspected only when no owned native download remains pending. Manager-backed
+visits additionally require recorded completion for every observed browser download;
+a missing or canceled terminal observation stops continuation. Public observation
+remains fail-fast. DOM evidence may proceed only after both API visit pages and
+their observer close, with idle, non-overflowed owned transport. Any failed API
+or DOM proof keeps the overall result failed. Both synthetic owners share one trailing-underscore
 handle and user ID, with distinct post IDs and owner-local ordinals. The fixture then
 retires those routes and opens a fresh, separate 20-tile DOM owner whose API returns
 403. It checks the late clicked item, ordinal 12 still pending before a single save,

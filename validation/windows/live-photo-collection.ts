@@ -813,6 +813,7 @@ export async function runLivePhotoCollection({
   receipt.visits = visits;
   const extensionPage = await context.newPage();
   let retainedTotal = 0;
+  const failedVisits: Array<{ ownerId: string; error: string }> = [];
   try {
     await extensionPage.goto(`chrome-extension://${extensionId}/manifest.json`);
     for (const owner of [contract.directQuote, contract.requested]) {
@@ -830,6 +831,8 @@ export async function runLivePhotoCollection({
         startedAt: new Date().toISOString(),
       };
       visits.push(visit);
+      const browserVisitSince = managerObserver?.snapshot() ?? 0;
+      const completedBrowserDownloads = new Set<string>();
       const productErrors: string[] = [];
       const pageErrors: string[] = [];
       const sourceRequestFailures: Array<Record<string, unknown>> = [];
@@ -1272,7 +1275,35 @@ export async function runLivePhotoCollection({
             visit.managerSingleSource = nativeSource;
           }
           const singleBytes = await readOwnedFile(singleItem, downloads, 64 * 1024 * 1024);
+          assert.equal(
+            basename(singleItem.filename),
+            selected.expected.filename,
+            'Single filename differs from pinned owner-local identity'
+          );
+          assert.equal(
+            singleBytes.length,
+            selected.expected.bytes,
+            'Single size differs from pinned original'
+          );
+          assert(
+            singleBytes.equals(references[selectedIndex]!.bytes),
+            'Single bytes differ from independent original'
+          );
+          assert.equal(
+            createHash('sha256').update(singleBytes).digest('hex'),
+            selected.expected.sha256,
+            'Single hash differs from frozen original'
+          );
           visit.retainedSingle = await retain('single', singleBytes);
+          visit.singleSaved = {
+            nativeId: singleItem.id,
+            index: selectedIndex,
+            ownerId: selected.owner.statusId,
+            ordinal: selected.attachmentOrdinal,
+            filename: selected.expected.filename,
+            bytes: singleBytes.length,
+            sha256: selected.expected.sha256,
+          };
           if (sourceDetails) {
             await page.waitForFunction(
               (previous) => {
@@ -1307,6 +1338,7 @@ export async function runLivePhotoCollection({
               )
             : null;
           if (cdpSingle) {
+            completedBrowserDownloads.add(cdpSingle.guid);
             assert.equal(
               cdpSingle.receivedBytes,
               singleBytes.length,
@@ -1315,7 +1347,8 @@ export async function runLivePhotoCollection({
           }
           return { singleItem, singleBytes, singleProgress, cdpSingle };
         };
-        const earlySingle = domObservation ? await saveSelected() : null;
+        visit.phase = 'single-save';
+        const earlySingle = await saveSelected();
         if (beforeDomSingle && fixture?.nativeSnapshot) {
           const afterDomSingle = fixture.nativeSnapshot();
           verifyDomNativeProbes(beforeDomSingle, afterDomSingle, 12, true);
@@ -1324,6 +1357,7 @@ export async function runLivePhotoCollection({
         const beforeZip = managerObserver
           ? null
           : new Set((await queryDownloads(extensionPage, extensionId)).map((item) => item.id));
+        visit.phase = 'zip-save';
         const cdpZipSince = managerObserver?.snapshot() ?? 0;
         await toolbar
           .locator(`button[aria-label="Download ${verified.length} shown files as ZIP"]`)
@@ -1337,6 +1371,9 @@ export async function runLivePhotoCollection({
         const cdpZip = managerObserver
           ? await managerObserver.waitForCompletion(cdpZipSince)
           : null;
+        if (cdpZip) {
+          completedBrowserDownloads.add(cdpZip.guid);
+        }
         const zipItem = beforeZip
           ? await waitForOwnedDownload(
               extensionPage,
@@ -1407,8 +1444,7 @@ export async function runLivePhotoCollection({
           );
           visit.unknownTotalZip = { title, paragraphs };
         }
-        const { singleItem, singleBytes, singleProgress, cdpSingle } =
-          earlySingle ?? (await saveSelected());
+        const { singleItem, singleBytes, singleProgress, cdpSingle } = earlySingle;
         assert(
           singleBytes.length + referenceTotal + zipBytes.length <= 128 * 1024 * 1024,
           'Photo proof exceeded retained byte budget'
@@ -1458,6 +1494,7 @@ export async function runLivePhotoCollection({
         await page
           .locator('[data-xeg-gallery-container]')
           .waitFor({ state: 'detached', timeout: 10_000 });
+        visit.status = 'observed';
       } catch (error) {
         visit.operationError =
           error instanceof Error ? error.message.slice(0, 1000) : String(error).slice(0, 1000);
@@ -1530,7 +1567,10 @@ export async function runLivePhotoCollection({
             };
           })
           .catch(() => null);
-        throw error;
+        failedVisits.push({ ownerId: owner.statusId, error: String(visit.operationError) });
+        if (!fixture) {
+          throw error;
+        }
       } finally {
         context.off('requestfailed', onRequestFailed);
         context.off('response', onResponse);
@@ -1538,9 +1578,29 @@ export async function runLivePhotoCollection({
         visit.pageClosed = true;
         visit.finishedAt = new Date().toISOString();
       }
-      visit.status = 'observed';
+      if (fixture && visit.status !== 'observed') {
+        if (managerObserver) {
+          await managerObserver.flush();
+          const uncertain = managerObserver
+            .beginsSince(browserVisitSince)
+            .filter((download) => !completedBrowserDownloads.has(download.guid));
+          assert.equal(
+            uncertain.length,
+            0,
+            'Browser-owned download terminal state is unverified after failed visit'
+          );
+        }
+        const owned = await queryDownloads(extensionPage, extensionId);
+        assert(
+          !owned.some((item) => item.state === 'in_progress'),
+          'Owned native transfer is still pending after failed visit'
+        );
+      }
     }
-    receipt.status = 'observed';
+    receipt.status = failedVisits.length === 0 ? 'observed' : 'failed';
+    if (failedVisits.length > 0) {
+      receipt.error = failedVisits;
+    }
   } catch (error) {
     receipt.error = error instanceof Error ? error.message : String(error);
   } finally {

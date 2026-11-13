@@ -252,6 +252,27 @@ export function largePhotoFixtureMedia(
   return { purpose: 'preview', key, bytes: photo.previewBytes };
 }
 
+/** A failed evidence phase may yield to independent work only after owned cleanup. */
+export function assertPhotoFixtureIdle(
+  proof: Record<string, unknown>,
+  native: NativeSnapshot,
+  routeOverflow: boolean
+): void {
+  assert.equal(proof.extensionPageClosed, true, 'API observer page did not close');
+  assert(
+    Array.isArray(proof.visits) &&
+      proof.visits.length === 2 &&
+      proof.visits.every(
+        (visit) => visit && typeof visit === 'object' && visit.pageClosed === true
+      ),
+    'API visits did not all finish owned-page cleanup'
+  );
+  assert.equal(native.activeCount, 0, 'Original transport remained active before DOM phase');
+  assert.equal(native.overflow, false, 'Original transport overflowed before DOM phase');
+  assert.equal(native.unexpectedCount, 0, 'Unexpected original transport request before DOM phase');
+  assert.equal(routeOverflow, false, 'Fixture route overflowed before DOM phase');
+}
+
 /** Every routed request consumes one bounded slot before it can be served. */
 export function createInstalledLargePhotoRouteBudget(limit = 512) {
   assert(Number.isSafeInteger(limit) && limit > 0 && limit <= 512);
@@ -434,16 +455,11 @@ export async function runInstalledLargePhotoFixture({
       },
     });
     receipt.proof = proof;
-    assert.equal(proof.status, 'observed', 'Installed 20/40 fixture proof is incomplete');
     const idleDeadline = Date.now() + 3_000;
     while (nativeSnapshot().activeCount > 0 && Date.now() < idleDeadline) {
       await new Promise((done) => setTimeout(done, 50));
     }
-    assert.equal(
-      nativeSnapshot().activeCount,
-      0,
-      'Original transport remained active before DOM phase'
-    );
+    assertPhotoFixtureIdle(proof, nativeSnapshot(), budget.overflow);
     assert(installDomNative, 'Installed DOM phase requires its own native original route');
     installDomNative(fixture);
     const beforeDomNative = nativeSnapshot();
@@ -473,6 +489,7 @@ export async function runInstalledLargePhotoFixture({
       },
     });
     receipt.domProof = domProof;
+    assert.equal(proof.status, 'observed', 'Installed 20/40 fixture proof is incomplete');
     assert.equal(domProof.status, 'observed', 'Installed DOM 20 fixture proof is incomplete');
     const afterDomNative = nativeSnapshot();
     assert(afterDomNative.events, 'DOM original transport observations are unavailable');

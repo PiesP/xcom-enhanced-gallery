@@ -4,9 +4,13 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import type { BrowserContext } from '@playwright/test';
 import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import {
+  assertPhotoFixtureIdle,
   assertLargePhotoNativeTransport,
   createInstalledLargePhotoFixture,
   createInstalledLargePhotoRouteBudget,
@@ -23,6 +27,7 @@ import { summarizeTweetResultResponse } from './live-page.ts';
 import { test } from 'vite-plus/test';
 import { StreamingZipWriter } from '../../src/shared/external/zip/streaming-zip-writer.ts';
 import {
+  runLivePhotoCollection,
   photoProviderRequestMatches,
   assertExactPhotoNativeSource,
   assertDomPhotoZipOutcome,
@@ -683,4 +688,137 @@ test('context API observation excludes foreign origins and other requested owner
   const malformed = new URL(url);
   malformed.searchParams.set('variables', '{');
   assert(!photoProviderRequestMatches(malformed, requested.statusId));
+});
+
+test('fixture visit failures retain both owners and cleanup while public observation fails fast', async () => {
+  for (const [sourceKnown, pendingNative, unverifiedBrowser] of [
+    [true, false, false],
+    [false, false, false],
+    [true, true, false],
+    [true, false, true],
+  ] as const) {
+    const output = await mkdtemp(join(tmpdir(), 'xeg-photo-visits-'));
+    const navigated: string[] = [];
+    const closed: string[] = [];
+    const context = {
+      newPage: async () => {
+        let current = 'observer';
+        return {
+          goto: async (url: string) => {
+            current = url;
+            if (url.startsWith('https://x.com/')) {
+              navigated.push(url);
+              throw new Error('injected visit failure');
+            }
+          },
+          on: () => undefined,
+          evaluate: async () =>
+            pendingNative
+              ? [{ id: 1, state: 'in_progress', bytesReceived: 0, totalBytes: 1, exists: false }]
+              : [],
+          close: async () => {
+            closed.push(current);
+          },
+        };
+      },
+      on: () => undefined,
+      off: () => undefined,
+    } as unknown as BrowserContext;
+    try {
+      const receipt = await runLivePhotoCollection({
+        context,
+        extensionId: 'owned-test-extension',
+        contract: fixture(true).contract,
+        downloads: output,
+        output,
+        managerObserver: unverifiedBrowser
+          ? {
+              snapshot: () => 0,
+              beginsSince: () => [
+                {
+                  guid: 'unverified-guid',
+                  url: 'blob:https://x.com/owned',
+                  suggestedFilename: 'owned.zip',
+                },
+              ],
+              flush: async () => {},
+              waitForCompletion: async () => {
+                throw new Error('unreached');
+              },
+            }
+          : null,
+        fixture: sourceKnown
+          ? {
+              originals: new Map(),
+              receiptFile: 'fixture.json',
+              retainedPrefix: 'injected-fixture',
+              scope: 'source-known injected failures',
+            }
+          : null,
+      });
+      assert.equal(receipt.status, 'failed');
+      assert(receipt.error);
+      assert(Array.isArray(receipt.visits));
+      assert.equal(
+        receipt.visits.length,
+        sourceKnown && !pendingNative && !unverifiedBrowser ? 2 : 1
+      );
+      assert.equal(navigated.length, sourceKnown && !pendingNative && !unverifiedBrowser ? 2 : 1);
+      assert(
+        receipt.visits.every(
+          (visit) =>
+            visit.status === 'failed' &&
+            visit.pageClosed === true &&
+            visit.operationError === 'injected visit failure'
+        )
+      );
+      assert.equal(closed.length, navigated.length + 1);
+      assert.equal(receipt.extensionPageClosed, true);
+      if (unverifiedBrowser) {
+        assert.match(String(receipt.error), /Browser-owned download terminal state is unverified/u);
+      }
+      if (pendingNative) {
+        assert.match(String(receipt.error), /native transfer is still pending/u);
+      }
+      if (sourceKnown && !pendingNative && !unverifiedBrowser) {
+        assertPhotoFixtureIdle(
+          receipt,
+          { activeCount: 0, overflow: false, unexpectedCount: 0 },
+          false
+        );
+      }
+    } finally {
+      await rm(output, { recursive: true, force: true });
+    }
+  }
+});
+
+test('independent DOM evidence requires all API pages closed and idle bounded transport', () => {
+  const failed = {
+    status: 'failed',
+    extensionPageClosed: true,
+    visits: [
+      { status: 'failed', pageClosed: true },
+      { status: 'observed', pageClosed: true },
+    ],
+  };
+  const idle = { activeCount: 0, overflow: false, unexpectedCount: 0 };
+  assert.doesNotThrow(() => assertPhotoFixtureIdle(failed, idle, false));
+  assert.throws(() =>
+    assertPhotoFixtureIdle({ ...failed, extensionPageClosed: false }, idle, false)
+  );
+  assert.throws(() =>
+    assertPhotoFixtureIdle({ ...failed, visits: failed.visits.slice(0, 1) }, idle, false)
+  );
+  assert.throws(() =>
+    assertPhotoFixtureIdle(
+      { ...failed, visits: [{ pageClosed: true }, { pageClosed: false }] },
+      idle,
+      false
+    )
+  );
+  assert.throws(() => assertPhotoFixtureIdle(failed, { ...idle, activeCount: 1 }, false));
+  assert.throws(() => assertPhotoFixtureIdle(failed, { ...idle, overflow: true }, false));
+  assert.throws(() => assertPhotoFixtureIdle(failed, { ...idle, unexpectedCount: 1 }, false));
+  assert.throws(() => assertPhotoFixtureIdle(failed, idle, true));
 });
