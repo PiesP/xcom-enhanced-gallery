@@ -14,7 +14,7 @@ export const LARGE_PHOTO_OWNERS = [
   '9000000000000000002',
   '9000000000000000003',
 ] as const;
-const jpeg = readFileSync(resolve(import.meta.dirname, 'native-original.jpg'));
+const jpeg = readFileSync(resolve(import.meta.dirname, 'large-photo-narrow.jpg'));
 
 export type PhotoExpectation = {
   ownerId: string;
@@ -73,7 +73,7 @@ function tweet(
           media_key: `3_${item.mediaId}`,
           media_url_https: `https://pbs.twimg.com/media/${item.sourceKey}.jpg`,
           expanded_url: `https://x.com/${LARGE_PHOTO_HANDLE}/status/${ownerId}/photo/${item.ordinal + 1}`,
-          original_info: { width: 640, height: 480 },
+          original_info: { width: 54, height: 1080 },
         })),
       },
     },
