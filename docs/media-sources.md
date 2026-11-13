@@ -116,8 +116,10 @@ HTTP 200 with its expected image MIME type at the exact requested URL.
 The resolver uses bounded HEAD requests through the platform adapter and honors
 extraction and save cancellation. Only same-source 404/410 responses for all
 three encodings establish that the original is unavailable. A forbidden
-response, redirect, MIME mismatch, network failure, timeout, or missing source
-metadata leaves the result inconclusive and retryable. The
+response, redirect, MIME mismatch, network failure, or timeout leaves a known
+source candidate inconclusive and retryable. Missing candidate URL metadata
+cannot be recovered by repeating a save; re-extract the post to establish an
+owned source before trying again. The
 observed display, owner, attachment identity, and gallery order remain intact.
 Single and ZIP plans receive the source-check outcome and derive extensions
 from a verified preferred source. Resolution happens before any native save; it does not
