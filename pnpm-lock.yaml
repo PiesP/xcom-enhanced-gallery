@@ -34,8 +34,8 @@ importers:
         specifier: file:packages/core
         version: file:packages/core
       solid-js:
-        specifier: ^1.9.18
-        version: 1.9.18
+        specifier: ^1.9.19
+        version: 1.9.19
     devDependencies:
       '@axe-core/playwright':
         specifier: ^4.14.0
@@ -66,7 +66,7 @@ importers:
         version: '@voidzero-dev/vite-plus-core@1.5.1(@types/node@26.6.6)(typescript@7.0.2)'
       vite-plugin-solid:
         specifier: ^2.11.15
-        version: 2.11.15(@voidzero-dev/vite-plus-core@1.5.1(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.18)
+        version: 2.11.15(@voidzero-dev/vite-plus-core@1.5.1(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.19)
       vite-plus:
         specifier: 'catalog:'
         version: 1.5.1(@types/node@26.6.6)(@vitest/browser-playwright@5.1.0)(@vitest/coverage-v8@5.1.0)(@vitest/ui@5.1.0)(playwright@1.65.0)(typescript@7.0.2)
@@ -480,7 +480,7 @@ packages:
 
   '@piesp/browser-core@file:packages/core':
     resolution: {directory: packages/core, type: directory}
-    engines: {node: ^22.23.4 || ^24.22.1 || >=26.12.1, pnpm: '>=12.14.0'}
+    engines: {node: ^22.23.5 || ^24.22.3 || >=26.13.1, pnpm: '>=12.14.0'}
 
   '@playwright/test@1.65.0':
     resolution: {integrity: sha512-iGURLGuKDLakSEl7Pgfv8h7f+XLT+V861Wfhz0zlEl5nyFuKUopdkFBPKqTllTUp06aOwPuH8iuUEb3yp3MpbQ==}
@@ -1288,8 +1288,8 @@ packages:
     resolution: {integrity: sha512-2wcC/oGxHis/BoHkkPwldgiPSYcpZK3JU28WoMVv55yHJgcZ8rlXvuG9iZggz+sU1d4bRgIGASwyWqjxu3FM0g==}
     engines: {node: '>=18'}
 
-  solid-js@1.9.18:
-    resolution: {integrity: sha512-CHGO5YFk6Y9m/1YSxVtKnXfrW7JD3Tmof8HmR4z6TmCPsS8efo8LnzIR8CQh3cUvffqYm6DWyBFfk8dQw1CNQQ==}
+  solid-js@1.9.19:
+    resolution: {integrity: sha512-NIrV/6o1FtmrA9iuAAYvnQJZaHrGcaH3LKSVj4kCiZfwqjCtJNDgIgR9XcqYl6KR/Lb3oRx1HrlyswPWR8SRvw==}
 
   solid-refresh@0.6.3:
     resolution: {integrity: sha512-F3aPsX6hVw9ttm5LYlth8Q15x6MlI/J3Dn+o3EQyRTtTxidepSTwAYdozt01/YA+7ObcciagGEyXIopGZzQtbA==}
@@ -2075,12 +2075,12 @@ snapshots:
       html-entities: 2.3.3
       parse5: 7.3.0
 
-  babel-preset-solid@1.9.16(@babel/core@7.29.7)(solid-js@1.9.18):
+  babel-preset-solid@1.9.16(@babel/core@7.29.7)(solid-js@1.9.19):
     dependencies:
       '@babel/core': 7.29.7
       babel-plugin-jsx-dom-expressions: 0.40.11(@babel/core@7.29.7)
     optionalDependencies:
-      solid-js: 1.9.18
+      solid-js: 1.9.19
 
   baseline-browser-mapping@2.11.33: {}
 
@@ -2379,18 +2379,18 @@ snapshots:
       mrmime: 2.0.1
       totalist: 3.0.1
 
-  solid-js@1.9.18:
+  solid-js@1.9.19:
     dependencies:
       csstype: 3.2.3
       seroval: 1.6.12
       seroval-plugins: 1.6.12(seroval@1.6.12)
 
-  solid-refresh@0.6.3(solid-js@1.9.18):
+  solid-refresh@0.6.3(solid-js@1.9.19):
     dependencies:
       '@babel/generator': 7.29.8
       '@babel/helper-module-imports': 7.29.7
       '@babel/types': 7.29.11
-      solid-js: 1.9.18
+      solid-js: 1.9.19
     transitivePeerDependencies:
       - supports-color
 
@@ -2453,14 +2453,14 @@ snapshots:
 
   util-deprecate@1.0.2: {}
 
-  vite-plugin-solid@2.11.15(@voidzero-dev/vite-plus-core@1.5.1(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.18):
+  vite-plugin-solid@2.11.15(@voidzero-dev/vite-plus-core@1.5.1(@types/node@26.6.6)(typescript@7.0.2))(solid-js@1.9.19):
     dependencies:
       '@babel/core': 7.29.7
       '@types/babel__core': 7.20.5
-      babel-preset-solid: 1.9.16(@babel/core@7.29.7)(solid-js@1.9.18)
+      babel-preset-solid: 1.9.16(@babel/core@7.29.7)(solid-js@1.9.19)
       merge-anything: 5.1.7
-      solid-js: 1.9.18
-      solid-refresh: 0.6.3(solid-js@1.9.18)
+      solid-js: 1.9.19
+      solid-refresh: 0.6.3(solid-js@1.9.19)
       vite: '@voidzero-dev/vite-plus-core@1.5.1(@types/node@26.6.6)(typescript@7.0.2)'
       vitefu: 1.1.3(@voidzero-dev/vite-plus-core@1.5.1(@types/node@26.6.6)(typescript@7.0.2))
     transitivePeerDependencies:
