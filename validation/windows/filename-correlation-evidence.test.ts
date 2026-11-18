@@ -10,7 +10,7 @@ import { createContext, runInContext, type Context } from 'node:vm';
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { describe, expect, it } from 'vitest';
 import { COMPACT_FIXTURE_URL } from './install-preparation.ts';
-import { withFilenameCorrelation } from './filename-correlation.ts';
+import { resolveFilenameCaptureLine, withFilenameCorrelation } from './filename-correlation.ts';
 
 const url = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig';
 const pageUrl = `${COMPACT_FIXTURE_URL}?compact=evidence`;
@@ -21,8 +21,9 @@ const bytes = Buffer.from([0, 1, 2, 254, 255, 10]);
 const requestedName = 'requested.jpg';
 const nativeName = 'native.jpg';
 const source = `async function downloadSingleFile(media, options = {}) {
-  const filename = generateMediaFilename(media, { nowMs: Date.now() });
-  if (options.blob) return filename;
+  const resolvedMedia = options.blob ? media : resolveDomImagesForDownload(media);
+  const filename = generateMediaFilename(resolvedMedia, { nowMs: Date.now() });
+  if (options.blob) return downloadBlobWithAdapter(options.blob, filename, abortSignal, options);
 }\n`;
 const sha256 = (value: Uint8Array | string) => createHash('sha256').update(value).digest('hex');
 
@@ -143,7 +144,9 @@ async function fixture() {
           if (method === 'Debugger.setBreakpointByUrl') {
             return {
               breakpointId: 'breakpoint',
-              locations: [{ scriptId: 'script', lineNumber: 2 }],
+              locations: [
+                { scriptId: 'script', lineNumber: resolveFilenameCaptureLine(source).lineNumber },
+              ],
             };
           }
           if (method === 'Debugger.removeBreakpoint') {

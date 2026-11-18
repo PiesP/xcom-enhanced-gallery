@@ -393,6 +393,12 @@ export function VerticalGalleryView(props: VerticalGalleryViewProps): JSXElement
                 { total: outcome().total }
               )}
             </p>
+            <Show when={outcome().unknownPostTotal}>
+              <p>{translate('msg.gal.partialRecovery.body')}</p>
+            </Show>
+            <Show when={outcome().knownSubset}>
+              <p>{translate('msg.gal.knownSubset.body')}</p>
+            </Show>
             <Show when={(outcome().recoverableCount ?? 0) > 0 && local.onRecoverFailed}>
               <button
                 type="button"

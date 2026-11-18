@@ -15,11 +15,23 @@ import { generateFixtureCertificate } from './userscript-loopback.ts';
 import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 
 const MAX_REQUESTS = 128;
+const LARGE_PHOTO_MAX_REQUESTS = 512;
 const MAX_BODY_BYTES = 256 * 1024;
 const MAX_SERVED_BYTES = 16 * 1024 * 1024;
 const IMAGE_PATHS = ['GkE1234ABCDEF', 'GkE5678GHIJKL.jpg', 'GkE9012MNOPQR.jpg'];
+const LARGE_PHOTO_DOCUMENT_URLS = [
+  'https://x.com/fixture_owner_/status/9666600000000000001',
+  'https://x.com/fixture_owner_/status/9666600000000000002',
+  'https://x.com/fixture_owner_/status/9666600000000000003',
+];
 
-type NativeRoute = { bytes: Buffer; host: string; path: string; contentType?: string };
+type NativeRoute = {
+  bytes: Buffer;
+  host: string;
+  path: string;
+  contentType?: string;
+  status?: 404;
+};
 type NativeEvent = {
   host: string;
   path: string;
@@ -38,6 +50,7 @@ type NativeEvent = {
   prefixBytesQueued?: number;
   firstByteQueuedAtMs?: number | null;
   redirectTo?: string;
+  sourceUrl?: string;
 };
 type VideoHold = {
   path: string;
@@ -76,12 +89,15 @@ function allowedVideos(payloads: Record<string, Buffer>) {
 export function createExtensionNativeFixtureHandler() {
   const allowed = new Map<string, NativeRoute>();
   let requestCount = 0;
+  let largePhotosInstalled = false;
   let unexpectedCount = 0;
   let servedBytes = 0;
   let reservedBytes = 0;
   let overflow = false;
   const events: NativeEvent[] = [];
   const active = new Set<ServerResponse>();
+  let domProbeActive = 0;
+  let domProbePeak = 0;
   let holdPath: string | null = null;
   let heldResponse: ServerResponse | null = null;
   let heldTail: Buffer | null = null;
@@ -103,9 +119,24 @@ export function createExtensionNativeFixtureHandler() {
     response.writeHead(status, { 'Content-Length': '0', 'Cache-Control': 'no-store' });
     response.end();
   };
+  const trackDomProbe = (
+    response: ServerResponse,
+    method: string | undefined,
+    path: string | undefined
+  ) => {
+    if (method !== 'HEAD' || !path?.startsWith('/media/XegDom')) {
+      return;
+    }
+    domProbeActive += 1;
+    domProbePeak = Math.max(domProbePeak, domProbeActive);
+    response.once('close', () => {
+      domProbeActive -= 1;
+    });
+  };
   const handle = (request: IncomingMessage, response: ServerResponse) => {
     requestCount += 1;
-    if (requestCount > MAX_REQUESTS || events.length >= MAX_REQUESTS) {
+    const requestLimit = largePhotosInstalled ? LARGE_PHOTO_MAX_REQUESTS : MAX_REQUESTS;
+    if (requestCount > requestLimit || events.length >= requestLimit) {
       overflow = true;
       response.destroy();
       return;
@@ -115,6 +146,37 @@ export function createExtensionNativeFixtureHandler() {
     const route = allowed.get(`${host?.replace(/:443$/u, '')}${request.url ?? ''}`);
     if (!['GET', 'HEAD'].includes(request.method ?? '') || !route || (sni && sni !== route.host)) {
       reject(response);
+      return;
+    }
+    if (route.status === 404) {
+      trackDomProbe(response, request.method, request.url);
+      const event: NativeEvent = {
+        host: route.host,
+        path: route.path,
+        method: request.method ?? '',
+        purpose: 'original-probe',
+        status: 404,
+        range: null,
+        bytes: 0,
+        sha256: null,
+        result: 'started',
+        atMs: performance.now(),
+        ...(request.url ? { sourceUrl: request.url } : {}),
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => active.delete(response));
+      response.once('finish', () => {
+        event.result = 'http-failure';
+        event.finishedAtMs = performance.now();
+      });
+      response.writeHead(404, {
+        'Content-Length': '0',
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+      });
+      response.end();
       return;
     }
     if (httpFailure?.key === `${route.host}${request.url ?? ''}`) {
@@ -190,6 +252,7 @@ export function createExtensionNativeFixtureHandler() {
       return;
     }
     const { bytes } = route;
+    trackDomProbe(response, request.method, request.url);
     let start = 0;
     let end = bytes.length - 1;
     const range = request.headers.range;
@@ -235,6 +298,7 @@ export function createExtensionNativeFixtureHandler() {
       sha256: null,
       result: 'started',
       atMs: performance.now(),
+      ...(request.url?.startsWith('/media/XegDom') ? { sourceUrl: request.url } : {}),
     };
     events.push(event);
     active.add(response);
@@ -360,6 +424,88 @@ export function createExtensionNativeFixtureHandler() {
       });
       for (const [path, bytes] of allowedVideos(videoPayloads)) {
         allowed.set(`video.twimg.com${path}`, { bytes, host: 'video.twimg.com', path });
+      }
+    },
+    setLargePhotos(originals: ReadonlyMap<string, Buffer>) {
+      assert(allowed.size > 0 && !largePhotosInstalled, 'Install base native fixture first');
+      assert.equal(originals.size, 40, 'Large photo fixture requires forty originals');
+      for (const [source, bytes] of originals) {
+        const url = new URL(source);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, 'pbs.twimg.com');
+        assert.match(url.pathname, /^\/media\/XegLarge[AB]\d{2}\.jpg$/u);
+        assert.equal(url.search, '?format=jpg&name=orig');
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+        const key = `${url.hostname}${url.pathname}${url.search}`;
+        assert(!allowed.has(key), 'Large photo original already installed');
+        allowed.set(key, { bytes, host: url.hostname, path: url.pathname });
+      }
+      largePhotosInstalled = true;
+    },
+    setLargePhotoDocuments(pages: ReadonlyMap<string, string>, scope: 'all' | 'dom20' = 'all') {
+      assert(largePhotosInstalled, 'Install the declared photo originals first');
+      const urls =
+        scope === 'dom20' ? LARGE_PHOTO_DOCUMENT_URLS.slice(2) : LARGE_PHOTO_DOCUMENT_URLS;
+      assert.deepEqual([...pages.keys()].sort(), [...urls].sort());
+      const additions = urls.map((source) => {
+        const url = new URL(source);
+        const bytes = Buffer.from(pages.get(source)!);
+        assert(bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+        const key = `${url.hostname}${url.pathname}`;
+        assert(!allowed.has(key), 'Large photo document already installed');
+        return [
+          key,
+          {
+            bytes,
+            host: 'x.com',
+            path: url.pathname,
+            contentType: 'text/html; charset=utf-8',
+          },
+        ] as const;
+      });
+      for (const [key, route] of additions) {
+        allowed.set(key, route);
+      }
+    },
+    setLargeDomPhotos(originals: ReadonlyMap<string, Buffer>, domOnly = false) {
+      assert(
+        domOnly ? allowed.size > 0 && !largePhotosInstalled : largePhotosInstalled,
+        'DOM photo fixture phase is unavailable'
+      );
+      assert.equal(originals.size, 20, 'DOM photo fixture requires twenty originals');
+      assert.equal(active.size, 0, 'Photo fixture transport must be idle before DOM phase');
+      const previous = [...allowed.keys()].filter((key) =>
+        /^pbs\.twimg\.com\/media\/XegLarge[AB]\d{2}\.jpg\?format=jpg&name=orig$/u.test(key)
+      );
+      assert.equal(previous.length, domOnly ? 0 : 40, 'Previous photo original set differs');
+      const additions = new Map<string, NativeRoute>();
+      for (const [source, bytes] of originals) {
+        const url = new URL(source);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, 'pbs.twimg.com');
+        assert.match(url.pathname, /^\/media\/XegDom\d{2}$/u);
+        assert.equal(url.search, '?format=jpg&name=orig');
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+        const jpegKey = `${url.hostname}${url.pathname}${url.search}`;
+        const webpKey = `${url.hostname}${url.pathname}?format=webp&name=orig`;
+        assert(!allowed.has(jpegKey) && !allowed.has(webpKey));
+        assert(!additions.has(jpegKey) && !additions.has(webpKey));
+        additions.set(webpKey, {
+          bytes: Buffer.alloc(0),
+          host: url.hostname,
+          path: url.pathname,
+          status: 404,
+        });
+        additions.set(jpegKey, { bytes, host: url.hostname, path: url.pathname });
+      }
+      for (const key of previous) {
+        allowed.delete(key);
+      }
+      for (const [key, route] of additions) {
+        allowed.set(key, route);
+      }
+      if (domOnly) {
+        largePhotosInstalled = true;
       }
     },
     setExperienceImages(images: Buffer[]) {
@@ -606,6 +752,7 @@ export function createExtensionNativeFixtureHandler() {
       reservedBytes,
       overflow,
       activeCount: active.size,
+      domProbePeak,
       events: events.map((event) => ({ ...event })),
     }),
     activeCount: () => active.size,

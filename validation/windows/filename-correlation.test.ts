@@ -2,9 +2,13 @@
 // Copyright (c) 2026 PiesP
 
 import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import {
   compareObservedFilenames,
+  CONTENT_LOGPOINT_CONDITION,
   assertReportedLiveFilenameTarget,
   isReportedLiveDownloadSource,
   resolveFilenameCaptureLine,
@@ -15,11 +19,12 @@ import {
 const expectedUrl = 'https://pbs.twimg.com/media/GkE5678GHIJKL.jpg?format=jpg&name=orig';
 const urlHash = createHash('sha256').update(expectedUrl).digest('hex');
 const source = `function other() {
-  const filename = generateMediaFilename(media, { nowMs: Date.now() });
+  const filename = generateMediaFilename(resolvedMedia, { nowMs: Date.now() });
 }
 async function downloadSingleFile(media, options = {}) {
-  const filename = generateMediaFilename(media, { nowMs: Date.now() });
-  if (options.blob) return filename;
+  const resolvedMedia = options.blob ? media : resolveDomImagesForDownload(media);
+  const filename = generateMediaFilename(resolvedMedia, { nowMs: Date.now() });
+  if (options.blob) return downloadBlobWithAdapter(options.blob, filename, abortSignal, options);
 }
 function next() {}
 `;
@@ -80,18 +85,97 @@ describe('filename correlation diagnostic', () => {
   });
 
   it('binds to the line after the sole downloadSingleFile generation site', () => {
-    expect(resolveFilenameCaptureLine(source).lineNumber).toBe(5);
+    expect(resolveFilenameCaptureLine(source).lineNumber).toBe(6);
     expect(() =>
-      resolveFilenameCaptureLine(source.replace('if (options.blob)', 'if (options.other)'))
+      resolveFilenameCaptureLine(
+        source.replace('if (options.blob) return', 'if (options.other) return')
+      )
+    ).toThrow();
+    expect(() =>
+      resolveFilenameCaptureLine(
+        source.replaceAll('generateMediaFilename(resolvedMedia', 'generateMediaFilename(media')
+      )
     ).toThrow();
     expect(() =>
       resolveFilenameCaptureLine(
         source.replace(
           'function next() {}',
-          `async function downloadSingleFile(media) {\n  const filename = generateMediaFilename(media, { nowMs: Date.now() });\n  if (options.blob) return filename;\n}`
+          `async function downloadSingleFile(media) {\n  const filename = generateMediaFilename(resolvedMedia, { nowMs: Date.now() });\n  if (options.blob) return downloadBlobWithAdapter(options.blob, filename, abortSignal, options);\n}`
         )
       )
     ).toThrow();
+  });
+
+  it('recognizes the current production filename boundary and any existing built candidate', () => {
+    const root = resolve(import.meta.dirname, '../..');
+    const product = readFileSync(
+      resolve(root, 'src/shared/services/download/single-download.ts'),
+      'utf8'
+    );
+    expect(product).toContain(
+      'const filename = generateMediaFilename(resolvedMedia, { nowMs: Date.now() });'
+    );
+    expect(product).toContain('await resolveDomImagesForDownload([media], abortSignal)');
+    const built = resolve(root, 'dist-extension/content.js');
+    if (existsSync(built)) {
+      const compiled = readFileSync(built, 'utf8');
+      const location = resolveFilenameCaptureLine(compiled);
+      expect(compiled.split(/\r?\n/)[location.lineNumber]).toMatch(
+        /if \(options\.blob\) return downloadBlobWithAdapter/u
+      );
+    }
+  });
+
+  it('records the resolved source while keeping input ownership and source distinct', () => {
+    const original = {
+      id: 'owned-media',
+      tweetId: 'owner',
+      attachmentOrdinal: 19,
+      type: 'image',
+      url: 'https://pbs.twimg.com/media/owned?format=webp&name=orig',
+      downloadSource: {
+        url: 'https://pbs.twimg.com/media/owned?format=webp&name=orig',
+        quality: 'unverified-original',
+      },
+    };
+    const selected = {
+      ...original,
+      url: 'https://pbs.twimg.com/media/owned?format=jpg&name=orig',
+      downloadSource: {
+        url: 'https://pbs.twimg.com/media/owned?format=jpg&name=orig',
+        quality: 'verified-original',
+      },
+    };
+    const state = {
+      marker: 'owned',
+      target: 'owned-fixture',
+      expectedUrl: selected.downloadSource.url,
+      mediaBasename: '',
+      maxEvents: 2,
+      events: [] as Record<string, unknown>[],
+    };
+    const context = {
+      globalThis: { __xegFilenameCorrelation482V1: state },
+      media: original,
+      resolvedMedia: selected,
+      filename: 'owner_19.jpg',
+      URL,
+    };
+    expect(runInNewContext(CONTENT_LOGPOINT_CONDITION, context)).toBe(false);
+    expect(state.events).toHaveLength(1);
+    expect(state.events[0]).toMatchObject({
+      id: 'owned-media',
+      tweetId: 'owner',
+      attachmentOrdinal: 19,
+      url: selected.url,
+      inputSource: { url: original.url, preferred: original.downloadSource.url },
+      downloadSource: { url: selected.downloadSource.url },
+      generatedFilename: 'owner_19.jpg',
+    });
+    state.events.length = 0;
+    context.resolvedMedia = { ...selected, tweetId: 'different-owner' };
+    expect(runInNewContext(CONTENT_LOGPOINT_CONDITION, context)).toBe(false);
+    expect(state.events).toHaveLength(0);
   });
 
   it('proves ownership through the observed request, native ID, and persisted binding even when names diverge', () => {

@@ -343,17 +343,38 @@ describe('GalleryApp media-click currentness', () => {
     }
   );
 
-  it('discloses visible-tile recovery and still opens only the recovered items', async () => {
-    const result = { ...success('tile'), metadata: { recoveryScope: 'visible-tile' } };
+  it.each(['visible-tile', 'visible-article'] as const)(
+    'discloses %s recovery and opens only observed items',
+    async (scope) => {
+      const result = { ...success('tile'), metadata: { recoveryScope: scope } };
+      state.extract.mockResolvedValue(result);
+      const app = new GalleryApp({ destroy: vi.fn() } as never);
+      await app.initialize();
+      await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
+      expect(state.openGallery).toHaveBeenCalledWith(result.mediaItems, 0, scope);
+      expect(state.notify).toHaveBeenCalledWith(
+        {},
+        'msg.gal.partialRecovery.title',
+        'msg.gal.partialRecovery.body'
+      );
+      await app.cleanup();
+    }
+  );
+
+  it('discloses a known supported API subset without a raw post total', async () => {
+    const result = {
+      ...success('supported'),
+      metadata: { sourceType: 'twitter-api', apiMediaCount: 2 },
+    };
     state.extract.mockResolvedValue(result);
     const app = new GalleryApp({ destroy: vi.fn() } as never);
     await app.initialize();
     await state.handlers?.onMediaClick(document.createElement('img'), new MouseEvent('click'));
-    expect(state.openGallery).toHaveBeenCalledWith(result.mediaItems, 0, 'visible-tile');
+    expect(state.openGallery).toHaveBeenCalledWith(result.mediaItems, 0, 'api-supported-subset');
     expect(state.notify).toHaveBeenCalledWith(
       {},
-      'msg.gal.partialRecovery.title',
-      'msg.gal.partialRecovery.body'
+      'msg.gal.knownSubset.title',
+      'msg.gal.knownSubset.body'
     );
     await app.cleanup();
   });

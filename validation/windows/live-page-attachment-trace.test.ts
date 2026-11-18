@@ -91,3 +91,58 @@ test('live trace rejects foreign hints and exposes the twelve-entity observation
   assert.equal(summary?.result?.media.length, 12);
   assert(summary?.result?.media.every(({ navigationHint }) => navigationHint === null));
 });
+
+test('explicit collection trace retains all owner-local positions without flattening nested quotes', () => {
+  const requestedId = '2121025509215850557';
+  const directId = '2121007970545017041';
+  const nestedId = '2120999999999999999';
+  const media = (prefix: string) =>
+    Array.from({ length: 20 }, (_, ordinal) => ({
+      id_str: `${prefix}${ordinal}`,
+      type: 'photo',
+      media_url_https: `https://pbs.twimg.com/media/${prefix}${ordinal}.jpg`,
+      expanded_url: `https://x.com/shinchilla_/status/${prefix === 'A' ? requestedId : directId}/photo/${ordinal + 1}`,
+    }));
+  const summary = summarizeTweetResultResponse(
+    `https://x.com/i/api/graphql/id/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: requestedId }))}`,
+    200,
+    {
+      data: {
+        tweetResult: {
+          result: {
+            rest_id: requestedId,
+            legacy: { extended_entities: { media: media('A') } },
+            quoted_status_result: {
+              result: {
+                rest_id: directId,
+                legacy: { extended_entities: { media: media('B') } },
+                quoted_status_result: { result: { rest_id: nestedId } },
+              },
+            },
+          },
+        },
+      },
+    },
+    40
+  );
+  assert.equal(summary?.result?.collectionCount, 20);
+  assert.equal(summary?.directQuote?.collectionCount, 20);
+  assert.equal(summary?.result?.media.length, 20);
+  assert.equal(summary?.directQuote?.media.length, 20);
+  assert.deepEqual(
+    [0, 3, 4, 9, 12, 13, 19].map((index) => [
+      summary?.result?.media[index]?.entityOrdinal,
+      summary?.directQuote?.media[index]?.entityOrdinal,
+    ]),
+    [0, 3, 4, 9, 12, 13, 19].map((index) => [index, index])
+  );
+  assert.equal(summary?.nestedQuoteId, nestedId);
+  assert.throws(() =>
+    summarizeTweetResultResponse(
+      `https://x.com/i/api/graphql/id/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: requestedId }))}`,
+      200,
+      {},
+      41
+    )
+  );
+});

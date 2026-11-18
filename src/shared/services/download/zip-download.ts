@@ -123,9 +123,9 @@ class RetainedByteBudget {
   }
 }
 
-const ensureUniqueFilenameFactory = (): UniqueFilenameFactory => {
-  const usedNames = new Set<string>();
-  const usedStems = new Set<string>();
+const ensureUniqueFilenameFactory = (reserved: readonly string[] = []): UniqueFilenameFactory => {
+  const usedNames = new Set(reserved.map((name) => name.toLowerCase()));
+  const usedStems = new Set(reserved.map(getFilenameStemKey));
   const baseCounts = new Map<string, number>();
   return (requested: string, identitySuffix = ''): string => {
     const desired = finalizeFilename(requested);
@@ -201,9 +201,21 @@ export async function downloadAsZip(
   const partLeases: LiveByteLease[] = [];
   const blobLeases: LiveByteLease[] = [];
   throwIfAborted(abortSignal);
-  const ensureUniqueFilename = ensureUniqueFilenameFactory();
-  const assignedFilenames = items.map((item) =>
-    ensureUniqueFilename(item.desiredName, item.identitySuffix)
+  const fixed = options.fixedZipFilenames ?? [];
+  if (fixed.length > 0 && fixed.length !== items.length) {
+    throw new RangeError('Fixed ZIP filenames must match the retry entry count');
+  }
+  const fixedNames = fixed.filter((name): name is string => name !== undefined);
+  const seededNames = [...(options.reservedZipFilenames ?? []), ...fixedNames];
+  if (
+    fixedNames.some((name) => name !== finalizeFilename(name, { preserveTailUnits: 32 })) ||
+    new Set(seededNames.map(getFilenameStemKey)).size !== seededNames.length
+  ) {
+    throw new RangeError('Fixed ZIP filenames conflict with prior saved entries');
+  }
+  const ensureUniqueFilename = ensureUniqueFilenameFactory(seededNames);
+  const assignedFilenames = items.map(
+    (item, index) => fixed[index] ?? ensureUniqueFilename(item.desiredName, item.identitySuffix)
   );
   // EOCD plus its final Blob snapshot are admitted before the writer can allocate them.
   partLeases.push(liveBudget.reserve(22));
@@ -218,6 +230,7 @@ export async function downloadAsZip(
   const total = items.length;
   let processed = 0;
   let successful = 0;
+  const successfulFilenames: string[] = [];
   let resourceLimitExceeded = false;
   let sourceUnavailable = false;
   const sourceFetchStatuses = new Set<number>();
@@ -367,6 +380,7 @@ export async function downloadAsZip(
         overhead = undefined;
         blobOverhead = undefined;
         successful++;
+        successfulFilenames.push(filename);
       } catch (error) {
         throwIfAborted(abortSignal);
         if (error instanceof DownloadSourceUnavailableError) {
@@ -435,6 +449,7 @@ export async function downloadAsZip(
   };
   return {
     filesSuccessful: successful,
+    successfulFilenames,
     failures,
     failedEntries: failedEntries.sort((a, b) => a.index - b.index),
     zipData: parts,

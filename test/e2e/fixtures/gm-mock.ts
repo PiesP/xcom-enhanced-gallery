@@ -13,11 +13,13 @@ import type {
 interface GMMockOptions {
   readonly persistentStorage?: boolean;
   readonly downloadApi?: boolean;
+  readonly mediaResponses?: Readonly<Record<string, readonly number[]>>;
+  readonly apiResponses?: Readonly<Record<string, string>>;
 }
 
 /** Install the userscript host contract used by behavior-level browser tests. */
 export async function installGMMock(page: Page, options: GMMockOptions = {}): Promise<void> {
-  await page.evaluate(({ persistentStorage, downloadApi }) => {
+  await page.evaluate(({ persistentStorage, downloadApi, apiResponses, mediaResponses }) => {
     const host = window as unknown as Record<string, unknown>;
     const storageKey = '__xeg_e2e_gm_storage';
     let storage = new Map<string, unknown>();
@@ -97,6 +99,72 @@ export async function installGMMock(page: Page, options: GMMockOptions = {}): Pr
       document.body.append(marker);
     };
     host.GM_xmlhttpRequest = (details: GMXMLHttpRequestDetails) => {
+      const media = mediaResponses?.[details.url];
+      if (media) {
+        const bytes = Uint8Array.from(media);
+        let aborted = false;
+        queueMicrotask(() => {
+          if (!aborted) {
+            details.onload?.({
+              finalUrl: details.url,
+              readyState: 4,
+              status: 200,
+              statusText: 'Fixture',
+              responseHeaders: `content-type: image/jpeg\r\ncontent-length: ${bytes.byteLength}`,
+              response:
+                details.responseType === 'blob'
+                  ? new Blob([bytes], { type: 'image/jpeg' })
+                  : bytes.buffer,
+              responseText: '',
+              context: details.context,
+            });
+          }
+        });
+        return {
+          abort: () => {
+            aborted = true;
+          },
+        };
+      }
+      const url = apiResponses ? new URL(details.url) : null;
+      if (
+        apiResponses &&
+        url &&
+        url.hostname === 'x.com' &&
+        url.pathname.endsWith('/TweetResultByRestId')
+      ) {
+        const variables = JSON.parse(url.searchParams.get('variables') ?? '{}') as {
+          tweetId?: string;
+        };
+        const body = apiResponses[variables.tweetId ?? ''] ?? '{}';
+        const encoded = new TextEncoder().encode(body);
+        let aborted = false;
+        const response: GMXMLHttpRequestResponse = {
+          finalUrl: details.url,
+          readyState: 4,
+          status: variables.tweetId && apiResponses[variables.tweetId] ? 200 : 404,
+          statusText: 'Fixture',
+          responseHeaders: `content-type: application/json\r\ncontent-length: ${encoded.byteLength}`,
+          response:
+            details.responseType === 'arraybuffer'
+              ? encoded.buffer
+              : details.responseType === 'json'
+                ? JSON.parse(body)
+                : body,
+          responseText: body,
+          context: details.context,
+        };
+        queueMicrotask(() => {
+          if (!aborted) {
+            details.onload?.(response);
+          }
+        });
+        return {
+          abort: () => {
+            aborted = true;
+          },
+        };
+      }
       if (details.responseType === 'blob') {
         const marker = document.createElement('span');
         marker.dataset.gmXhrDownload = 'true';
