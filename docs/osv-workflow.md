@@ -50,7 +50,7 @@ a real-container run.
 ## Independent pins and rollback
 
 At this revision the runtime gitlink is
-`068b57a6a37c0d8a0af8e151d0c160250ce3d105`. The security workflow pins
+`256ce8406d153f7d07045baad8ee1496bf6b7769`. The security workflow pins
 `setup-project` to `38cd1cb18c9c37e57e8b53a98e811450bb1a18fc` and
 `prepare-osv` to `9a9471ad301e439bcd1ebc52334cf6b4399510e7`.
 Both reviewed tool-metadata checkouts use the merged consumer source
