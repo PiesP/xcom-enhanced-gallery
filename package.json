@@ -80,9 +80,9 @@
     "@vitest/browser-playwright": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "playwright": "1.65.1",
-    "selenium-webdriver": "4.52.0",
+    "selenium-webdriver": "4.53.0",
     "vite": "catalog:",
-    "vite-plugin-solid": "^2.11.15",
+    "vite-plugin-solid": "^2.11.17",
     "vite-plus": "catalog:",
     "vitest": "catalog:"
   },
