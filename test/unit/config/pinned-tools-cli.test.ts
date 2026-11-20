@@ -150,7 +150,7 @@ afterEach(() => {
 describe('scanner pin consumer contract', () => {
   it('binds test snapshots and consumer metadata to the reviewed bytes', () => {
     expect(createHash('sha256').update(metadata).digest('hex')).toBe(
-      'bb8f394930fa948bc32f4fc7592bf75111418da8ddd7bd597bd0edded45a1fa7'
+      '65aa3be10be4e488fe36999b861a410b4901c5ea7c0929ec8edd3d0996dcfc15'
     );
     for (const [, snapshot, hash] of files) {
       expect(
