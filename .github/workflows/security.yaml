@@ -65,7 +65,7 @@ jobs:
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
-        uses: PiesP/browser-core/automation/actions/prepare-scanner-pins@4ab0442d8d2e3cf640767b499b6444c92f6479b5
+        uses: PiesP/browser-core/automation/actions/prepare-scanner-pins@4a5b22d012896fda0541b54104288da8d4a1bd75
 
       - name: 🔐 Export validated scanner images
         id: pins
@@ -153,7 +153,7 @@ jobs:
 
       - name: 🔐 Prepare reviewed scanner pin helper
         id: scanner_helper
-        uses: PiesP/browser-core/automation/actions/prepare-scanner-pins@4ab0442d8d2e3cf640767b499b6444c92f6479b5
+        uses: PiesP/browser-core/automation/actions/prepare-scanner-pins@4a5b22d012896fda0541b54104288da8d4a1bd75
 
       - name: 🔎 Check pinned tools after the cooling window
         env:
