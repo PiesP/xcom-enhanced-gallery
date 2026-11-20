@@ -54,10 +54,10 @@ At this revision the runtime gitlink is
 `setup-project` to `38cd1cb18c9c37e57e8b53a98e811450bb1a18fc` and
 `prepare-osv` to `9a9471ad301e439bcd1ebc52334cf6b4399510e7`.
 Both reviewed tool-metadata checkouts use the merged consumer source
-`f5f480efdd47743a769a5494a2fe2c3c0afb30b4`. Its `.node-version` selects
-Node 26.13.1, `packageManager` selects pnpm 12.18.0, and the workspace catalog
-selects Vite+ 1.5.1 for the setup Action's global CLI. Its reviewed scanner
-metadata selects OSV 2.7.0 and Semgrep 1.184.0. The checkout pin remains
+`ea61af6aad864eee446cc0aead349e8cd8d559b1`. Its `.node-version` selects
+Node 26.13.1, `packageManager` selects pnpm 12.22.0, and the workspace catalog
+selects Vite+ 1.6.0 for the setup Action's global CLI. Its reviewed scanner
+metadata selects OSV 2.7.1 and Semgrep 1.186.0. The checkout pin remains
 independent of the provider Action and runtime gitlink pins.
 The original provider adoption replaced a base-checkout Python validator and
 inline scan/report policy; it did not change the product runtime gitlink.

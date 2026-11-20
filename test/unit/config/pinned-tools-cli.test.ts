@@ -24,7 +24,7 @@ const pins = JSON.parse(metadata.toString('utf8')) as {
   osv: { version: string; image: string };
   semgrep: { version: string; image: string };
 };
-const consumerSha = 'f5f480efdd47743a769a5494a2fe2c3c0afb30b4';
+const consumerSha = 'ea61af6aad864eee446cc0aead349e8cd8d559b1';
 const setupProjectAction =
   'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc';
 const providerSha = '4ab0442d8d2e3cf640767b499b6444c92f6479b5';
