@@ -179,10 +179,12 @@ describe('shared download binary ownership', () => {
     // The one-byte input alone survives cancellation. Detect premature return
     // of any writer or copy credit while the underlying Blob is still pending.
     expect(admitted).toBeGreaterThan(1);
+    const deniedWhilePending = budget.limitBytes - admitted + 1;
     controller.abort();
-    await Promise.resolve();
+    // Observe after all abort reactions have had a turn, with I/O still unresolved.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
     expect(budget.usedBytes).toBe(admitted);
-    expect(() => budget.reserve(budget.availableBytes + 1)).toThrow(DownloadResourceLimitError);
+    expect(() => budget.reserve(deniedWhilePending)).toThrow(DownloadResourceLimitError);
     finishCopy?.(new ArrayBuffer(1));
     expect(await observed).toMatchObject({ name: 'AbortError' });
     expect(budget.usedBytes).toBe(1);
