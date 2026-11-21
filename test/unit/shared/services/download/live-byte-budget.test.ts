@@ -175,11 +175,19 @@ describe('shared download binary ownership', () => {
     );
     const observed = pending.catch((error: unknown) => error);
     await vi.waitFor(() => expect(finishCopy).toBeTypeOf('function'));
+    const admitted = budget.usedBytes;
+    // The one-byte input alone survives cancellation. Detect premature return
+    // of any writer or copy credit while the underlying Blob is still pending.
+    expect(admitted).toBeGreaterThan(1);
+    const deniedWhilePending = budget.limitBytes - admitted + 1;
     controller.abort();
-    await Promise.resolve();
-    expect(budget.usedBytes).toBeGreaterThan(0);
+    // Observe after all abort reactions have had a turn, with I/O still unresolved.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(budget.usedBytes).toBe(admitted);
+    expect(() => budget.reserve(deniedWhilePending)).toThrow(DownloadResourceLimitError);
     finishCopy?.(new ArrayBuffer(1));
     expect(await observed).toMatchObject({ name: 'AbortError' });
+    expect(budget.usedBytes).toBe(1);
     for (const owner of inputOwners.splice(0)) {
       owner.lease.release();
     }

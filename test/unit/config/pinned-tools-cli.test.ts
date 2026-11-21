@@ -24,10 +24,10 @@ const pins = JSON.parse(metadata.toString('utf8')) as {
   osv: { version: string; image: string };
   semgrep: { version: string; image: string };
 };
-const consumerSha = 'f5f480efdd47743a769a5494a2fe2c3c0afb30b4';
+const consumerSha = 'ea61af6aad864eee446cc0aead349e8cd8d559b1';
 const setupProjectAction =
   'uses: PiesP/browser-core/automation/actions/setup-project@38cd1cb18c9c37e57e8b53a98e811450bb1a18fc';
-const providerSha = '4ab0442d8d2e3cf640767b499b6444c92f6479b5';
+const providerSha = '4a5b22d012896fda0541b54104288da8d4a1bd75';
 const action = 'uses: PiesP/browser-core/automation/actions/prepare-scanner-pins@' + providerSha;
 const files = [
   [
@@ -43,7 +43,7 @@ const files = [
   [
     'automation/security/scanner-pins.ts',
     'scanner-pins.ts.txt',
-    '4975feec038d3969dc38fcd1de73afba04cb84e8cd8e176de9ed8a4a81f7b7a9',
+    '4faf0995672138f00731e459555dc81ff33d8dd4b7f16bad38f68219db5e80f6',
   ],
 ] as const;
 const roots: string[] = [];
@@ -84,7 +84,7 @@ function fixture() {
       'else',
       '  case "$*" in',
       '    *ghcr.io/token*) printf \'{"token":"fixture-token"}\';;',
-      '    *) printf "Docker-Content-Digest: %s\\r\\n" "$EXPECTED_DIGEST";;',
+      '    *) printf "Content-Type: application/vnd.oci.image.index.v1+json\\r\\nDocker-Content-Digest: %s\\r\\n" "$EXPECTED_DIGEST";;',
       '  esac',
       'fi',
       '',
@@ -150,7 +150,7 @@ afterEach(() => {
 describe('scanner pin consumer contract', () => {
   it('binds test snapshots and consumer metadata to the reviewed bytes', () => {
     expect(createHash('sha256').update(metadata).digest('hex')).toBe(
-      'bb8f394930fa948bc32f4fc7592bf75111418da8ddd7bd597bd0edded45a1fa7'
+      '65aa3be10be4e488fe36999b861a410b4901c5ea7c0929ec8edd3d0996dcfc15'
     );
     for (const [, snapshot, hash] of files) {
       expect(
