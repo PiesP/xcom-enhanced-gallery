@@ -48,6 +48,7 @@ function taggedNodeVersion(sha: string, releaseVersion: string): string {
     'test:e2e:all',
     'build:all:ci',
     'release:prepare',
+    'release:firefox-validate',
   ];
   const missingScripts = requiredReleaseScripts.filter((name) => !scriptMap[name]?.trim());
   if (missingScripts.length > 0) {
