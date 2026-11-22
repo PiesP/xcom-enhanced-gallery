@@ -8,6 +8,15 @@ provide the security workflow helper. The scanner image is resolved independentl
 from the reviewed tool-metadata source by the `pin-metadata` job; failed metadata
 preparation fails both OSV jobs even when the changed-path scan would be skipped.
 
+The PR diff and full scanners publish distinct job names. `pr-gate/osv / osv-scan`
+is the sole stable OSV decision: it requires successful classification and pin
+resolution, a digest-pinned image, success from the event-selected scanner, and
+an expected skip from the alternate scanner. A valid unaffected-path route is
+an explicit no-op in the selected job. The required `Security scan summary`
+also requires successful CodeQL and Semgrep jobs, valid routing outputs, and
+reviewed scanner images. CodeQL job success means analysis completed for the
+selected languages; it does not assert that the alert inventory is empty.
+
 For pull requests, the workflow checks out the target history, switches to the
 trusted PR base, initializes that base's submodule, sets up Node without a
 dependency install, and prepares the helper. It scans the base, restores the
@@ -40,17 +49,29 @@ a real-container run.
 
 ## Independent pins and rollback
 
-The runtime gitlink remains `5af10d3d6832507ce81d88164bc0af6bba4edb10`.
-The runtime setup Action remains `279124fa998847bd0184d2de12bdaadcd6d2f969`.
-The new OSV provider Action is `9a9471ad301e439bcd1ebc52334cf6b4399510e7`;
-the previous workflow used the base checkout's local Python validator and inline
-scan/report policy rather than a shared provider Action.
+At this revision the runtime gitlink is
+`256ce8406d153f7d07045baad8ee1496bf6b7769`. The security workflow pins
+`setup-project` to `38cd1cb18c9c37e57e8b53a98e811450bb1a18fc` and
+`prepare-osv` to `9a9471ad301e439bcd1ebc52334cf6b4399510e7`.
+Both reviewed tool-metadata checkouts use the merged consumer source
+`ea61af6aad864eee446cc0aead349e8cd8d559b1`. Its `.node-version` selects
+Node 26.13.1, `packageManager` selects pnpm 12.22.0, and the workspace catalog
+selects Vite+ 1.6.0 for the setup Action's global CLI. Its reviewed scanner
+metadata selects OSV 2.7.1 and Semgrep 1.186.0. The checkout pin remains
+independent of the provider Action and runtime gitlink pins.
+The original provider adoption replaced a base-checkout Python validator and
+inline scan/report policy; it did not change the product runtime gitlink.
 
-Rollback of this first adoption requires a protected PR reverting the adoption
+Rollback of that original adoption requires a protected PR reverting the adoption
 commit, restoring its Python validator, callers and tests together. Leave the
 runtime gitlink, setup Action and separately adopted tool-metadata pin intact.
 Once a later provider pin is adopted, restore the previously verified full SHA
 in both `prepare-osv` calls and run the same workflow gates before landing.
+For this Node security metadata activation, a protected rollback PR restores
+`d5f21b38d591ab6b5754c9960228e9292b6705f7` in both reviewed tool-metadata
+checkouts and their consumer contract. That rollback source selects Node 26.13.0
+and reintroduces the pre-fix tooling baseline; prefer a forward repair that keeps
+the patched runtime. Run the security and CI gates before any rollback lands.
 Never substitute a candidate branch, mutable tag or runtime gitlink for the
 trusted helper source. Rollback instructions are a recovery procedure; they do
 not claim that a rollback has been deployed.

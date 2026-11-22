@@ -390,6 +390,24 @@ export function createExtensionNativeFixtureHandler() {
         contentType: 'image/webp',
       });
     },
+    setRepeatedHintImages(images: readonly Buffer[]) {
+      const paths = ['RepeatedHintOne', 'RepeatedHintTwo', 'RepeatedHintThree', 'RepeatedHintFour'];
+      const formats = ['jpg', 'png', 'png', 'jpg'];
+      assert.equal(images.length, paths.length);
+      for (const [index, path] of paths.entries()) {
+        const bytes = images[index];
+        const format = formats[index];
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_BODY_BYTES);
+        const key = `pbs.twimg.com/media/${path}?format=${format}&name=orig`;
+        assert(!allowed.has(key), 'Repeated-hint source already installed');
+        allowed.set(key, {
+          bytes,
+          host: 'pbs.twimg.com',
+          path: `/media/${path}`,
+          contentType: format === 'jpg' ? 'image/jpeg' : 'image/png',
+        });
+      }
+    },
     setRecoveryPayloads({
       tweetId,
       validMp4,
@@ -599,19 +617,31 @@ export function createExtensionNativeFixtureHandler() {
   };
 }
 
-export async function startExtensionNativeFixtureLoopback(helperPath: string) {
+export async function startExtensionNativeFixtureLoopback(
+  helperPath: string,
+  observeTransport = false
+) {
   const certificate = await generateFixtureCertificate(helperPath, undefined, true, true);
   const fixture = createExtensionNativeFixtureHandler();
   const server = createServer(
     { key: certificate.keyPem, cert: certificate.certPem, maxHeaderSize: 4_096 },
     fixture.handle
   );
-  const lifecycle = await startHttpsLoopback(server, 'extension-native-loopback-unavailable');
+  const lifecycle = await startHttpsLoopback(
+    server,
+    'extension-native-loopback-unavailable',
+    observeTransport
+  );
   return {
     ...fixture,
     port: lifecycle.port,
     spkiSha256: certificate.spkiSha256,
-    snapshot: () => ({ ...fixture.snapshot(), serverError: lifecycle.serverError() }),
+    releaseIdleConnections: () => lifecycle.releaseIdleConnections(),
+    snapshot: () => ({
+      ...fixture.snapshot(),
+      serverError: lifecycle.serverError(),
+      transport: lifecycle.transportSnapshot(),
+    }),
     close: () => lifecycle.close(fixture.destroyActive),
   };
 }

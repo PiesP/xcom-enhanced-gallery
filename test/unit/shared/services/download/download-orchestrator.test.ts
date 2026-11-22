@@ -275,14 +275,14 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     orchestrator.destroy();
   });
 
-  it('allocates case-insensitive names around an existing numeric suffix', async () => {
+  it('allocates extension-independent names around an existing numeric suffix', async () => {
     const orchestrator = new DownloadOrchestrator();
     orchestrator.initialize();
-    const names = ['Alpha.JPG', 'alpha-1.jpg', 'alpha.jpg'];
+    const names = ['Alpha.JPG', 'alpha-1.png', 'alpha.foo-bar', 'ALPHA.JPG', 'alpha.png'];
     const media: MediaInfo[] = names.map((filename, index) => ({
       id: `${index}`,
       type: 'image',
-      url: `https://pbs.twimg.com/media/${index}.jpg`,
+      url: `https://pbs.twimg.com/media/${index}.${filename.split('.').pop()!.toLowerCase()}`,
       filename,
     }));
     let saved: Buffer | undefined;
@@ -293,14 +293,119 @@ describe('DownloadOrchestrator bulk resource limits', () => {
     const result = await orchestrator.downloadBulk(media, {
       cachedBlobs: new Map(media.map((item) => [item.url, ownedBlob(new Blob([item.id]))])),
     });
-    expect(result).toMatchObject({ success: true, filesSuccessful: 3 });
-    expect(
-      verifyStoredZip(saved!, [
-        { filename: 'Alpha.JPG', bytes: Buffer.from('0') },
-        { filename: 'alpha-1.jpg', bytes: Buffer.from('1') },
-        { filename: 'alpha-2.jpg', bytes: Buffer.from('2') },
-      ]).entryOrder
-    ).toEqual(['Alpha.JPG', 'alpha-1.jpg', 'alpha-2.jpg']);
+    expect(result).toMatchObject({ success: true, filesSuccessful: 5 });
+    const entries = verifyStoredZip(saved!, [
+      { filename: 'Alpha.JPG', bytes: Buffer.from('0') },
+      { filename: 'alpha-1.png', bytes: Buffer.from('1') },
+      { filename: 'alpha-2.foo-bar', bytes: Buffer.from('2') },
+      { filename: 'ALPHA-3.JPG', bytes: Buffer.from('3') },
+      { filename: 'alpha-4.png', bytes: Buffer.from('4') },
+    ]).entryOrder;
+    expect(entries).toEqual([
+      'Alpha.JPG',
+      'alpha-1.png',
+      'alpha-2.foo-bar',
+      'ALPHA-3.JPG',
+      'alpha-4.png',
+    ]);
+    expect(new Set(entries.map((name) => name.replace(/\.[^.]+$/, '').toLowerCase())).size).toBe(5);
+    orchestrator.destroy();
+  });
+
+  it('keeps collision counters distinct when their digit width grows at the length limit', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const media: MediaInfo[] = Array.from({ length: 11 }, (_, index) => ({
+      id: String(index),
+      type: 'image',
+      url: `https://pbs.twimg.com/media/counter-${index}.jpg`,
+      filename: `${'a'.repeat(251)}.jpg`,
+    }));
+    let saved: Buffer | undefined;
+    state.downloadBlob.mockImplementation(async (blob: Blob, _filename, _signal, released) => {
+      saved = Buffer.from(await blob.arrayBuffer());
+      released?.();
+    });
+    const result = await orchestrator.downloadBulk(media, {
+      concurrency: 1,
+      cachedBlobs: new Map(
+        media.map((item, index) => [item.url, ownedBlob(new Blob([`content-${index}`]))])
+      ),
+    });
+    expect(result).toMatchObject({ success: true, filesSuccessful: 11 });
+    const expectedNames = [
+      `${'a'.repeat(251)}.jpg`,
+      `${'a'.repeat(249)}-1.jpg`,
+      `${'a'.repeat(249)}-2.jpg`,
+      `${'a'.repeat(249)}-3.jpg`,
+      `${'a'.repeat(249)}-4.jpg`,
+      `${'a'.repeat(249)}-5.jpg`,
+      `${'a'.repeat(249)}-6.jpg`,
+      `${'a'.repeat(249)}-7.jpg`,
+      `${'a'.repeat(249)}-8.jpg`,
+      `${'a'.repeat(249)}-9.jpg`,
+      `${'a'.repeat(248)}-10.jpg`,
+    ];
+    const entries = verifyStoredZip(
+      saved!,
+      expectedNames.map((filename, index) => ({
+        filename,
+        bytes: Buffer.from(`content-${index}`),
+      }))
+    ).entryOrder;
+    expect(new Set(entries.map((name) => name.replace(/\.[^.]+$/, '').toLowerCase())).size).toBe(
+      11
+    );
+    orchestrator.destroy();
+  });
+
+  it('rejects a collision whose generated identity cannot retain any counter', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const media: MediaInfo[] = ['first', 'second'].map((id) => ({
+      id,
+      type: 'image',
+      url: `https://pbs.twimg.com/media/${id}.jpg`,
+      tweetUsername: 'alice',
+      tweetId: '1'.repeat(247),
+      attachmentOrdinal: 0,
+    }));
+    const result = await orchestrator.downloadBulk(media, {
+      cachedBlobs: new Map(
+        media.map((item, index) => [item.url, ownedBlob(new Blob([String(index)]))])
+      ),
+    });
+    expect(result).toMatchObject({ success: false, status: 'error', filesProcessed: 2 });
+    expect(result.error).toMatch(/identity leaves no room/);
+    expect(state.downloadBlob).not.toHaveBeenCalled();
+    orchestrator.destroy();
+  });
+
+  it('rejects legacy recovery entries with conflicting extensionless assigned names', async () => {
+    const orchestrator = new DownloadOrchestrator();
+    orchestrator.initialize();
+    const media: MediaInfo[] = ['jpg', 'png'].map((extension) => ({
+      id: extension,
+      type: 'image',
+      url: `https://pbs.twimg.com/media/same.${extension}`,
+    }));
+    const result = await orchestrator.downloadFailedEntries(
+      media.map((item, index) => ({
+        index,
+        media: item,
+        url: item.url,
+        filename: `same.${index === 0 ? 'jpg' : 'png'}`,
+      })),
+      'gallery.zip',
+      1
+    );
+    expect(result).toMatchObject({
+      success: false,
+      status: 'error',
+      filesProcessed: 0,
+      error: 'Failed entries have conflicting assigned filenames',
+    });
+    expect(state.downloadBlob).not.toHaveBeenCalled();
     orchestrator.destroy();
   });
 

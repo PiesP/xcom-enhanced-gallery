@@ -104,7 +104,7 @@ it('prioritizes the clicked attachment and bounds distinct source probes', async
   expect(mock.request.mock.calls[0]?.[0].url).toContain('/media/PHOTO5?');
 });
 
-it('shares one original probe across display variants without changing attachment positions', async () => {
+it('shares one original probe across display variants with conflicting positions left unknown', async () => {
   document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/1"><img id="target" src="${display}"></a><a href="/author/status/222/photo/2"><img src="${display.replace('name=small', 'name=large')}"></a></article>`;
   mock.request.mockImplementation((details) => {
     queueMicrotask(() => details.onload?.(successfulWebp(details)));
@@ -117,7 +117,7 @@ it('shares one original probe across display variants without changing attachmen
     'duplicate-original'
   );
   expect(result.success).toBe(true);
-  expect(result.mediaItems.map((media) => media.attachmentOrdinal)).toEqual([0, 1]);
+  expect(result.mediaItems.map((media) => media.attachmentOrdinal)).toEqual([undefined, undefined]);
   expect(result.mediaItems.map((media) => media.tweetId)).toEqual(['222', '222']);
   expect(mock.request).toHaveBeenCalledOnce();
 });

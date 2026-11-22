@@ -1,0 +1,16 @@
+{
+  "source": "46105d696700b332b1b6ebcd6e34678986d86d60",
+  "core": "4638d703806b38734430a761104ee73512cbdf5c",
+  "productContentSha256": "a8bb70a80c7113c454f7df36eabfbbd0bedccc335776ee8010f0516a95667859",
+  "browser": "installed Edge 157.0.4341.46",
+  "workload": "unchanged 4 owned MP4 originals, total2992536B, savedZIP2993158B",
+  "protocol": "CRC owner releases only idle HTTP connections immediately before trustedclick; max8 and originaltimeouts/buffer/security/byteguards",
+  "attempts": 5,
+  "perAttempt": "fresh browser/profile; 1first-use and2fresh-pagewarm; genuinepageclose onlyafterexactZIPverification",
+  "performanceAdmission": "functionalpassed + warmcache===true; completeZIPmembers; zero drop/overflow; source/producthashes exact; no replacements for ineligible/failed attempts",
+  "diagnosticReuse": false,
+  "netlog": false,
+  "screen": "union all crc-active and crc-table; preserve overlaps; idealremoval cannotreachboth10percentAND50ms =>stopbeforeRust; notuniversalbound",
+  "history": "onefailedunchangedfixturediagnostic931 preserved; 2exactportjoins, thirdtimeonly; no historicfailurerelabeling",
+  "neighbors": "originalmanualEdge/Firefox/Nodeprocessespreserved; no concurrent host heavychecks during active measured actions; centralVMlock and environmentdriftreceipts"
+}

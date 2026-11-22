@@ -1,5 +1,26 @@
 # Windows stable-browser gallery validation
 
+The bounded [CRC Phase 0 experiment](../../docs/experiments/534-transport-followup.md)
+concluded RETAIN_CURRENT. Product instrumentation, the CRC selector and its
+executable profile were removed. Its exact tested source can be reconstructed
+from the inert evidence patch described in that record; ordinary installed
+preparation has no CRC MP4 prerequisite.
+
+For a source-bound transport diagnostic, the existing native fixture factory
+accepts an optional `observeTransport` argument. Its `snapshot().transport`
+records bounded TCP admission/drop, TLS, first HTTP, owner timeout and close
+events with explicit clocks and effective settings. Normal installed runs keep
+this observation opt-in off. `releaseIdleConnections()` delegates to Node's idle
+HTTP connection close API without changing the eight-connection cap or active
+response ownership. It is not automatically applied to other scenarios. Use
+observations only within the selected source/fixture contract; server write
+completion does not prove browser receipt/cache completion. The installation
+receipt retains a separate post-close cleanup snapshot. No HTTP `clientError` or
+server/request/response timeout listener replaces Node's default handling.
+Connection labels correlate currently live endpoint tuples; they do not assert
+TLS/raw socket object identity. An unavailable match remains null. Pre-HTTP
+drops require browser-side evidence before assigning an exact request URL.
+
 This optional validation has four separate evidence tiers. None substitutes
 for another, and none is a required CI lane.
 
@@ -50,7 +71,9 @@ for another, and none is a required CI lane.
 
 The native regression suite under `validation/windows/` runs with
 `vp run test:e2e:native` after the project dependencies and Playwright Chromium
-are installed. This command selects the Vite+ Windows native Node project,
+are installed. Run `vp run verify` first to build the production artifacts:
+the release-upgrade regressions require the current `dist-extension` inventory.
+This command selects the Vite+ Windows native Node project,
 including Chromium
 tests, and is included in `test:e2e:all`, CI E2E, and `verify:full`. It checks
 fixture and cleanup contracts; the installed Windows tiers below still require
@@ -291,6 +314,8 @@ runtime acceptance.
 
 The ignored `validation/windows/inputs/attachment-filenames.json` selector
 (`{"scenario":"attachment-filenames"}`) runs the focused extension cycle.
+Its four-source repeated `/photo/1` control verifies JPG/PNG/PNG/JPG native singles
+and parsed ZIP members against literal owner ordinals and exact source bytes.
 An extension run may append ordinary `--live-url` public observations after
 closing the fixture browser and loopback; those observations remain separate
 from the controlled saved-file qualification.
@@ -776,41 +801,41 @@ diagnosis rather than terminating unrelated processes.
 
 ### Optional public-to-candidate upgrade input
 
-For v2.3.10 release qualification, copy the checksum-verified public v2.3.9 userscript to
-`validation/windows/release-upgrade/v2.3.9.user.js` and extract the verified public
-Chrome ZIP to `validation/windows/release-upgrade/v2.3.9-extension/`. Compute the
+For v2.4.0 release qualification, copy the checksum-verified public v2.3.10 userscript to
+`validation/windows/release-upgrade/v2.3.10.user.js` and extract the verified public
+Chrome ZIP to `validation/windows/release-upgrade/v2.3.10-extension/`. Compute the
 unpacked file inventory with `extensionInventorySha256(path)` from
 `validation/windows/release-upgrade/source.ts`. Add the ignored
 `validation/windows/release-upgrade/input.json` with the exact paths, release URLs,
 provider-verified public userscript SHA-256 and the extracted Chrome ZIP inventory
-SHA-256. Use `schema: 1`, `previousVersion: "2.3.9"`,
-`candidateVersion: "2.3.10"`, `previousUserscript: { path, sha256, url }`, and
+SHA-256. Use `schema: 1`, `previousVersion: "2.3.10"`,
+`candidateVersion: "2.4.0"`, `previousUserscript: { path, sha256, url }`, and
 `previousExtension: { path, inventorySha256, url }`. The input parser requires a
-production v2.3.10 userscript and extension
+production v2.4.0 userscript and extension
 manifest. Keep the public assets and input outside Git; the installation asset
 declaration bundles them
 only for the selected Windows run. Without `input.json`, the original fresh
-installation runs unchanged. The historical v2.3.7→v2.3.8 and v2.3.8→v2.3.9 inputs remain supported
+installation runs unchanged. The historical v2.3.7→v2.3.8, v2.3.8→v2.3.9 and v2.3.9→v2.3.10 inputs remain supported
 with their original fixed paths and URLs; the separate v2.3.8 same-version
 attribution input below is not an upgrade input.
 
-The extension control loads v2.3.9 from an owned profile path, changes fit and
+The extension control loads v2.3.10 from an owned profile path, changes fit and
 language through the gallery controls and video volume through the gallery's
 trusted Arrow Down shortcut, copies the candidate over that same path, invokes
 the extension's documented `chrome.runtime.reload()` API, and checks the same
-extension ID, v2.3.10 manifest, exact candidate file inventory and saved settings.
-Both controls check the public v2.3.9 gallery's default video-click setting and
+extension ID, v2.4.0 manifest, exact candidate file inventory and saved settings.
+Both controls check the public v2.3.10 gallery's default video-click setting and
 enabled keyboard navigation before and after the update. They exercise the
 candidate's nondefault click setting separately, then restore it; they do not
 establish nondefault click-mode preservation across this update. The Tampermonkey
-control imports v2.3.9 through its UI, changes the same available gallery
+control imports v2.3.10 through its UI, changes the same available gallery
 controls, imports the candidate through the manager's Update confirmation, and
 checks one script row with the new version plus saved settings in newly opened
 galleries. It reads the manager's visible CodeMirror editor before and after the
 update and matches the full installed source hashes and script identity against
 the bundled public and candidate files. The public and candidate headers must
 both use the Latest download URL. This flow exercises a manual manager update
-and does not prove automatic discovery or installation of v2.3.10. Both restore
+and does not prove automatic discovery or installation of v2.4.0. Both restore
 fixture defaults through the app UI before the existing download and lifecycle
 suite. Receipts are
 `extension-upgrade.json` or `userscript-upgrade.json`; a missing or unfamiliar UI
@@ -870,9 +895,10 @@ hyperv-control --profile /absolute/private/profile.json validate --kind browser 
   --manager-directory /path/to/unpacked/tampermonkey
 ```
 
-The HTTPS userscript fixture currently supports Chrome only; Edge userscript
-acceptance remains unverified. The manager is imported as an unpacked
-extension, the production userscript is installed through its confirmation UI,
+The HTTPS userscript fixture supports installed Chrome and Edge. A candidate's
+Edge userscript behavior requires its own source-bound run. The manager is
+imported as an unpacked extension, the production userscript is installed
+through its confirmation UI,
 and native downloads use the owned browser directory. The fixture starts a
 task-owned HTTPS listener on ephemeral `127.0.0.1` before launching the fresh
 profile. A one-run SPKI exception and exact `pbs.twimg.com:443` and `x.com:443`

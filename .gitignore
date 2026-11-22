@@ -89,6 +89,8 @@ memory/
 /validation/windows/release-upgrade/v2.3.8-extension/
 /validation/windows/release-upgrade/v2.3.9.user.js
 /validation/windows/release-upgrade/v2.3.9-extension/
+/validation/windows/release-upgrade/v2.3.10.user.js
+/validation/windows/release-upgrade/v2.3.10-extension/
 /validation/windows/inputs/settings-persistence.json
 /validation/windows/inputs/opening-feedback.json
 /validation/windows/inputs/media-download-recovery.json

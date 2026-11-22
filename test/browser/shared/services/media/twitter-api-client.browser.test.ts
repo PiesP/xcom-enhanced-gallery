@@ -315,7 +315,21 @@ describe('TweetMetadataReuse', () => {
       ...(quote ? { quoted_status_result: { result: quote } } : {}),
     });
     const c = post('333', 'carol', [photo('carol', 'C1', 1)]);
-    const b = post('222', 'bob', [photo('bob', 'B2', 2), photo('bob', 'B1', 1)], c);
+    const b = {
+      ...post('222', 'bob', [photo('bob', 'B2', 2), photo('bob', 'B1', 1)], c),
+      note_tweet: {
+        note_tweet_results: {
+          result: {
+            media: {
+              inline_media: [
+                { media_id: 'B1', index: 0 },
+                { media_id: 'B2', index: 1 },
+              ],
+            },
+          },
+        },
+      },
+    };
     const a = post('111', 'alice', [photo('alice', 'A1', 1)], b);
     httpGet.mockImplementation(async (url: string) => {
       const variables = JSON.parse(new URL(url).searchParams.get('variables') ?? '{}') as {

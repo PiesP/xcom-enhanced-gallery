@@ -1,4 +1,5 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vite-plus/test';
 
@@ -6,6 +7,19 @@ const root = resolve(import.meta.dirname, '../../..');
 const dependabot = readFileSync(resolve(root, '.github/dependabot.yaml'), 'utf8');
 
 describe('dependency review policy', () => {
+  it('resolves one Playwright runtime for the CLI, test API, browser provider and axe', () => {
+    const installedManifest = (name: string) =>
+      join(realpathSync(resolve(root, 'node_modules', name)), 'package.json');
+    const resolvedDependency = (owner: string, dependency: string) =>
+      realpathSync(createRequire(installedManifest(owner)).resolve(`${dependency}/package.json`));
+
+    const directPlaywright = realpathSync(installedManifest('playwright'));
+    const directCore = resolvedDependency('playwright', 'playwright-core');
+    expect(resolvedDependency('@playwright/test', 'playwright')).toBe(directPlaywright);
+    expect(resolvedDependency('@vitest/browser-playwright', 'playwright')).toBe(directPlaywright);
+    expect(resolvedDependency('@axe-core/playwright', 'playwright-core')).toBe(directCore);
+  });
+
   it('keeps npm and GitHub Actions updates assigned to the maintainer', () => {
     const updates = dependabot.split(/^ {2}- package-ecosystem: /m).slice(1);
     expect(updates).toHaveLength(2);

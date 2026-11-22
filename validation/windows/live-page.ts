@@ -89,10 +89,13 @@ export {
 type TweetMedia = {
   id: string | null;
   type: string;
+  entityOrdinal?: number;
+  navigationHint?: { kind: 'photo' | 'video'; ordinal: number } | null | undefined;
+  sourceFormat?: 'jpg' | 'jpeg' | 'png' | 'webp' | 'gif' | null | undefined;
   poster: Source | null;
   playableVariants: (Source | null)[];
 };
-type TweetSummary = { id: string | null; media: TweetMedia[] };
+type TweetSummary = { id: string | null; collectionCount?: number; media: TweetMedia[] };
 type ApiObservation = {
   operation: string;
   requestedTweetId: string | null;
@@ -1125,6 +1128,52 @@ function unwrapTweet(value: unknown): Record<string, unknown> | null {
   return record(field(result, 'tweet') ?? result);
 }
 
+function ownedNavigationHint(value: unknown, ownerId: string | null): TweetMedia['navigationHint'] {
+  if (typeof value !== 'string' || !ownerId) {
+    return null;
+  }
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== 'https:' ||
+      !['x.com', 'twitter.com'].includes(url.hostname) ||
+      url.port ||
+      url.username ||
+      url.password ||
+      url.hash
+    ) {
+      return null;
+    }
+    const match = /^\/[^/]+\/status\/(\d+)\/(photo|video)\/([1-9]\d*)\/?$/u.exec(url.pathname);
+    const position = Number(match?.[3]);
+    return match?.[1] === ownerId && Number.isSafeInteger(position)
+      ? { kind: match[2] as 'photo' | 'video', ordinal: position - 1 }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function admittedPhotoFormat(value: unknown): TweetMedia['sourceFormat'] {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || url.hostname !== 'pbs.twimg.com') {
+      return null;
+    }
+    const query = url.searchParams.get('format')?.toLowerCase();
+    const path = /\.(jpe?g|png|webp|gif)(?::[a-z0-9]+)?$/iu.exec(url.pathname)?.[1]?.toLowerCase();
+    const format = query ?? path;
+    return format && ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(format)
+      ? (format as TweetMedia['sourceFormat'])
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function summarizeTweet(value: unknown): TweetSummary | null {
   const tweet = unwrapTweet(value);
   if (!tweet || typeof tweet !== 'object') {
@@ -1135,10 +1184,12 @@ function summarizeTweet(value: unknown): TweetSummary | null {
     field(field(tweet.legacy, 'extended_entities'), 'media') ??
     field(tweet.extended_entities, 'media') ??
     [];
+  const ownerId = typeof id === 'string' && /^\d+$/u.test(id) ? id : null;
   return {
-    id: typeof id === 'string' && /^\d+$/u.test(id) ? id : null,
+    id: ownerId,
+    collectionCount: Array.isArray(media) ? media.length : 0,
     media: Array.isArray(media)
-      ? media.slice(0, 12).map((item): TweetMedia => {
+      ? media.slice(0, 12).map((item, entityOrdinal): TweetMedia => {
           const mediaId = field(item, 'id_str');
           const mediaType = field(item, 'type');
           const variants = field(field(item, 'video_info'), 'variants');
@@ -1149,6 +1200,9 @@ function summarizeTweet(value: unknown): TweetSummary | null {
               ['photo', 'video', 'animated_gif'].includes(mediaType)
                 ? mediaType
                 : 'unknown',
+            entityOrdinal,
+            navigationHint: ownedNavigationHint(field(item, 'expanded_url'), ownerId),
+            sourceFormat: admittedPhotoFormat(field(item, 'media_url_https')),
             poster: mediaSource(field(item, 'media_url_https'), 'image'),
             playableVariants: Array.isArray(variants)
               ? variants

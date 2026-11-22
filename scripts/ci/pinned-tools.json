@@ -1,10 +1,10 @@
 {
   "osv": {
-    "version": "2.7.0",
-    "image": "ghcr.io/google/osv-scanner-action@sha256:d54770fe0b09493894e76a02aaed9f51a0513fa57c5186452a755d257b0068a6"
+    "version": "2.7.1",
+    "image": "ghcr.io/google/osv-scanner-action@sha256:3fa25659351c9a5527b30d73b6f3c2ee0bcac106d6220948211d87379d08f243"
   },
   "semgrep": {
-    "version": "1.183.0",
-    "image": "semgrep/semgrep:1.183.0@sha256:fb59331f2772da4a9960692ae31961cd58a7c666c014125e9202c96bdfdc38cc"
+    "version": "1.186.0",
+    "image": "semgrep/semgrep:1.186.0@sha256:6e1b04340e60e910fbb4ddbf3c857ab0918f064417ad5ac530014ccb3cf8c8f1"
   }
 }
