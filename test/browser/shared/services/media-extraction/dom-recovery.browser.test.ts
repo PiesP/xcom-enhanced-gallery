@@ -183,6 +183,28 @@ describe('scoped DOM recovery', () => {
     expect(generateMediaFilename(unique[0]!)).toBe(generateMediaFilename(result.mediaItems[1]!));
   });
 
+  it('keeps both directions of an ambiguous ordinal ambiguous after a repeated hint', async () => {
+    const linked = (id: string, source: string, position: number): string =>
+      `<a href="/author/status/222/photo/${position}"><img id="${id}" src="https://pbs.twimg.com/media/${source}.jpg"></a>`;
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a>
+      ${linked('first', 'a', 1)}${linked('other-position', 'a', 2)}${linked('repeat', 'a', 1)}
+      ${linked('third', 'b', 3)}${linked('other-source', 'c', 3)}${linked('selected', 'b', 3)}
+      ${linked('unique', 'd', 4)}</article>`;
+    const result = await recover('selected');
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(5);
+    expect(result.mediaItems.map((item) => item.attachmentOrdinal)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      3,
+    ]);
+    expect(result.mediaItems[5]?.id).toBe('222_dom_5');
+  });
+
   it('recovers one validated source ordinal across duplicate DOM representations', async () => {
     document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/2">${photo('same')}</a><img id="selected" src="https://pbs.twimg.com/media/same?format=jpg&name=small"></article>`;
     const result = await recover('selected');
