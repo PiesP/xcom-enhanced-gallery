@@ -60,7 +60,8 @@ export class DownloadMediaCache {
   getOrFetch(
     media: MediaInfo,
     signal?: AbortSignal,
-    maxResponseBytes?: number
+    maxResponseBytes?: number,
+    access?: 'large-photo-scan'
   ): Promise<OwnedBlob> | null {
     if (this.disposed || media.type === 'video' || media.type === 'gif') {
       return null;
@@ -80,7 +81,7 @@ export class DownloadMediaCache {
     }
 
     if (this.cache.size >= this.maxEntries) {
-      this.evictOldest();
+      this.evictCompletedEntry(access === 'large-photo-scan');
     }
     const entry: CacheEntry = {
       url,
@@ -237,14 +238,16 @@ export class DownloadMediaCache {
     }
   }
 
-  private evictOldest(): void {
-    let node = this.head;
+  private evictCompletedEntry(largePhotoScan = false): void {
+    // In a scan longer than the cache, the earliest photos will be requested
+    // again before the newest photos. Prefer evicting a completed entry.
+    let node = largePhotoScan ? this.tail : this.head;
     while (node) {
       if (!this.activeRequests.has(node.url)) {
         this.evictNode(node);
         return;
       }
-      node = node.next;
+      node = largePhotoScan ? node.prev : node.next;
     }
     if (this.head) {
       this.evictNode(this.head);
@@ -253,7 +256,7 @@ export class DownloadMediaCache {
 
   private evictByByteBudget(): void {
     while (this.totalBytes > this.maxBytes && this.head) {
-      this.evictOldest();
+      this.evictCompletedEntry();
     }
   }
 

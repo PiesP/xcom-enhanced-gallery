@@ -149,6 +149,29 @@ describe('DownloadMediaCache', () => {
     expect(budget.usedBytes).toBe(0);
   });
 
+  it('retains earlier settled originals across oversized sequential photo downloads', async () => {
+    http.getOwnedBinary.mockImplementation(async () => ownedResponse('a'));
+    const cache = new DownloadMediaCache(3, 100, budget);
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f'];
+    for (const id of ids) {
+      const image = await cache.getOrFetch(media(id), undefined, undefined, 'large-photo-scan');
+      image?.lease.release();
+      expect(budget.usedBytes).toBeLessThanOrEqual(3);
+    }
+    expect(http.getOwnedBinary).toHaveBeenCalledTimes(6);
+    for (const id of ids) {
+      const image = await cache.getOrFetch(media(id), undefined, undefined, 'large-photo-scan');
+      image?.lease.release();
+      expect(budget.usedBytes).toBeLessThanOrEqual(3);
+    }
+    // a and b survive the first pass. Unlike a full LRU scan, their next reads are hits.
+    expect(http.getOwnedBinary.mock.calls.slice(6).map(([url]) => url)).toEqual(
+      ids.filter((id) => id !== 'a' && id !== 'b' && id !== 'f').map((id) => media(id).url)
+    );
+    cache.destroy();
+    expect(budget.usedBytes).toBe(0);
+  });
+
   it('keeps an evicted entry charged while a borrower still owns it', async () => {
     budget = new LiveByteBudget(5);
     http.getOwnedBinary.mockImplementation(async () => ownedResponse('four'));

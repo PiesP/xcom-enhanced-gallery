@@ -19,7 +19,8 @@ export interface GalleryMediaActions extends MediaExtractor {
   getDownloadMedia(
     media: MediaInfo,
     signal?: AbortSignal,
-    maxResponseBytes?: number
+    maxResponseBytes?: number,
+    access?: 'large-photo-scan'
   ): Promise<OwnedBlob> | null;
   cancelPendingMediaRequests(): void;
 }
@@ -89,9 +90,10 @@ export class MediaService {
   getDownloadMedia(
     media: MediaInfo,
     signal?: AbortSignal,
-    maxResponseBytes?: number
+    maxResponseBytes?: number,
+    access?: 'large-photo-scan'
   ): Promise<OwnedBlob> | null {
-    return this.downloadCache?.getOrFetch(media, signal, maxResponseBytes) ?? null;
+    return this.downloadCache?.getOrFetch(media, signal, maxResponseBytes, access) ?? null;
   }
 
   cancelPendingMediaRequests(): void {
