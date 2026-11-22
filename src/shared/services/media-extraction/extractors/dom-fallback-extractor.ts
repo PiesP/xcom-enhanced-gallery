@@ -79,62 +79,44 @@ function getOwnedAttachmentOrdinal(element: MediaElement, tweetInfo: TweetInfo):
   );
 }
 
-interface ObservedMedia {
-  readonly element: MediaElement;
-  readonly domIndex: number;
-  readonly source: string | null;
-  readonly key: string | null;
-  ordinal: number | null;
-}
-
-/** A second distinct value makes the hint ambiguous for the rest of this observation. */
-function recordUnique<K, V>(map: Map<K, V | null>, key: K, value: V): void {
-  const previous = map.get(key);
-  map.set(key, previous === undefined || previous === value ? value : null);
-}
-
-function observeOwnedMedia(
+/** An owned element stays in the map even when the DOM supplies no unique ordinal. */
+function getOwnedObservedOrdinals(
   elements: readonly MediaElement[],
-  tweetInfo: TweetInfo,
-  verifiedClickedElement: HTMLElement
-): ObservedMedia[] {
-  const observations: ObservedMedia[] = [];
-  for (const [domIndex, element] of elements.entries()) {
-    if (
-      element !== verifiedClickedElement &&
-      extractClickContext(element)?.ownership.ownerTweetId !== tweetInfo.tweetId
-    ) {
-      continue;
+  tweetInfo: TweetInfo
+): ReadonlyMap<MediaElement, number | null> {
+  const observations = elements.flatMap((element) => {
+    if (extractClickContext(element)?.ownership.ownerTweetId !== tweetInfo.tweetId) {
+      return [];
     }
+    const ordinal = getOwnedAttachmentOrdinal(element, tweetInfo);
     const source =
       element instanceof HTMLVideoElement
         ? selectMediaSourceUrl(element)
         : extractMediaUrlFromElement(element);
     const key = source ? (getCanonicalPhotoIdentity(source) ?? getMediaSourceKey(source)) : null;
-    const ordinal = key ? getOwnedAttachmentOrdinal(element, tweetInfo) : null;
-    observations.push({ element, domIndex, source, key, ordinal });
-  }
-  if (observations.length < 2) {
-    return observations;
-  }
-
-  // Rejected originals still participate in ordinal conflicts for this observed owner.
-  const sourcesAtOrdinal = new Map<number, string | null>();
-  const ordinalsForSource = new Map<string, number | null>();
-  for (const { key, ordinal } of observations) {
-    if (key && ordinal !== null) {
-      recordUnique(sourcesAtOrdinal, ordinal, key);
-      recordUnique(ordinalsForSource, key, ordinal);
+    return [{ element, ordinal, key }];
+  });
+  const sourcesAtOrdinal = new Map<number, Set<string>>();
+  const ordinalsForSource = new Map<string, Set<number>>();
+  for (const { ordinal, key } of observations) {
+    if (!key || ordinal === null) {
+      continue;
     }
+    const sources = sourcesAtOrdinal.get(ordinal) ?? new Set<string>();
+    sources.add(key);
+    sourcesAtOrdinal.set(ordinal, sources);
+    const ordinals = ordinalsForSource.get(key) ?? new Set<number>();
+    ordinals.add(ordinal);
+    ordinalsForSource.set(key, ordinals);
   }
-  for (const observed of observations) {
-    const ordinal = observed.key ? ordinalsForSource.get(observed.key) : null;
-    observed.ordinal =
-      typeof ordinal === 'number' && sourcesAtOrdinal.get(ordinal) === observed.key
-        ? ordinal
-        : null;
-  }
-  return observations;
+  return new Map(
+    observations.map(({ element, key }) => {
+      const ordinals = key ? ordinalsForSource.get(key) : undefined;
+      const ordinal = ordinals?.size === 1 ? ordinals.values().next().value : undefined;
+      const uniqueOrdinal = ordinal !== undefined && sourcesAtOrdinal.get(ordinal)?.size === 1;
+      return [element, uniqueOrdinal ? ordinal : null] as const;
+    })
+  );
 }
 
 function getSourceFilenameKey(url: string): string | null {
@@ -154,12 +136,26 @@ function getSourceFilenameKey(url: string): string | null {
   return `source-${hash.toString(16).padStart(16, '0')}`;
 }
 
+/**
+ * Create MediaInfo from DOM media element
+ * @param element - Media element (img or video)
+ * @param tweetInfo - Tweet metadata
+ * @param index - Media index in array
+ * @param tweetTextContent - Tweet text content
+ */
 function createMediaInfoFromDOM(
-  { element, domIndex: index, source: mediaUrl, ordinal }: ObservedMedia,
+  element: MediaElement,
   tweetInfo: TweetInfo,
-  tweetTextContent?: string
+  index: number,
+  tweetTextContent?: string,
+  attachmentOrdinal?: number
 ): MediaInfo | null {
   try {
+    // A video's poster is a matching hint, not a playable fallback source.
+    const mediaUrl =
+      element instanceof HTMLVideoElement
+        ? selectMediaSourceUrl(element)
+        : extractMediaUrlFromElement(element);
     if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
       return null;
     }
@@ -207,7 +203,7 @@ function createMediaInfoFromDOM(
       url: mediaUrl,
       type: mediaType,
       filename: '',
-      ...(ordinal !== null ? { attachmentOrdinal: ordinal } : {}),
+      ...(attachmentOrdinal !== undefined ? { attachmentOrdinal } : {}),
       ...(attachmentSourceKey ? { attachmentSourceKey } : {}),
       tweetUsername: tweetInfo.username,
       tweetId: tweetInfo.tweetId,
@@ -288,15 +284,32 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
         );
       }
 
+      // Step 4: Convert media elements to MediaInfo objects
+      // Build mapping from element to mediaItems index
       const mediaItems: MediaInfo[] = [];
-      const clickedMedia = findMediaElementInDOM(clickedElement);
-      let clickedIndex: number | undefined;
-      for (const observed of observeOwnedMedia(mediaElements, tweetInfo, clickedElement)) {
-        const mediaInfo = createMediaInfoFromDOM(observed, tweetInfo, tweetTextContent);
+      const elementToIndexMap = new Map<MediaElement, number>();
+      // Inspect the observed owner collection before original-source filtering.
+      const ownedOrdinals = getOwnedObservedOrdinals(mediaElements, tweetInfo);
+
+      for (let i = 0; i < mediaElements.length; i++) {
+        const element = mediaElements[i];
+        if (!element) {
+          continue;
+        }
+        const ordinal = ownedOrdinals.get(element);
+        if (ordinal === undefined) {
+          continue;
+        }
+
+        const mediaInfo = createMediaInfoFromDOM(
+          element,
+          tweetInfo,
+          i,
+          tweetTextContent,
+          ordinal ?? undefined
+        );
         if (mediaInfo) {
-          if (observed.element === clickedMedia) {
-            clickedIndex = mediaItems.length;
-          }
+          elementToIndexMap.set(element, mediaItems.length);
           mediaItems.push(mediaInfo);
         }
       }
@@ -309,13 +322,17 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
         );
       }
 
-      if (clickedIndex === undefined) {
+      // Step 5: Determine which media was clicked
+      const clickedMedia = findMediaElementInDOM(clickedElement);
+      const mappedIndex = clickedMedia ? elementToIndexMap.get(clickedMedia) : undefined;
+      if (mappedIndex === undefined) {
         return createFailureResult(
           'Clicked media is not available as an original DOM source',
           'dom-fallback',
           'dom-clicked-media-unavailable'
         );
       }
+      const clickedIndex = mappedIndex;
 
       if (options.clickedMediaEvidence) {
         const currentEvidence = captureClickedMediaEvidence(clickedElement);
