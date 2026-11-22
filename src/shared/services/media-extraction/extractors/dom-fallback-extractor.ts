@@ -79,11 +79,11 @@ function getOwnedAttachmentOrdinal(element: MediaElement, tweetInfo: TweetInfo):
   );
 }
 
-/** DOM is a partial observation: validate hints without inventing subset positions. */
-function getObservedOrdinals(
+/** An owned element stays in the map even when the DOM supplies no unique ordinal. */
+function getOwnedObservedOrdinals(
   elements: readonly MediaElement[],
   tweetInfo: TweetInfo
-): ReadonlyMap<MediaElement, number> {
+): ReadonlyMap<MediaElement, number | null> {
   const observations = elements.flatMap((element) => {
     if (extractClickContext(element)?.ownership.ownerTweetId !== tweetInfo.tweetId) {
       return [];
@@ -94,12 +94,12 @@ function getObservedOrdinals(
         ? selectMediaSourceUrl(element)
         : extractMediaUrlFromElement(element);
     const key = source ? (getCanonicalPhotoIdentity(source) ?? getMediaSourceKey(source)) : null;
-    return key ? [{ element, ordinal, key }] : [];
+    return [{ element, ordinal, key }];
   });
   const sourcesAtOrdinal = new Map<number, Set<string>>();
   const ordinalsForSource = new Map<string, Set<number>>();
   for (const { ordinal, key } of observations) {
-    if (ordinal === null) {
+    if (!key || ordinal === null) {
       continue;
     }
     const sources = sourcesAtOrdinal.get(ordinal) ?? new Set<string>();
@@ -110,12 +110,11 @@ function getObservedOrdinals(
     ordinalsForSource.set(key, ordinals);
   }
   return new Map(
-    observations.flatMap(({ element, key }) => {
-      const ordinals = ordinalsForSource.get(key);
+    observations.map(({ element, key }) => {
+      const ordinals = key ? ordinalsForSource.get(key) : undefined;
       const ordinal = ordinals?.size === 1 ? ordinals.values().next().value : undefined;
-      return ordinal !== undefined && sourcesAtOrdinal.get(ordinal)?.size === 1
-        ? [[element, ordinal] as const]
-        : [];
+      const uniqueOrdinal = ordinal !== undefined && sourcesAtOrdinal.get(ordinal)?.size === 1;
+      return [element, uniqueOrdinal ? ordinal : null] as const;
     })
   );
 }
@@ -290,15 +289,15 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
       const mediaItems: MediaInfo[] = [];
       const elementToIndexMap = new Map<MediaElement, number>();
       // Inspect the observed owner collection before original-source filtering.
-      const observedOrdinals = getObservedOrdinals(mediaElements, tweetInfo);
+      const ownedOrdinals = getOwnedObservedOrdinals(mediaElements, tweetInfo);
 
       for (let i = 0; i < mediaElements.length; i++) {
         const element = mediaElements[i];
         if (!element) {
           continue;
         }
-        const owner = extractClickContext(element);
-        if (owner?.ownership.ownerTweetId !== tweetInfo.tweetId) {
+        const ordinal = ownedOrdinals.get(element);
+        if (ordinal === undefined) {
           continue;
         }
 
@@ -307,7 +306,7 @@ export class DOMFallbackExtractor implements MediaExtractorStrategy {
           tweetInfo,
           i,
           tweetTextContent,
-          observedOrdinals.get(element)
+          ordinal ?? undefined
         );
         if (mediaInfo) {
           elementToIndexMap.set(element, mediaItems.length);
