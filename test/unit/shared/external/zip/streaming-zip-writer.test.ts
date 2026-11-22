@@ -89,25 +89,116 @@ describe('StreamingZipWriter cooperative CRC32', () => {
     expect(header.getUint32(31 + source.length + 16, true)).toBe(0xefd50db4);
   });
 
-  it.each(['grow', 'truncate'])(
-    'releases the reservation after a disallowed %s at yield',
-    async (change) => {
+  it('can grow an added view using only unreserved archive capacity', async () => {
+    const stripe = 1024 * 1024;
+    const offset = 7;
+    const initial = stripe + 33;
+    const length = 2 * stripe + 31;
+    const backing = new ArrayBuffer(offset + initial, { maxByteLength: 4 * stripe });
+    const source = new Uint8Array(backing, offset);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const yieldToBrowser = vi.fn(async () => {
+      if (source.length === initial) {
+        backing.resize(offset + length);
+        source.fill(0x4d, initial);
+      }
+    });
+    vi.stubGlobal('scheduler', { yield: yieldToBrowser });
+    const writer = new StreamingZipWriter(512 * stripe);
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(yieldToBrowser).toHaveBeenCalledTimes(2);
+    expect(bytes.length).toBe(length + 100);
+    expect(header.getUint32(18, true)).toBe(length);
+    expect(header.getUint32(14, true)).toBe(0x0bbce28b);
+    expect(header.getUint32(31 + length + 16, true)).toBe(0x0bbce28b);
+  });
+
+  it.each([
+    [1024 * 1024 - 1, 0xca03d70e],
+    [0, 0],
+  ])('rechecks a truncated prefix of %i bytes before publication', async (length, crc) => {
+    const stripe = 1024 * 1024;
+    const backing = new ArrayBuffer(2 * stripe + 38, { maxByteLength: 4 * stripe });
+    const source = new Uint8Array(backing, 7);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const truncate = vi.fn(async () => backing.resize(7 + length));
+    vi.stubGlobal('scheduler', { yield: truncate });
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(truncate).toHaveBeenCalledOnce();
+    expect(header.getUint32(18, true)).toBe(length);
+    expect(header.getUint32(14, true)).toBe(crc);
+    expect(header.getUint32(31 + length + 16, true)).toBe(crc);
+  });
+
+  it.each(['explicit', 'reserved'])(
+    'preserves the %s capacity when the view grows',
+    async (limit) => {
       const stripe = 1024 * 1024;
       const backing = new ArrayBuffer(stripe + 16, { maxByteLength: 2 * stripe });
       const data = new Uint8Array(backing);
-      vi.stubGlobal('scheduler', {
-        yield: async () => backing.resize(change === 'grow' ? stripe + 17 : stripe - 1),
-      });
-      const writer = new StreamingZipWriter();
-      await expect(writer.addFile('invalid.bin', data)).rejects.toThrow(
-        change === 'grow' ? /reservation/u : /truncated/u
-      );
-      await writer.addFile('next.bin', new Uint8Array([42]));
+      vi.stubGlobal('scheduler', { yield: async () => backing.resize(stripe + 17) });
+      const writer = new StreamingZipWriter(stripe + 195);
+      // Two one-character entries, 22 EOCD bytes, and one byte reserved for the peer.
+      const peer = writer.reserveEntry('p', 1);
+      const rejected =
+        limit === 'explicit'
+          ? writer.reserveEntry('v', data.length).commit(data)
+          : writer.addFile('v', data);
+      await expect(rejected).rejects.toBeInstanceOf(ZipResourceLimitError);
+      await peer.commit(new Uint8Array([42]));
       const bytes = await archiveBytes(writer);
-      expect(findBytes(bytes, new TextEncoder().encode('invalid.bin'))).toBe(-1);
-      expect(findBytes(bytes, new TextEncoder().encode('next.bin'))).toBe(30);
+      expect(bytes.length).toBe(101);
+      expect(bytes[30]).toBe('p'.charCodeAt(0));
     }
   );
+
+  it('keeps a completed resizable member within its committed length', async () => {
+    const backing = new ArrayBuffer(4, { maxByteLength: 8 });
+    const source = new Uint8Array(backing);
+    source.set([1, 2, 3, 4]);
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    backing.resize(8);
+    const bytes = await archiveBytes(writer);
+    expect(bytes.length).toBe(104);
+    expect(Array.from(bytes.subarray(31, 35))).toEqual([1, 2, 3, 4]);
+    backing.resize(3);
+    expect(() => writer.finalize()).toThrow(/truncated/u);
+  });
+
+  it('can cancel a repeated checksum pass after a truncated prefix', async () => {
+    const stripe = 1024 * 1024;
+    const backing = new ArrayBuffer(4 * stripe, { maxByteLength: 5 * stripe });
+    const source = new Uint8Array(backing);
+    const controller = new AbortController();
+    let yieldCount = 0;
+    vi.stubGlobal('scheduler', {
+      yield: async () => {
+        if (++yieldCount === 3) {
+          backing.resize(stripe + 3);
+        } else if (yieldCount === 4) {
+          controller.abort();
+        }
+      },
+    });
+    const writer = new StreamingZipWriter();
+    await expect(
+      writer.addFile('invalid.bin', source, { signal: controller.signal })
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    await writer.addFile('next.bin', new Uint8Array([42]));
+    const bytes = await archiveBytes(writer);
+    expect(findBytes(bytes, new TextEncoder().encode('invalid.bin'))).toBe(-1);
+    expect(findBytes(bytes, new TextEncoder().encode('next.bin'))).toBe(30);
+  });
 
   it('produces the same archive across Blob checksum boundaries', async () => {
     const data = new Uint8Array(1024 * 1024 + 1);

@@ -126,6 +126,11 @@ export class BorrowedZipBlob {
 
 type EntryBody = Uint8Array | BorrowedZipBlob;
 
+function hasResizableBacking(data: Uint8Array): boolean {
+  const backing = data.buffer;
+  return 'resizable' in backing ? backing.resizable === true : backing.growable === true;
+}
+
 function updateCRC32(
   initial: number,
   bytes: Uint8Array,
@@ -201,7 +206,7 @@ async function calculateStreamCRC32(
 /** Consume one bounded range at a time and yield between checksum ranges. */
 async function calculateCRC32(
   data: EntryBody,
-  maxDataBytes: number,
+  ensureCapacity: (size: number) => void,
   signal?: AbortSignal
 ): Promise<{ crc32: number; size: number }> {
   const table = ensureCRC32Table();
@@ -215,7 +220,8 @@ async function calculateCRC32(
   }
   let crc = 0xffffffff;
   let consumed = 0;
-  for (let start = 0; start < data.byteLength; start += CRC32_CHUNK_SIZE) {
+  while (consumed < data.byteLength) {
+    const start = consumed;
     signal?.throwIfAborted();
     const end = Math.min(start + CRC32_CHUNK_SIZE, data.byteLength);
     if (ArrayBuffer.isView(data)) {
@@ -226,16 +232,18 @@ async function calculateCRC32(
       crc = updateCRC32(crc, bytes, 0, bytes.length, table);
     }
     consumed = end;
-    if (end < data.byteLength) {
+    const beforeYield = data.byteLength;
+    if (end < beforeYield) {
       await schedulerYield();
       signal?.throwIfAborted();
-      if (data.byteLength > maxDataBytes) {
-        throw new ZipResourceLimitError(
-          'Bulk ZIP limit exceeded: member grew beyond its reservation'
-        );
-      }
-      if (data.byteLength < consumed) {
-        throw new RangeError('ZIP member was truncated within bytes already checksummed');
+      if (data.byteLength !== beforeYield) {
+        ensureCapacity(data.byteLength);
+        if (data.byteLength < consumed) {
+          // A truncated prefix no longer has the accumulated checksum. Re-read the live
+          // bytes in cooperative stripes without retaining checkpoints for fixed inputs.
+          consumed = 0;
+          crc = 0xffffffff;
+        }
       }
     }
   }
@@ -295,6 +303,7 @@ interface FileEntry {
   readonly size: number;
   readonly offset: number;
   readonly crc32: number;
+  readonly resizableBody?: Uint8Array;
 }
 
 export class ZipResourceLimitError extends Error {
@@ -357,7 +366,7 @@ export class StreamingZipWriter {
   ): Promise<void> {
     let reservation: ZipEntryReservation;
     try {
-      reservation = this.reserveEntry(filename, data.length);
+      reservation = this.reserve(filename, data.length, hasResizableBacking(data));
     } catch (error) {
       return Promise.reject(error);
     }
@@ -380,6 +389,24 @@ export class StreamingZipWriter {
    * the same stale remaining capacity.
    */
   reserveEntry(filename: string, requestedMaxDataBytes: number): ZipEntryReservation {
+    return this.reserve(filename, requestedMaxDataBytes, false);
+  }
+
+  private availableArchiveBytes(): number {
+    return (
+      this.maxArchiveBytes -
+      this.currentOffset -
+      this.centralDirectorySize -
+      END_OF_CENTRAL_DIRECTORY_BYTES -
+      this.reservedArchiveBytes
+    );
+  }
+
+  private reserve(
+    filename: string,
+    requestedMaxDataBytes: number,
+    allowGrowth: boolean
+  ): ZipEntryReservation {
     if (!Number.isSafeInteger(requestedMaxDataBytes) || requestedMaxDataBytes < 0) {
       throw new RangeError('requestedMaxDataBytes must be a non-negative safe integer');
     }
@@ -392,10 +419,7 @@ export class StreamingZipWriter {
 
     const entryOverheadBytes =
       LOCAL_FILE_HEADER_BYTES + CENTRAL_DIRECTORY_ENTRY_BYTES + filenameBytes.length * 2;
-    const committedArchiveBytes =
-      this.currentOffset + this.centralDirectorySize + END_OF_CENTRAL_DIRECTORY_BYTES;
-    const remainingArchiveBytes =
-      this.maxArchiveBytes - committedArchiveBytes - this.reservedArchiveBytes;
+    const remainingArchiveBytes = this.availableArchiveBytes();
 
     if (remainingArchiveBytes < entryOverheadBytes) {
       throw new ZipResourceLimitError(
@@ -403,12 +427,22 @@ export class StreamingZipWriter {
       );
     }
 
-    const maxDataBytes = Math.min(
-      requestedMaxDataBytes,
-      remainingArchiveBytes - entryOverheadBytes
-    );
-    const reservationBytes = entryOverheadBytes + maxDataBytes;
-    this.reservedArchiveBytes += reservationBytes;
+    let maxDataBytes = Math.min(requestedMaxDataBytes, remainingArchiveBytes - entryOverheadBytes);
+    this.reservedArchiveBytes += entryOverheadBytes + maxDataBytes;
+    const ensureCapacity = (size: number): void => {
+      if (size <= maxDataBytes) {
+        return;
+      }
+      const extra = size - maxDataBytes;
+      if (!allowGrowth || extra > this.availableArchiveBytes()) {
+        throw new ZipResourceLimitError(
+          `Bulk ZIP limit exceeded: ${filename} is ${size} bytes (remaining ${maxDataBytes})`
+        );
+      }
+      assertZip32(size < ZIP_CONST.MAX_UINT32, `file too large (size=${size})`);
+      this.reservedArchiveBytes += extra;
+      maxDataBytes = size;
+    };
 
     let committed = false;
     let released = false;
@@ -417,7 +451,7 @@ export class StreamingZipWriter {
         return;
       }
       released = true;
-      this.reservedArchiveBytes -= reservationBytes;
+      this.reservedArchiveBytes -= entryOverheadBytes + maxDataBytes;
     };
 
     return {
@@ -428,20 +462,15 @@ export class StreamingZipWriter {
         }
         committed = true;
         try {
-          const size = data.byteLength;
-          if (size > maxDataBytes) {
-            throw new ZipResourceLimitError(
-              `Bulk ZIP limit exceeded: ${filename} is ${size} bytes (remaining ${maxDataBytes})`
-            );
-          }
+          ensureCapacity(data.byteLength);
 
           // Independent Blob reads may finish in any order. Only a complete immutable
           // member can enter the ordered writer with its checksum already computed.
           const checksum = ArrayBuffer.isView(data)
             ? undefined
-            : await calculateCRC32(data, maxDataBytes, options.signal);
+            : await calculateCRC32(data, ensureCapacity, options.signal);
           const operation = this.pendingAdd.then(() =>
-            this.addFileInOrder(filename, data, maxDataBytes, options.signal, checksum)
+            this.addFileInOrder(filename, data, ensureCapacity, options.signal, checksum)
           );
           this.pendingAdd = operation.catch(() => undefined);
           await operation;
@@ -456,7 +485,7 @@ export class StreamingZipWriter {
   private async addFileInOrder(
     filename: string,
     data: EntryBody,
-    maxDataBytes: number,
+    ensureCapacity: (size: number) => void,
     signal?: AbortSignal,
     checksum?: { crc32: number; size: number }
   ): Promise<void> {
@@ -474,24 +503,11 @@ export class StreamingZipWriter {
     );
 
     const filenameBytes = encodeUtf8(filename);
-    const localHeaderSize = LOCAL_FILE_HEADER_BYTES + filenameBytes.length;
     const centralDirectoryEntrySize = CENTRAL_DIRECTORY_ENTRY_BYTES + filenameBytes.length;
-    const available = Math.min(
-      maxDataBytes,
-      this.maxArchiveBytes -
-        this.currentOffset -
-        localHeaderSize -
-        this.centralDirectorySize -
-        centralDirectoryEntrySize -
-        END_OF_CENTRAL_DIRECTORY_BYTES
-    );
-    if (data.byteLength > available) {
-      throw new ZipResourceLimitError(
-        `Bulk ZIP limit exceeded: archive would exceed ${this.maxArchiveBytes} bytes`
-      );
-    }
-    const { crc32, size } = checksum ?? (await calculateCRC32(data, available, signal));
+    ensureCapacity(data.byteLength);
+    const { crc32, size } = checksum ?? (await calculateCRC32(data, ensureCapacity, signal));
     signal?.throwIfAborted();
+    ensureCapacity(size);
     if (size !== data.byteLength) {
       throw new RangeError('ZIP member size changed after its checksum');
     }
@@ -517,8 +533,19 @@ export class StreamingZipWriter {
       `archive too large (offset=${this.currentOffset}, add=${localHeader.length + size})`
     );
 
-    this.chunks.push(localHeader, ArrayBuffer.isView(data) ? data : data.value);
-    this.entries.push({ filename, size, offset: this.currentOffset, crc32 });
+    // Fix the published view length without copying its bytes if the backing grows again.
+    const resizableBody =
+      ArrayBuffer.isView(data) && hasResizableBacking(data)
+        ? new Uint8Array(data.buffer, data.byteOffset, size)
+        : undefined;
+    this.chunks.push(localHeader, resizableBody ?? (ArrayBuffer.isView(data) ? data : data.value));
+    this.entries.push({
+      filename,
+      size,
+      offset: this.currentOffset,
+      crc32,
+      ...(resizableBody && { resizableBody }),
+    });
     this.currentOffset += localHeader.length + size;
     this.centralDirectorySize += centralDirectoryEntrySize;
   }
@@ -563,6 +590,9 @@ export class StreamingZipWriter {
     let pos = 0;
 
     for (const entry of this.entries) {
+      if (entry.resizableBody && entry.resizableBody.byteLength !== entry.size) {
+        throw new RangeError('ZIP member was truncated after its checksum');
+      }
       const filenameBytes = encodeUtf8(entry.filename);
       assertZip32(entry.offset < ZIP_CONST.MAX_UINT32, `entry offset overflow (${entry.offset})`);
       assertZip32(entry.size < ZIP_CONST.MAX_UINT32, `entry too large (size=${entry.size})`);
