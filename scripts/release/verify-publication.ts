@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
+import { verifyFinalFirefoxHandoff } from './firefox-validation-report.ts';
 
 type ReadApi = (path: string, asset?: boolean) => Promise<unknown>;
 type Git = (args: string[]) => string;
@@ -167,6 +168,11 @@ if (import.meta.main) {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository) || !token || !output) {
     throw new Error('Repository, read token and publication output are required');
   }
+  verifyFinalFirefoxHandoff(
+    process.cwd(),
+    process.env.RELEASE_SHA ?? '',
+    (process.env.RELEASE_TAG ?? '').slice(1)
+  );
   const result = await verifyPublication(
     process.env.RELEASE_TAG ?? '',
     process.env.RELEASE_SHA ?? '',
