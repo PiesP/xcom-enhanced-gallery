@@ -53,6 +53,7 @@ function encodeUtf8(value: string): Uint8Array {
 const blobPrototype = Blob.prototype;
 const readBlob = blobPrototype.arrayBuffer;
 const sliceBlob = blobPrototype.slice;
+const streamBlob = blobPrototype.stream;
 const blobSize = Object.getOwnPropertyDescriptor(blobPrototype, 'size')?.get;
 
 /** An immutable part whose checksum reads refer to the same native Blob bytes. */
@@ -94,6 +95,24 @@ export class BorrowedZipBlob {
     }
   }
 
+  async openByteReader(): Promise<ReadableStreamBYOBReader | undefined> {
+    if (
+      typeof streamBlob !== 'function' ||
+      Object.hasOwn(this.#source, 'stream') ||
+      this.#source.stream !== streamBlob
+    ) {
+      return undefined;
+    }
+    const stream = streamBlob.call(this.#source);
+    try {
+      return stream.getReader({ mode: 'byob' });
+    } catch {
+      // No stream bytes have been consumed. Settle this source before using native slices.
+      await stream.cancel();
+      return undefined;
+    }
+  }
+
   async read(start: number, end: number): Promise<Uint8Array<ArrayBuffer>> {
     const part =
       start === 0 && end === this.byteLength ? this.value : sliceBlob.call(this.value, start, end);
@@ -122,10 +141,74 @@ function updateCRC32(
   return crc;
 }
 
+/** Read one native byte stream into a transferred and reused checksum scratch buffer. */
+async function calculateStreamCRC32(
+  reader: ReadableStreamBYOBReader,
+  size: number,
+  table: Uint32Array,
+  signal?: AbortSignal
+): Promise<number> {
+  let cancellation: Promise<void> | undefined;
+  const cancel = (): void => {
+    cancellation ??= reader.cancel(signal?.reason).catch(() => undefined);
+  };
+  signal?.addEventListener('abort', cancel, { once: true });
+
+  let crc = 0xffffffff;
+  let complete = false;
+  try {
+    let scratch = new ArrayBuffer(CRC32_CHUNK_SIZE);
+    let consumed = 0;
+    let nextYield = CRC32_CHUNK_SIZE;
+    while (consumed < size) {
+      signal?.throwIfAborted();
+      const requested = Math.min(size, nextYield) - consumed;
+      const { done, value } = await reader.read(new Uint8Array(scratch, 0, requested), {
+        min: requested,
+      });
+      signal?.throwIfAborted();
+      if (done || !value.byteLength || value.byteLength > requested) {
+        throw new RangeError('ZIP member stream returned an unexpected byte count');
+      }
+      crc = updateCRC32(crc, value, 0, value.byteLength, table);
+      consumed += value.byteLength;
+      scratch = value.buffer;
+      if (consumed === nextYield && consumed < size) {
+        await schedulerYield();
+        nextYield += CRC32_CHUNK_SIZE;
+      }
+    }
+    signal?.throwIfAborted();
+    const end = await reader.read(new Uint8Array(scratch, 0, 1));
+    signal?.throwIfAborted();
+    if (!end.done || end.value?.byteLength) {
+      throw new RangeError('ZIP member stream exceeded its source size');
+    }
+    complete = true;
+    return (crc ^ 0xffffffff) >>> 0;
+  } finally {
+    signal?.removeEventListener('abort', cancel);
+    if (!complete) {
+      cancel();
+    }
+    if (cancellation) {
+      await cancellation;
+    }
+    reader.releaseLock();
+  }
+}
+
 /** Process each bounded read before obtaining the next slice. */
 async function calculateCRC32(data: EntryBody, signal?: AbortSignal): Promise<number> {
   const table = ensureCRC32Table();
   const size = data.byteLength;
+  if (!ArrayBuffer.isView(data) && size > CRC32_CHUNK_SIZE) {
+    signal?.throwIfAborted();
+    const reader = await data.openByteReader();
+    if (reader) {
+      return calculateStreamCRC32(reader, size, table, signal);
+    }
+  }
   let crc = 0xffffffff;
   for (let start = 0; start < size; start += CRC32_CHUNK_SIZE) {
     signal?.throwIfAborted();
