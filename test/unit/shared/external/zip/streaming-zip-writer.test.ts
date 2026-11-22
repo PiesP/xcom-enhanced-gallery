@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import {
+  BorrowedZipBlob,
   StreamingZipWriter,
   ZipResourceLimitError,
 } from '@shared/external/zip/streaming-zip-writer';
@@ -53,7 +54,20 @@ describe('StreamingZipWriter cooperative CRC32', () => {
     const candidate = new StreamingZipWriter();
     const source = new Blob([data]);
     await control.addFile('boundary.bin', data);
-    await candidate.reserveEntry('boundary.bin', data.length).commit(source);
+    const retained = BorrowedZipBlob.from(source);
+    expect(retained).toBeDefined();
+    if (!retained) {
+      throw new Error('Expected a native Blob');
+    }
+    // A later replacement cannot substitute bytes for the already admitted native body.
+    vi.spyOn(source, 'slice').mockReturnValue(new Blob(['changed']));
+    vi.spyOn(source, 'arrayBuffer').mockResolvedValue(new Uint8Array([99]).buffer);
+    const reads = vi.spyOn(BorrowedZipBlob.prototype, 'read');
+    await candidate.reserveEntry('boundary.bin', data.length).commit(retained);
+    expect(reads.mock.calls).toEqual([
+      [0, 1024 * 1024],
+      [1024 * 1024, data.length],
+    ]);
     expect(candidate.finalize()).toContain(source);
     expect(Buffer.compare(await archiveBytes(candidate), await archiveBytes(control))).toBe(0);
   });

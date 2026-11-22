@@ -12,8 +12,11 @@ The ZIP worker infers `owned-blob`, `blob-provider`, or `direct-url` from its
 actual `blob` and `getBlob` fields. The optional `inputKind` label is diagnostic
 and cannot reduce the worker's memory charge. For Blob inputs the worker
 reserves CRC scratch before calling the provider or reading the cached Blob.
-A provider also needs capacity for its response. Direct URL entries retain the
-fetched buffer. Every entry reserves filename, header and directory overhead
+A provider also needs capacity for its response. Standard Blobs from the
+current realm with unmodified read, slice and size operations can be shared
+with the writer. Custom and foreign Blobs require a separate full-read
+reservation. Their returned bytes supply both the checksum and the member.
+Direct URL entries retain the fetched buffer. Every entry reserves filename, header and directory overhead
 and capacity for its share of the final ZIP Blob. The worker checks known
 sizes before invoking the provider or transport. For bounded diagnostics,
 `onEntryAdmission` exposes the entry index, inferred input kind, admitted

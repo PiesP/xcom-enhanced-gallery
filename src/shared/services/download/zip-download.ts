@@ -22,6 +22,7 @@ import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import {
+  BorrowedZipBlob,
   CRC32_CHUNK_SIZE,
   StreamingZipWriter,
   type ZipEntryReservation,
@@ -309,7 +310,7 @@ export async function downloadAsZip(
           ...(knownSize !== undefined ? { knownSize } : {}),
         });
         futureBlob = liveBudget.reserve(remainingEntryBytes);
-        let data: Uint8Array | Blob;
+        let data: Uint8Array | BorrowedZipBlob;
         if (usesBlob) {
           // Admit the largest outstanding slice before invoking the provider.
           crcScratch = liveBudget.reserve(Math.min(remainingEntryBytes, CRC32_CHUNK_SIZE));
@@ -334,10 +335,19 @@ export async function downloadAsZip(
                 `Bulk ZIP limit exceeded: ${filename} is ${blob.size} bytes (remaining ${remainingEntryBytes})`
               );
             }
-            data = blob;
-            body = borrowed.lease;
-            borrowed = undefined;
-            crcScratch.shrink(Math.min(blob.size, CRC32_CHUNK_SIZE));
+            const retained = BorrowedZipBlob.from(blob);
+            if (retained) {
+              data = retained;
+              body = borrowed.lease;
+              borrowed = undefined;
+              crcScratch.shrink(Math.min(retained.byteLength, CRC32_CHUNK_SIZE));
+            } else {
+              // A provider may implement its own read. Publish precisely the bytes it returns.
+              crcScratch.release();
+              crcScratch = undefined;
+              body = liveBudget.reserve(remainingEntryBytes);
+              data = new Uint8Array(await blob.arrayBuffer());
+            }
           } else {
             crcScratch.release();
             crcScratch = undefined;
@@ -365,11 +375,14 @@ export async function downloadAsZip(
           body = fetched.lease;
         }
         throwIfAborted(abortSignal);
-        const size = ArrayBuffer.isView(data) ? data.byteLength : data.size;
+        const size = data.byteLength;
         if (size > remainingEntryBytes) {
           throw new ZipResourceLimitError(
             `Bulk ZIP limit exceeded: ${filename} is ${size} bytes (remaining ${remainingEntryBytes})`
           );
+        }
+        if (borrowed) {
+          body.shrink(size);
         }
         futureBlob.shrink(size);
         if (index > 0) {

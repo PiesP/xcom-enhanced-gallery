@@ -50,11 +50,62 @@ function encodeUtf8(value: string): Uint8Array {
   return textEncoder.encode(value);
 }
 
-type EntryBody = Uint8Array | Blob;
+const blobPrototype = Blob.prototype;
+const readBlob = blobPrototype.arrayBuffer;
+const sliceBlob = blobPrototype.slice;
+const blobSize = Object.getOwnPropertyDescriptor(blobPrototype, 'size')?.get;
 
-function entrySize(data: EntryBody): number {
-  return ArrayBuffer.isView(data) ? data.byteLength : data.size;
+/** An immutable part whose checksum reads refer to the same native Blob bytes. */
+export class BorrowedZipBlob {
+  readonly #source: Blob;
+
+  private constructor(
+    source: Blob,
+    readonly byteLength: number
+  ) {
+    this.#source = source;
+    Object.freeze(this);
+  }
+
+  get value(): Blob {
+    return this.#source;
+  }
+
+  static from(value: Blob): BorrowedZipBlob | undefined {
+    try {
+      if (
+        Object.getPrototypeOf(value) !== blobPrototype ||
+        !blobSize ||
+        Object.hasOwn(value, 'size') ||
+        Object.hasOwn(value, 'arrayBuffer') ||
+        Object.hasOwn(value, 'slice') ||
+        value.arrayBuffer !== readBlob ||
+        value.slice !== sliceBlob
+      ) {
+        return undefined;
+      }
+      // The native accessor also checks the Blob brand (a wrapper may share its prototype).
+      const size: unknown = blobSize.call(value);
+      return typeof size === 'number' && size === value.size
+        ? new BorrowedZipBlob(value, size)
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  async read(start: number, end: number): Promise<Uint8Array<ArrayBuffer>> {
+    const part =
+      start === 0 && end === this.byteLength ? this.value : sliceBlob.call(this.value, start, end);
+    const bytes = new Uint8Array(await readBlob.call(part));
+    if (bytes.byteLength !== end - start) {
+      throw new RangeError('ZIP member read returned an unexpected byte count');
+    }
+    return bytes;
+  }
 }
+
+type EntryBody = Uint8Array | BorrowedZipBlob;
 
 function updateCRC32(
   initial: number,
@@ -74,7 +125,7 @@ function updateCRC32(
 /** Process each bounded read before obtaining the next slice. */
 async function calculateCRC32(data: EntryBody, signal?: AbortSignal): Promise<number> {
   const table = ensureCRC32Table();
-  const size = entrySize(data);
+  const size = data.byteLength;
   let crc = 0xffffffff;
   for (let start = 0; start < size; start += CRC32_CHUNK_SIZE) {
     signal?.throwIfAborted();
@@ -82,8 +133,7 @@ async function calculateCRC32(data: EntryBody, signal?: AbortSignal): Promise<nu
     if (ArrayBuffer.isView(data)) {
       crc = updateCRC32(crc, data, start, end, table);
     } else {
-      const part = size <= CRC32_CHUNK_SIZE ? data : data.slice(start, end);
-      const bytes = new Uint8Array(await part.arrayBuffer());
+      const bytes = await data.read(start, end);
       signal?.throwIfAborted();
       crc = updateCRC32(crc, bytes, 0, bytes.length, table);
     }
@@ -179,7 +229,7 @@ const concat = (arrays: readonly Uint8Array[]): Uint8Array => {
  * Finalize() adds Central Directory to complete the ZIP
  */
 export class StreamingZipWriter {
-  private readonly chunks: EntryBody[] = [];
+  private readonly chunks: (Uint8Array | Blob)[] = [];
   private readonly entries: FileEntry[] = [];
   private pendingAdd: Promise<void> = Promise.resolve();
   private currentOffset = 0;
@@ -280,7 +330,7 @@ export class StreamingZipWriter {
         }
         committed = true;
         try {
-          const size = entrySize(data);
+          const size = data.byteLength;
           if (size > maxDataBytes) {
             throw new ZipResourceLimitError(
               `Bulk ZIP limit exceeded: ${filename} is ${size} bytes (remaining ${maxDataBytes})`
@@ -311,7 +361,7 @@ export class StreamingZipWriter {
     signal?: AbortSignal,
     checksum?: number
   ): Promise<void> {
-    const size = entrySize(data);
+    const size = data.byteLength;
     signal?.throwIfAborted();
     // Zip32-only: entry count fits in 16-bit EOCD fields, sizes in 32-bit fields
     assertZip32(
@@ -364,7 +414,7 @@ export class StreamingZipWriter {
       `archive too large (offset=${this.currentOffset}, add=${localHeader.length + size})`
     );
 
-    this.chunks.push(localHeader, data);
+    this.chunks.push(localHeader, ArrayBuffer.isView(data) ? data : data.value);
     this.entries.push({ filename, size, offset: this.currentOffset, crc32 });
     this.currentOffset += localHeader.length + size;
     this.centralDirectorySize += centralDirectoryEntrySize;
