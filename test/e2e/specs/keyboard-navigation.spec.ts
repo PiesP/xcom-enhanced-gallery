@@ -316,7 +316,7 @@ test.describe('X.com Enhanced Gallery Keyboard Navigation', () => {
     await page.keyboard.press('Space');
     await expect(
       page.locator('[data-gallery-element="settings-panel"] select').first()
-    ).toBeVisible();
+    ).toBeFocused();
     await settings.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('[data-gallery-element="settings-panel"] select')).toHaveCount(0);
