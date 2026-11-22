@@ -198,7 +198,7 @@ async function calculateStreamCRC32(
   }
 }
 
-/** Process each bounded read before obtaining the next slice. */
+/** Consume one bounded range at a time and yield between checksum ranges. */
 async function calculateCRC32(data: EntryBody, signal?: AbortSignal): Promise<number> {
   const table = ensureCRC32Table();
   const size = data.byteLength;
