@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2024-2026 PiesP
 
+import { BorrowedZipBlob } from '@shared/external/zip/streaming-zip-writer';
 import {
   DownloadResourceLimitError,
   LiveByteBudget,
@@ -122,6 +123,78 @@ describe('shared download binary ownership', () => {
     expect(budget.usedBytes).toBe(output.value.size);
     output.lease.release();
     expect(budget.usedBytes).toBe(0);
+  });
+
+  it.each([1024 * 1024 - 1, 1024 * 1024, 1024 * 1024 + 1])(
+    'retains the admitted representation and final-copy capacity at %i bytes',
+    async (size) => {
+      const chunk = 1024 * 1024;
+      const filename = 'stripe.bin';
+      const overhead = 2 * (22 + 256 + filename.length * 8);
+      const peak = overhead + 2 * size + Math.min(size, chunk);
+      const usages: number[] = [];
+      const budget = new LiveByteBudget(peak, (used) => usages.push(used));
+      const expected = Buffer.alloc(size, 0x57);
+      const input = ownedBlob(new Blob([expected]), budget);
+      const result = await downloadAsZip(
+        [{ url: 'https://pbs.twimg.com/media/stripe.jpg', desiredName: filename, blob: input }],
+        { liveBudget: budget }
+      );
+      expect(result.failures).toEqual([]);
+      expect(Math.max(...usages)).toBe(peak);
+      expect(result.zipData.includes(input.value)).toBe(size > chunk);
+      expect(
+        result.zipData.some((part) => ArrayBuffer.isView(part) && part.byteLength === size)
+      ).toBe(size <= chunk);
+      expect(budget.usedBytes).toBe(overhead + (size <= chunk ? 3 : 2) * size);
+      input.lease.release();
+      expect(budget.usedBytes).toBe(overhead + 2 * size);
+      const saved = result.createBlob();
+      expect(budget.usedBytes).toBe(saved.value.size);
+      verifyStoredZip(Buffer.from(await saved.value.arrayBuffer()), [
+        { filename, bytes: expected },
+      ]);
+      result.dispose();
+      saved.lease.release();
+      expect(budget.usedBytes).toBe(0);
+    }
+  );
+
+  it('retains a one-range read until it settles after cancellation', async () => {
+    const filename = 'a.jpg';
+    const source = new Blob(['abc']);
+    const expectedPeak = 2 * (22 + 256 + filename.length * 8) + 3 * source.size;
+    const budget = new LiveByteBudget(expectedPeak);
+    const input = ownedBlob(source, budget);
+    const started = Promise.withResolvers<void>();
+    const finish = Promise.withResolvers<void>();
+    const original = BorrowedZipBlob.prototype.read;
+    const pendingRead = vi
+      .spyOn(BorrowedZipBlob.prototype, 'read')
+      .mockImplementationOnce(async function (this: BorrowedZipBlob, start, end) {
+        started.resolve();
+        await finish.promise;
+        return original.call(this, start, end);
+      });
+    try {
+      const controller = new AbortController();
+      const pending = downloadAsZip(
+        [{ url: 'https://pbs.twimg.com/media/a.jpg', desiredName: filename, blob: input }],
+        { liveBudget: budget, signal: controller.signal }
+      );
+      const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+      await started.promise;
+      controller.abort();
+      expect(budget.usedBytes).toBe(expectedPeak);
+      finish.resolve();
+      await rejected;
+      expect(budget.usedBytes).toBe(source.size);
+      input.lease.release();
+      expect(budget.usedBytes).toBe(0);
+    } finally {
+      finish.resolve();
+      pendingRead.mockRestore();
+    }
   });
 
   it('checksums and saves the actual bytes returned by a custom Blob reader', async () => {

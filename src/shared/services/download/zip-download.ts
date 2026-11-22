@@ -336,7 +336,12 @@ export async function downloadAsZip(
               );
             }
             const retained = BorrowedZipBlob.from(blob);
-            if (retained) {
+            if (retained && retained.byteLength <= CRC32_CHUNK_SIZE) {
+              // A single read can supply the stored typed member and its checksum.
+              body = crcScratch;
+              crcScratch = undefined;
+              data = await retained.read(0, retained.byteLength);
+            } else if (retained) {
               data = retained;
               body = borrowed.lease;
               borrowed = undefined;

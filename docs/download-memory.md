@@ -26,12 +26,14 @@ A response chunk rejected on arrival is not accepted into retained storage.
 `OwnedBlob` input promises and providers must reserve storage before starting
 their producer. A cached input keeps its own lease. For a standard Blob from
 the current realm with the original read, slice and size operations, the ZIP
-worker borrows that lease and reserves up to 1 MiB of scratch per active
-checksum. For larger sources it fills and reuses that buffer from one native
-byte stream. When the source has no supported native byte reader, the worker
+worker reserves up to 1 MiB of scratch per active checksum. When the entire
+source fits, a single read supplies both the stored typed member and the CRC.
+The worker transfers its scratch reservation to that member. For larger
+sources the archive borrows the source lease and the worker fills and reuses a
+bounded buffer from one native byte stream. When the source has no supported native byte reader, the worker
 reads bounded native slices. Once a stream read begins, a read failure,
 unexpected byte count or cancellation prevents that entry from being added.
-The archive retains the source until finalization or disposal. A custom or
+The archive retains the selected member until finalization or disposal. A custom or
 foreign Blob can expose different bytes through its read method. The worker
 reserves room for the complete read and uses those bytes for both the CRC
 and the archive member. Sharing an existing lease charges the backing storage
