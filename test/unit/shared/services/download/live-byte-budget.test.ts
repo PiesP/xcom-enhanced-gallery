@@ -97,6 +97,40 @@ describe('shared download binary ownership', () => {
     expect(Math.max(...usages)).toBeLessThanOrEqual(budget.limitBytes);
   });
 
+  it('retains the source Blob and bounds checksum scratch at near-limit admission', async () => {
+    const chunk = 1024 * 1024;
+    const size = 2 * chunk + 17;
+    const filename = 'large.bin';
+    const overhead = 2 * (22 + 256 + filename.length * 8);
+    const limit = overhead + 2 * size + chunk;
+    const usages: number[] = [];
+    const budget = new LiveByteBudget(limit, (bytes) => usages.push(bytes));
+    const source = new Blob([new Uint8Array(size)]);
+    const fullRead = vi.spyOn(source, 'arrayBuffer');
+    const slices = vi.spyOn(source, 'slice');
+    const input = ownedBlob(source, budget);
+    const result = await downloadAsZip(
+      [{ url: 'https://pbs.twimg.com/media/large.jpg', desiredName: filename, blob: input }],
+      { liveBudget: budget }
+    );
+    expect(result.failures).toEqual([]);
+    expect(result.zipData).toContain(source);
+    expect(fullRead).not.toHaveBeenCalled();
+    expect(slices.mock.calls).toEqual([
+      [0, chunk],
+      [chunk, 2 * chunk],
+      [2 * chunk, size],
+    ]);
+    expect(Math.max(...usages)).toBe(limit);
+    input.lease.release();
+    expect(budget.usedBytes).toBe(overhead + 2 * size);
+    const output = result.createBlob();
+    result.dispose();
+    expect(budget.usedBytes).toBe(output.value.size);
+    output.lease.release();
+    expect(budget.usedBytes).toBe(0);
+  });
+
   it('keeps an honest partial ZIP and permits a small later operation after disposal', async () => {
     const budget = new LiveByteBudget(2500);
     const result = await downloadAsZip(

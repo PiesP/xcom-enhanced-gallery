@@ -44,6 +44,20 @@ describe('StreamingZipWriter cooperative CRC32', () => {
     expect(toHex(bytes)).toBe(BASELINE_ZIP_HEX);
   });
 
+  it('produces the same archive across Blob checksum boundaries', async () => {
+    const data = new Uint8Array(1024 * 1024 + 1);
+    data[0] = 3;
+    data[data.length - 2] = 127;
+    data[data.length - 1] = 251;
+    const control = new StreamingZipWriter();
+    const candidate = new StreamingZipWriter();
+    const source = new Blob([data]);
+    await control.addFile('boundary.bin', data);
+    await candidate.reserveEntry('boundary.bin', data.length).commit(source);
+    expect(candidate.finalize()).toContain(source);
+    expect(Buffer.compare(await archiveBytes(candidate), await archiveBytes(control))).toBe(0);
+  });
+
   it('yields during a large single file and preserves overlapping call order', async () => {
     const schedulerYield = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('scheduler', { yield: schedulerYield });
