@@ -1174,7 +1174,7 @@ function admittedPhotoFormat(value: unknown): TweetMedia['sourceFormat'] {
   }
 }
 
-function summarizeTweet(value: unknown): TweetSummary | null {
+function summarizeTweet(value: unknown, mediaLimit = 12): TweetSummary | null {
   const tweet = unwrapTweet(value);
   if (!tweet || typeof tweet !== 'object') {
     return null;
@@ -1189,7 +1189,7 @@ function summarizeTweet(value: unknown): TweetSummary | null {
     id: ownerId,
     collectionCount: Array.isArray(media) ? media.length : 0,
     media: Array.isArray(media)
-      ? media.slice(0, 12).map((item, entityOrdinal): TweetMedia => {
+      ? media.slice(0, mediaLimit).map((item, entityOrdinal): TweetMedia => {
           const mediaId = field(item, 'id_str');
           const mediaType = field(item, 'type');
           const variants = field(field(item, 'video_info'), 'variants');
@@ -1223,8 +1223,12 @@ function summarizeTweet(value: unknown): TweetSummary | null {
 export function summarizeTweetResultResponse(
   urlValue: string,
   status: number,
-  body: unknown
+  body: unknown,
+  mediaLimit = 12
 ): ApiObservation | null {
+  if (!Number.isSafeInteger(mediaLimit) || mediaLimit < 1 || mediaLimit > 40) {
+    throw new Error('Live media trace limit must be between 1 and 40');
+  }
   const url = new URL(urlValue);
   if (!url.pathname.endsWith('/TweetResultByRestId')) {
     return null;
@@ -1247,8 +1251,8 @@ export function summarizeTweetResultResponse(
     requestedTweetId,
     httpStatus: status,
     providerErrors: Array.isArray(providerErrors) && providerErrors.length > 0,
-    result: summarizeTweet(result),
-    directQuote: summarizeTweet(directQuote),
+    result: summarizeTweet(result, mediaLimit),
+    directQuote: summarizeTweet(directQuote, mediaLimit),
     nestedQuoteId: summarizeTweet(unwrapTweet(directQuote?.quoted_status_result))?.id ?? null,
   };
 }

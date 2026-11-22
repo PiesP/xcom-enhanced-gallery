@@ -2,13 +2,18 @@
 // Copyright (c) 2026 PiesP
 
 import { EventEmitter } from 'node:events';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import {
   createInstalledUserscriptFrameTrace,
+  createInstalledUserscriptApiTrace,
   createPreArmPauseGuard,
   LIVE_FILENAME_FRAME_EXPRESSION,
   LIVE_SHARED_GM_FRAME_EXPRESSION,
+  resolveUserscriptApiOnloadLine,
 } from './userscript-frame-trace.ts';
 
 const target = {
@@ -47,6 +52,276 @@ const selectedMedia = () => ({
     legacyDownloadType: 'function',
     modernDownloadType: 'function',
   },
+});
+
+const API_OWNER = '9666600000000000001';
+const API_URL = `https://x.com/i/api/graphql/fixture/TweetResultByRestId?variables=${encodeURIComponent(JSON.stringify({ tweetId: API_OWNER }))}`;
+
+class FakeApiSession extends EventEmitter {
+  calls: Array<{ method: string; params: Record<string, unknown> | undefined }> = [];
+  actualLineOffset = 0;
+  details: Record<string, unknown> = { url: API_URL, method: 'GET', responseType: 'json' };
+  response: Record<string, unknown> = {
+    finalUrl: API_URL,
+    status: 200,
+    response: new TextEncoder().encode('{"data":{"ok":true}}').buffer,
+  };
+  async send(method: string, params?: Record<string, unknown>): Promise<unknown> {
+    this.calls.push({ method, params });
+    if (method === 'Debugger.setBreakpoint') {
+      const location = params?.location as { scriptId: string; lineNumber: number };
+      return {
+        breakpointId: 'api-bp',
+        actualLocation: { ...location, lineNumber: location.lineNumber + this.actualLineOffset },
+      };
+    }
+    if (method === 'Debugger.evaluateOnCallFrame') {
+      return {
+        result: {
+          value: runInNewContext(params?.expression as string, {
+            details: this.details,
+            response: this.response,
+            URL,
+            ArrayBuffer,
+            TextDecoder,
+            TextEncoder,
+          }),
+        },
+      };
+    }
+    return {};
+  }
+  async detach(): Promise<void> {
+    this.calls.push({ method: 'detach', params: undefined });
+    this.removeAllListeners('Debugger.paused');
+  }
+  pause(lineNumber: number, overrides: Record<string, unknown> = {}) {
+    this.emit('Debugger.paused', {
+      reason: 'other',
+      hitBreakpoints: ['api-bp'],
+      callFrames: [{ callFrameId: 'api', location: { scriptId: 'api-script', lineNumber } }],
+      ...overrides,
+    });
+  }
+}
+
+describe('source-bound installed userscript API onload trace', () => {
+  const lineNumber = 1891;
+  const create = (
+    session: FakeApiSession,
+    onResponse: (value: { url: string; finalUrl: string; status: number; bodyText: string }) => void
+  ) =>
+    createInstalledUserscriptApiTrace({
+      session,
+      scriptId: 'api-script',
+      responseLine: lineNumber,
+      requestedId: API_OWNER,
+      onResponse,
+    });
+
+  it('selects exactly one current unminified onload first statement and rejects stale shapes', () => {
+    const built = readFileSync(
+      resolve(import.meta.dirname, '../../dist/xcom-enhanced-gallery.user.js'),
+      'utf8'
+    );
+    const resolved = resolveUserscriptApiOnloadLine(built);
+    expect(resolved.columnNumber).toBe(0);
+    expect(built.split(/\r?\n/u)[resolved.lineNumber]?.trim()).toBe(
+      'if (resourceLimitExceeded) return;'
+    );
+    const site =
+      'gmDetails.onload = (response) => {\n  try {\n    if (resourceLimitExceeded) return;';
+    expect(resolveUserscriptApiOnloadLine(site)).toEqual({ lineNumber: 2, columnNumber: 0 });
+    expect(() => resolveUserscriptApiOnloadLine(`${site}\n${site}`)).toThrow('not unique');
+    expect(() =>
+      resolveUserscriptApiOnloadLine(site.replace('resourceLimitExceeded', 'other'))
+    ).toThrow('first statement');
+    expect(() =>
+      resolveUserscriptApiOnloadLine(
+        'gmDetails.onload=(response)=>{try{if(resourceLimitExceeded)return;}'
+      )
+    ).toThrow('not unique');
+  });
+
+  it('sets a condition for the exact owner GET JSON API path and excludes binary callbacks', async () => {
+    const session = new FakeApiSession();
+    const trace = create(session, () => {});
+    await trace.arm();
+    const setup = session.calls.find((call) => call.method === 'Debugger.setBreakpoint')!;
+    const condition = setup.params?.condition as string;
+    const matches = (details: Record<string, unknown>) =>
+      runInNewContext(condition, { details, URL }) as boolean;
+    expect(matches(session.details)).toBe(true);
+    for (const details of [
+      { ...session.details, url: API_URL.replace(API_OWNER, '9666600000000000002') },
+      { ...session.details, url: API_URL.replace('x.com', 'other.example') },
+      { ...session.details, url: API_URL.replace('x.com', 'x.com:8443') },
+      { ...session.details, url: API_URL.replace('x.com', 'user@x.com') },
+      { ...session.details, url: `${API_URL}#fragment` },
+      { ...session.details, url: API_URL.replace('/fixture/', '/fixture/extra/') },
+      { ...session.details, method: 'POST' },
+      { ...session.details, responseType: 'blob' },
+    ]) {
+      expect(matches(details)).toBe(false);
+    }
+    expect((await trace.stop()).errors).toEqual([]);
+    expect(session.listenerCount('Debugger.paused')).toBe(0);
+  });
+
+  it('passes bounded 200 and 403 bodies only to the callback and persists digests, never body or URL', async () => {
+    const session = new FakeApiSession();
+    const received: Array<{ status: number; bodyText: string }> = [];
+    const trace = create(session, ({ status, bodyText }) => {
+      received.push({ status, bodyText });
+    });
+    await trace.arm();
+    session.pause(lineNumber);
+    await new Promise((done) => setTimeout(done, 0));
+    session.response = { finalUrl: API_URL, status: 403, response: '{}' };
+    session.pause(lineNumber);
+    const stopped = await trace.stop();
+    expect(received).toEqual([
+      { status: 200, bodyText: '{"data":{"ok":true}}' },
+      { status: 403, bodyText: '{}' },
+    ]);
+    expect(stopped.responses).toEqual([
+      {
+        requestedId: API_OWNER,
+        status: 200,
+        bytes: Buffer.byteLength('{"data":{"ok":true}}'),
+        sha256: createHash('sha256').update('{"data":{"ok":true}}').digest('hex'),
+      },
+      {
+        requestedId: API_OWNER,
+        status: 403,
+        bytes: 2,
+        sha256: createHash('sha256').update('{}').digest('hex'),
+      },
+    ]);
+    expect(JSON.stringify(stopped)).not.toContain('data');
+    expect(JSON.stringify(stopped)).not.toContain('variables');
+    expect(session.calls.filter((call) => call.method === 'Debugger.resume')).toHaveLength(2);
+    expect(session.calls.some((call) => call.method === 'Debugger.removeBreakpoint')).toBe(true);
+    expect(session.listenerCount('Debugger.paused')).toBe(0);
+  });
+
+  it('accepts a branded ArrayBuffer from another realm and preserves BOM bytes in its digest', async () => {
+    const session = new FakeApiSession();
+    const raw = Buffer.from([0xef, 0xbb, 0xbf, 0x7b, 0x7d]);
+    const foreign = runInNewContext('Uint8Array.from([239, 187, 191, 123, 125]).buffer');
+    expect(foreign instanceof ArrayBuffer).toBe(false);
+    session.response.response = foreign;
+    const received: string[] = [];
+    const trace = create(session, ({ bodyText }) => {
+      received.push(bodyText);
+    });
+    await trace.arm();
+    session.pause(lineNumber);
+    const stopped = await trace.stop();
+    expect(received).toEqual(['\uFEFF{}']);
+    expect(stopped.responses).toEqual([
+      {
+        requestedId: API_OWNER,
+        status: 200,
+        bytes: raw.length,
+        sha256: createHash('sha256').update(raw).digest('hex'),
+      },
+    ]);
+    expect(JSON.stringify(stopped)).not.toContain('FEFF');
+    expect(JSON.stringify(stopped)).not.toContain('bodyText');
+  });
+
+  it('rejects duck-typed buffers and malformed UTF-8 without retaining a partial digest', async () => {
+    for (const body of [
+      { byteLength: 2, [Symbol.toStringTag]: 'ArrayBuffer' },
+      runInNewContext('Uint8Array.from([255]).buffer'),
+    ]) {
+      const session = new FakeApiSession();
+      session.response.response = body;
+      const received: unknown[] = [];
+      const trace = create(session, (value) => {
+        received.push(value);
+      });
+      await trace.arm();
+      session.pause(lineNumber);
+      await expect(trace.stop()).rejects.toThrow('Installed API trace teardown');
+      expect(received).toHaveLength(0);
+      expect(trace.snapshot().responses).toEqual([]);
+      expect(session.listenerCount('Debugger.paused')).toBe(0);
+    }
+  });
+
+  it('fails closed on redirects, unsupported bodies, oversize text and changed source locations', async () => {
+    for (const change of ['redirect', 'body', 'oversize', 'location'] as const) {
+      const session = new FakeApiSession();
+      if (change === 'redirect') {
+        session.response.finalUrl = 'https://other.example/asset';
+      }
+      if (change === 'body') {
+        session.response.response = new Blob(['binary']);
+      }
+      if (change === 'oversize') {
+        session.response.response = 'x'.repeat(2_000_001);
+      }
+      const received: unknown[] = [];
+      const trace = create(session, (value) => {
+        received.push(value);
+      });
+      await trace.arm();
+      session.pause(change === 'location' ? lineNumber + 1 : lineNumber);
+      await expect(trace.stop()).rejects.toThrow('Installed API trace teardown');
+      expect(received).toHaveLength(0);
+      expect(JSON.stringify(trace.snapshot())).not.toContain('other.example');
+      expect(JSON.stringify(trace.snapshot())).not.toContain('xxxxx');
+      expect(session.calls.some((call) => call.method === 'Debugger.resume')).toBe(true);
+      expect(session.listenerCount('Debugger.paused')).toBe(0);
+    }
+  });
+
+  it('quiesces unexpected pauses and tears down by detaching if debugger disable fails', async () => {
+    const session = new FakeApiSession();
+    const original = session.send.bind(session);
+    session.send = async (method, params) => {
+      if (method === 'Debugger.disable') {
+        session.calls.push({ method, params });
+        throw new Error('disable unavailable');
+      }
+      return original(method, params);
+    };
+    const trace = create(session, () => {});
+    await trace.arm();
+    session.pause(lineNumber, { hitBreakpoints: ['other-bp'] });
+    await expect(trace.stop()).rejects.toThrow('Installed API trace teardown');
+    expect(trace.snapshot()).toMatchObject({
+      pauseCount: 1,
+      captureJobs: 0,
+      debuggerDetached: true,
+    });
+    expect(session.calls.some((call) => call.method === 'Debugger.setSkipAllPauses')).toBe(true);
+    expect(session.calls.some((call) => call.method === 'Debugger.resume')).toBe(true);
+    expect(session.listenerCount('Debugger.paused')).toBe(0);
+  });
+
+  it('bounds a pause storm and removes a breakpoint even when its actual line changed', async () => {
+    const storm = new FakeApiSession();
+    const trace = create(storm, () => {});
+    await trace.arm();
+    for (let index = 0; index < 13; index++) {
+      storm.pause(lineNumber);
+    }
+    await expect(trace.stop()).rejects.toThrow('Installed API trace teardown');
+    expect(trace.snapshot()).toMatchObject({ pauseCount: 13, captureJobs: 12 });
+    expect(trace.snapshot().errors.length).toBeLessThanOrEqual(4);
+    expect(storm.listenerCount('Debugger.paused')).toBe(0);
+
+    const changed = new FakeApiSession();
+    changed.actualLineOffset = 1;
+    const changedTrace = create(changed, () => {});
+    await expect(changedTrace.arm()).rejects.toThrow('Installed API trace arm failed');
+    await expect(changedTrace.stop()).rejects.toThrow('Installed API trace teardown');
+    expect(changed.calls.some((call) => call.method === 'Debugger.removeBreakpoint')).toBe(true);
+    expect(changed.listenerCount('Debugger.paused')).toBe(0);
+  });
 });
 const gmCall = () => ({
   apiName: 'GM.download',

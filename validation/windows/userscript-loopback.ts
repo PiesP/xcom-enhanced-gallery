@@ -12,6 +12,7 @@ import { startHttpsLoopback } from './https-loopback-lifecycle.ts';
 const execFileAsync = promisify(execFile);
 const HOST = 'pbs.twimg.com';
 const MAX_REQUESTS = 64;
+const LARGE_PHOTO_MAX_REQUESTS = 512;
 const MAX_IMAGE_BYTES = 64 * 1024;
 const MAX_SERVED_BYTES = 2 * 1024 * 1024;
 const MAX_API_SERVED_BYTES = 3 * 1024 * 1024;
@@ -45,6 +46,13 @@ type FixtureEvent = {
   result: string;
   bytes: number;
   sha256: string | null;
+  sourceUrl?: string;
+  status?: number;
+  requestedId?: string;
+  host?: 'x.com';
+  operation?: 'TweetResultByRestId';
+  atMs?: number;
+  finishedAtMs?: number;
 };
 type RejectedIdShape = {
   type: string;
@@ -214,6 +222,11 @@ export function createUserscriptFixtureHandler(
   assert.equal(avatarPath, '/profile_images/123456789/public-avatar.jpg');
   allowed.set(avatarPath, { cohort: 'avatar', index: 0 });
   let images: Buffer[] | undefined;
+  const largePhotos = new Map<string, { index: number; bytes: Buffer; status?: 404 }>();
+  const largeApi = new Map<string, Buffer>();
+  let largeDomApiId: string | null = null;
+  let largeServedBytes = 0;
+  let largeApiServedBytes = 0;
   let phase = 'normal';
   let heldArmed = false;
   let heldPending: { response: ServerResponse; event: FixtureEvent; body: Buffer } | null = null;
@@ -232,6 +245,8 @@ export function createUserscriptFixtureHandler(
   let rejectedIdShapeOverflow = 0;
   const events: FixtureEvent[] = [];
   const active = new Set<ServerResponse>();
+  let domProbeActive = 0;
+  let domProbePeak = 0;
   const reject = (response: ServerResponse, reason: string) => {
     unexpectedCount += 1;
     rejectedReasons[reason] = (rejectedReasons[reason] ?? 0) + 1;
@@ -267,13 +282,73 @@ export function createUserscriptFixtureHandler(
   };
   const handle = (request: IncomingMessage, response: ServerResponse) => {
     requestCount += 1;
-    if (requestCount > MAX_REQUESTS) {
+    if (requestCount > (largePhotos.size ? LARGE_PHOTO_MAX_REQUESTS : MAX_REQUESTS)) {
       overflow = true;
       response.destroy();
       return;
     }
     const host = request.headers.host?.replace(/:443$/u, '');
     const path = request.url ?? '';
+    const largePhoto = host === HOST ? largePhotos.get(path) : undefined;
+    if (largePhoto) {
+      if (
+        !['GET', 'HEAD'].includes(request.method ?? '') ||
+        request.headers['sec-fetch-dest'] === 'image'
+      ) {
+        reject(response, 'large-photo-purpose');
+        return;
+      }
+      const body =
+        request.method === 'HEAD' || largePhoto.status === 404 ? Buffer.alloc(0) : largePhoto.bytes;
+      if (largeServedBytes + body.length > 1024 * 1024) {
+        overflow = true;
+        response.destroy();
+        return;
+      }
+      largeServedBytes += body.length;
+      if (request.method === 'HEAD' && path.startsWith('/media/XegDom')) {
+        domProbeActive += 1;
+        domProbePeak = Math.max(domProbePeak, domProbeActive);
+        response.once('close', () => {
+          domProbeActive -= 1;
+        });
+      }
+      const event: FixtureEvent = {
+        phase: 'large-photo',
+        cohort: 'large-photo',
+        index: largePhoto.index,
+        purpose: request.method === 'HEAD' ? 'original-probe' : 'transfer',
+        method: request.method ?? '',
+        result: 'started',
+        bytes: 0,
+        sha256: null,
+        ...(path.startsWith('/media/XegDom')
+          ? { sourceUrl: path, status: largePhoto.status ?? 200 }
+          : {}),
+      };
+      events.push(event);
+      active.add(response);
+      response.once('close', () => {
+        if (!response.writableFinished) {
+          event.result = 'aborted';
+        }
+        active.delete(response);
+      });
+      response.once('finish', () => {
+        event.result = largePhoto.status === 404 ? 'http-404' : 'served';
+        event.bytes = body.length;
+        event.sha256 = body.length ? createHash('sha256').update(body).digest('hex') : null;
+      });
+      response.writeHead(largePhoto.status ?? 200, {
+        ...(largePhoto.status === 404 ? {} : { 'Content-Type': 'image/jpeg' }),
+        'Content-Length': String(largePhoto.status === 404 ? 0 : largePhoto.bytes.length),
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': 'https://x.com',
+        'Access-Control-Allow-Credentials': 'true',
+      });
+      response.end(body);
+      return;
+    }
     const apiAllowedOrigin =
       request.headers.origin === 'https://mobile.x.com' ? 'https://mobile.x.com' : 'https://x.com';
     const isAllowedReceiver = host === HOST && path === '/xeg-metadata-allowed.json';
@@ -334,12 +409,106 @@ export function createUserscriptFixtureHandler(
       try {
         const url = new URL(path, 'https://x.com');
         tweetId = JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId;
-        if (!url.pathname.endsWith('/TweetResultByRestId')) {
+        if (!/^\/i\/api\/graphql\/[^/]+\/TweetResultByRestId$/u.test(url.pathname)) {
           reject(response, 'graphql-path');
           return;
         }
       } catch {
         reject(response, 'graphql-variables');
+        return;
+      }
+      const largeId = typeof tweetId === 'string' ? tweetId : null;
+      const largeBody = largeId ? largeApi.get(largeId) : undefined;
+      if (largeId !== null && largeId === largeDomApiId && request.method === 'GET') {
+        const body = Buffer.from('{}');
+        const event: FixtureEvent = {
+          phase: 'large-dom-photo',
+          cohort: 'large-dom-api',
+          index: 0,
+          purpose: 'metadata',
+          method: 'GET',
+          result: 'started',
+          bytes: 0,
+          sha256: null,
+          requestedId: largeId,
+          host: 'x.com',
+          operation: 'TweetResultByRestId',
+          status: 403,
+          atMs: performance.now(),
+        };
+        events.push(event);
+        active.add(response);
+        response.once('close', () => {
+          if (!response.writableFinished) {
+            event.result = 'aborted';
+          }
+          active.delete(response);
+        });
+        response.once('finish', () => {
+          event.result = 'http-403';
+          event.bytes = body.length;
+          event.sha256 = createHash('sha256').update(body).digest('hex');
+          event.finishedAtMs = performance.now();
+        });
+        response.writeHead(403, {
+          'Content-Type': 'application/json',
+          'Content-Length': String(body.length),
+          'Cache-Control': 'no-store',
+          'Access-Control-Allow-Origin': apiAllowedOrigin,
+          'Access-Control-Allow-Credentials': 'true',
+        });
+        response.end(body);
+        return;
+      }
+      if (largeBody) {
+        assert(largeId !== null, 'Installed photo API owner is missing');
+        if (request.method !== 'GET') {
+          reject(response, 'large-api-method');
+          return;
+        }
+        if (largeApiServedBytes + largeBody.length > 4 * 1024 * 1024) {
+          overflow = true;
+          response.destroy();
+          return;
+        }
+        largeApiServedBytes += largeBody.length;
+        const event: FixtureEvent = {
+          phase: 'large-photo',
+          cohort: 'large-api',
+          index: largeId?.endsWith('1') ? 0 : 1,
+          purpose: 'metadata',
+          method: 'GET',
+          result: 'started',
+          bytes: 0,
+          sha256: null,
+          requestedId: largeId,
+          host: 'x.com',
+          operation: 'TweetResultByRestId',
+          status: 200,
+          atMs: performance.now(),
+        };
+        events.push(event);
+        active.add(response);
+        response.once('close', () => {
+          if (!response.writableFinished) {
+            event.result = 'aborted';
+          }
+          active.delete(response);
+        });
+        response.once('finish', () => {
+          event.result = 'served';
+          event.bytes = largeBody.length;
+          event.sha256 = createHash('sha256').update(largeBody).digest('hex');
+          event.finishedAtMs = performance.now();
+        });
+        response.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Content-Length': String(largeBody.length),
+          'Cache-Control': 'no-store',
+          'Access-Control-Allow-Origin': apiAllowedOrigin,
+          'Access-Control-Allow-Credentials': 'true',
+        });
+        response.end(largeBody);
         return;
       }
       const defaultKind =
@@ -584,6 +753,57 @@ export function createUserscriptFixtureHandler(
   };
   return {
     handle,
+    setLargePhotos(
+      originals: ReadonlyMap<string, Buffer>,
+      apiResponses: ReadonlyMap<string, Buffer>
+    ) {
+      assert(images && largePhotos.size === 0 && largeApi.size === 0, 'Install base images first');
+      assert.equal(originals.size, 40);
+      assert.equal(apiResponses.size, 2);
+      for (const [source, bytes] of originals) {
+        const url = new URL(source);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, HOST);
+        assert.match(url.pathname, /^\/media\/XegLarge[AB]\d{2}\.jpg$/u);
+        assert.equal(url.search, '?format=jpg&name=orig');
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_IMAGE_BYTES);
+        assert(!largePhotos.has(`${url.pathname}${url.search}`));
+        largePhotos.set(`${url.pathname}${url.search}`, { index: largePhotos.size, bytes });
+      }
+      for (const [id, body] of apiResponses) {
+        assert.match(id, /^[1-9]\d{1,39}$/u);
+        assert(Buffer.isBuffer(body) && body.length > 0 && body.length <= 512 * 1024);
+        largeApi.set(id, body);
+      }
+    },
+    setLargeDomPhotos(originals: ReadonlyMap<string, Buffer>, ownerId: string) {
+      assert(images && largePhotos.size === 40 && largeApi.size === 2);
+      assert.equal(originals.size, 20);
+      assert.match(ownerId, /^[1-9]\d{1,39}$/u);
+      assert(!largeApi.has(ownerId) && largeDomApiId === null);
+      assert.equal(active.size, 0, 'Photo fixture transport must be idle before DOM phase');
+      const additions = new Map<string, { index: number; bytes: Buffer; status?: 404 }>();
+      for (const [source, bytes] of originals) {
+        const url = new URL(source);
+        assert.equal(url.protocol, 'https:');
+        assert.equal(url.hostname, HOST);
+        assert.match(url.pathname, /^\/media\/XegDom\d{2}$/u);
+        assert.equal(url.search, '?format=jpg&name=orig');
+        assert(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= MAX_IMAGE_BYTES);
+        const jpeg = `${url.pathname}${url.search}`;
+        const webp = `${url.pathname}?format=webp&name=orig`;
+        assert(!largePhotos.has(jpeg) && !largePhotos.has(webp));
+        assert(!additions.has(jpeg) && !additions.has(webp));
+        additions.set(webp, { index: additions.size, bytes: Buffer.alloc(0), status: 404 });
+        additions.set(jpeg, { index: additions.size, bytes });
+      }
+      largePhotos.clear();
+      largeApi.clear();
+      for (const [path, entry] of additions) {
+        largePhotos.set(path, entry);
+      }
+      largeDomApiId = ownerId;
+    },
     setImages(next: Buffer[]) {
       assert(
         !images &&
@@ -670,8 +890,11 @@ export function createUserscriptFixtureHandler(
       upgradeDenialEnabled,
       overflow,
       servedBytes,
+      largeServedBytes,
+      largeApiServedBytes,
       apiServedBytes,
       activeCount: active.size,
+      domProbePeak,
       mediaRedirectArmed,
       mediaRedirectPending,
       events: events.map((event) => ({ ...event })),

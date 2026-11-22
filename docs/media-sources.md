@@ -106,19 +106,35 @@ WebP original recovery may change the save extension while preserving identity.
 ## DOM WebP originals
 
 An extensionless DOM WebP can be a display encoding whose `name=orig` URL is
-unavailable. DOM recovery confirms that original before returning the gallery's
-media. A successful WebP original remains WebP. Only HTTP 404 or 410 permits
+unavailable. DOM recovery confirms the first bounded set of originals before
+returning the gallery; deferred items are checked when saved. A successful WebP
+original remains WebP. Only HTTP 404 or 410 permits
 checking JPEG, then PNG originals of the same validated attachment, preserving
 the encoded identity, `name=orig`, and other query data. A candidate must return
 HTTP 200 with its expected image MIME type at the exact requested URL.
 
 The resolver uses bounded HEAD requests through the platform adapter and honors
-extraction cancellation. A forbidden response, network failure, timeout, missing
-source metadata, or failed alternatives leaves the original unverified. The
+extraction and save cancellation. Only same-source 404/410 responses for all
+three encodings establish that the original is unavailable. A forbidden
+response, redirect, MIME mismatch, network failure, or timeout leaves a known
+source candidate inconclusive and retryable. Missing candidate URL metadata
+cannot be recovered by repeating a save; re-extract the post to establish an
+owned source before trying again. The
 observed display, owner, attachment identity, and gallery order remain intact.
-Single and ZIP plans receive the resolved preferred source and derive their
-extensions from it. Resolution happens before any native save; it does not
+Single and ZIP plans receive the source-check outcome and derive extensions
+from a verified preferred source. Resolution happens before any native save; it does not
 retry or overwrite a completed transfer.
+
+The extractor checks at most four distinct source URLs eagerly, giving the
+clicked photo first access. A later photo remains pending, not unavailable.
+Single save checks that photo on demand; ZIP checks all pending photos through
+an operation-local queue with at most four active source probes. Shared URLs
+reuse one probe result within the operation, while each media item keeps its
+own post and attachment identity. A failed check can be retried by a later
+explicit save, and cancellation does not retain a negative result. Source
+selection precedes filename and ZIP planning, so a verified JPEG alternative
+receives a JPEG filename. The existing byte and download concurrency limits
+remain separate from the source-probe queue.
 
 `resolveDomImageOriginal` in
 [`dom-image-original.ts`](../src/shared/services/media-extraction/extractors/dom-image-original.ts)
@@ -187,8 +203,12 @@ This generic caller boundary does not correct an invalid semantic ordinal.
 Allocation is bounded by the names already reserved. If an overlong generated
 identity cannot retain its collision counter, the plan fails before asynchronous
 work or saving; ordinary X post IDs are not claimed to reach that synthetic limit.
-Assigned failed-entry names are reused exactly during recovery. A supplied legacy
-recovery plan with conflicting stems or noncanonical names is rejected before
+Assigned names for failed entries with verified sources are reused exactly during
+failed-only recovery. An unverified DOM original has no final assigned name:
+its source and format are checked on explicit retry before planning its ZIP
+entry. The supplementary ZIP reserves names already committed to prior archives,
+so a late JPEG cannot rename a successful entry or collide with its stem.
+A supplied legacy recovery plan with conflicting stems or noncanonical names is rejected before
 saving rather than silently renamed. Supplementary archives reserve
 `-missing[-N].zip` before truncation. Explicit caller-provided names retain up
 to 32 UTF-16 units from the end of an overlong stem as a best-effort way to
@@ -259,12 +279,18 @@ that XEG fixed the FetchV filename conflict.
 
 ## In-gallery limitations
 
-A gallery recovered only from the clicked visible tile retains that scope for
-its own session. Its media details disclosure states the shown-item count,
-without inventing the total number of attachments in the post. The disclosure
-also follows the displayed item's preferred save source: observed video quality
-and an unavailable verified image original remain visible in its summary.
-Playback fallback does not change these save-source details. Complete API and
-verified DOM collections add no warning solely because of their extraction path.
+A gallery recovered from an observed article or visible tile retains that
+unknown-total scope for its own session. Its media details disclosure states
+the collected-item count, without inventing the total number of attachments
+in the post. The disclosure also follows the displayed item's preferred save
+source: observed video quality, a pending image check, an inconclusive source
+check, or an unavailable original remain visible in its summary.
+Playback fallback does not change these save-source details. Complete API
+collections add no warning solely because of their extraction path. An
+article-local DOM observation cannot establish complete attachment coverage.
+When the API reports a recognized unsupported entry alongside supported
+entries, the gallery identifies the supported subset without treating the
+parsed entry count as the post's raw attachment total. Supported items retain
+their owner-local attachment ordinals, including gaps.
 Closing or replacing a gallery clears the prior acquisition scope; navigating
 to another item closes the disclosure and updates the current source details.

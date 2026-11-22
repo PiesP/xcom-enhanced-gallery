@@ -74,16 +74,18 @@ const CONTENT_INSTALL_FUNCTION = `function(config) {
   };
   return { installed: true };
 }`;
-const CONTENT_LOGPOINT_CONDITION = `(() => {
+export const CONTENT_LOGPOINT_CONDITION = `(() => {
   const state = globalThis.__xegFilenameCorrelation482V1;
-  const preferred = media?.downloadSource?.url ?? media?.originalUrl ?? media?.url;
-  const resolution = media?.metadata?.originalSourceResolution;
-  if (!state || typeof media?.id !== 'string' || !media.id ||
+  const preferred = resolvedMedia?.downloadSource?.url ?? resolvedMedia?.originalUrl ?? resolvedMedia?.url;
+  const resolution = resolvedMedia?.metadata?.originalSourceResolution;
+  if (!state || typeof resolvedMedia?.id !== 'string' || !resolvedMedia.id ||
+      media?.id !== resolvedMedia.id || media?.tweetId !== resolvedMedia.tweetId ||
+      media?.attachmentOrdinal !== resolvedMedia.attachmentOrdinal ||
       typeof filename !== 'string' || !filename || typeof preferred !== 'string') return false;
   if (state.target === 'owned-fixture' && preferred !== state.expectedUrl) return false;
   if (state.target === 'reported-live-post') {
     let source;
-    try { source = new URL(preferred || media?.originalUrl || media?.url); } catch { return false; }
+    try { source = new URL(preferred); } catch { return false; }
     const path = /^\\/media\\/([A-Za-z0-9_-]{1,40})(?:\\.(jpg|jpeg|png|webp|gif))?$/.exec(source.pathname);
     const pairs = [...source.searchParams].sort();
     const format = pairs[0]?.[1];
@@ -96,22 +98,27 @@ const CONTENT_LOGPOINT_CONDITION = `(() => {
         (path[2] && path[2] !== format)) return false;
   }
   if (state.events.length < state.maxEvents) state.events.push({
-    id: media.id.slice(0, 128), type: media.type, url: String(media.url).slice(0, 256),
-    originalUrl: media.originalUrl?.slice(0, 256),
-    downloadSource: media.downloadSource ? {
-      url: media.downloadSource.url.slice(0, 256), quality: media.downloadSource.quality,
-      provenance: media.downloadSource.provenance
+    id: resolvedMedia.id.slice(0, 128), type: resolvedMedia.type,
+    url: String(resolvedMedia.url).slice(0, 256),
+    originalUrl: resolvedMedia.originalUrl?.slice(0, 256),
+    downloadSource: resolvedMedia.downloadSource ? {
+      url: resolvedMedia.downloadSource.url.slice(0, 256), quality: resolvedMedia.downloadSource.quality,
+      provenance: resolvedMedia.downloadSource.provenance
     } : undefined,
-    filename: media.filename?.slice(0, 256), attachmentOrdinal: media.attachmentOrdinal,
-    attachmentSourceKey: media.attachmentSourceKey?.slice(0, 128),
-    tweetUsername: media.tweetUsername?.slice(0, 128), tweetId: media.tweetId?.slice(0, 128),
-    quotedUsername: media.quotedUsername?.slice(0, 128),
-    quotedTweetId: media.quotedTweetId?.slice(0, 128), sourceLocation: media.sourceLocation,
+    inputSource: {
+      url: typeof media.url === 'string' ? media.url.slice(0, 256) : null,
+      preferred: typeof media.downloadSource?.url === 'string' ? media.downloadSource.url.slice(0, 256) : null
+    },
+    filename: resolvedMedia.filename?.slice(0, 256), attachmentOrdinal: resolvedMedia.attachmentOrdinal,
+    attachmentSourceKey: resolvedMedia.attachmentSourceKey?.slice(0, 128),
+    tweetUsername: resolvedMedia.tweetUsername?.slice(0, 128), tweetId: resolvedMedia.tweetId?.slice(0, 128),
+    quotedUsername: resolvedMedia.quotedUsername?.slice(0, 128),
+    quotedTweetId: resolvedMedia.quotedTweetId?.slice(0, 128), sourceLocation: resolvedMedia.sourceLocation,
     metadata: {
-      requestTweetId: media.metadata?.requestTweetId,
-      extractionSource: media.metadata?.extractionSource,
-      apiIndex: media.metadata?.apiIndex, domIndex: media.metadata?.domIndex,
-      mediaKey: media.metadata?.apiData?.media_key?.slice(0, 128),
+      requestTweetId: resolvedMedia.metadata?.requestTweetId,
+      extractionSource: resolvedMedia.metadata?.extractionSource,
+      apiIndex: resolvedMedia.metadata?.apiIndex, domIndex: resolvedMedia.metadata?.domIndex,
+      mediaKey: resolvedMedia.metadata?.apiData?.media_key?.slice(0, 128),
       originalSourceResolution: resolution && typeof resolution === 'object' ? {
         requestedUrl: typeof resolution.requestedUrl === 'string' ? resolution.requestedUrl.slice(0, 256) : null,
         selectedUrl: typeof resolution.selectedUrl === 'string' ? resolution.selectedUrl.slice(0, 256) : null,
@@ -201,12 +208,14 @@ export function resolveFilenameCaptureLine(source: string): SourceLocation {
     }
     if (
       inside &&
-      /^\s*const filename = generateMediaFilename\(media, \{ nowMs: Date\.now\(\) \}\);\s*$/.test(
+      /^\s*const filename = generateMediaFilename\(resolvedMedia, \{ nowMs: Date\.now\(\) \}\);\s*$/.test(
         lines[index] ?? ''
       )
     ) {
       assert(
-        /^\s*if \(options\.blob\)/.test(lines[index + 1] ?? ''),
+        /^\s*if \(options\.blob\) return downloadBlobWithAdapter\(options\.blob, filename, abortSignal, options\);\s*$/.test(
+          lines[index + 1] ?? ''
+        ),
         'Filename capture must execute immediately after generation'
       );
       matches.push(index + 1);

@@ -64,6 +64,8 @@ import {
   validateLiveUrls,
 } from './live-page.ts';
 import { parseActualSiteAcceptanceSelector, runLiveSettingsAcceptance } from './live-acceptance.ts';
+import { parsePhotoCollectionSelector, runLivePhotoCollection } from './live-photo-collection.ts';
+import { runInstalledLargePhotoFixture } from './installed-large-photo-fixture.ts';
 import { runInstalledSettingsUx } from './installed-settings-ux.ts';
 import { runInstalledMediaApiReuseProfile } from './media-api-reuse-profile.ts';
 import { createLateImageLayoutProbe, type LateLayoutReceipt } from './late-image-layout.ts';
@@ -548,27 +550,74 @@ function assertOpeningAbsent(
   assert.deepEqual(snapshot.opening, [], `${label}: stale opening status must be removed`);
 }
 
+type SourceDetailsExpectation =
+  | {
+      scope: 'complete';
+      quality: 'verified' | 'observed' | 'unavailable' | 'pending' | 'retryable';
+    }
+  | {
+      scope: 'unknown-total' | 'known-subset';
+      quality: 'verified' | 'observed' | 'unavailable' | 'pending' | 'retryable';
+      count: number;
+    };
+
+/** Compare every summary part so a scope warning cannot mask a wrong source warning. */
+export function assertSourceDetailsSummary(
+  observed: readonly string[],
+  expected: SourceDetailsExpectation
+): void {
+  if (expected.scope !== 'complete') {
+    assert(Number.isSafeInteger(expected.count) && expected.count > 0);
+  }
+  const scope =
+    expected.scope === 'unknown-total'
+      ? `${expected.count} collected items · the post may contain more`
+      : expected.scope === 'known-subset'
+        ? `${expected.count} supported items · some observed media cannot be saved`
+        : null;
+  const quality = {
+    verified: null,
+    observed: 'Video save quality is unverified',
+    unavailable: 'Original image unavailable for saving',
+    pending: 'Original image will be checked when saving',
+    retryable: 'Original image could not be confirmed',
+  }[expected.quality];
+  assert.deepEqual(
+    observed,
+    [scope, quality].filter((part) => part !== null)
+  );
+}
+
 async function assertSourceDetails(
   gallery: Locator,
-  expected: 'absent' | 'visible-tile' | 'observed' | 'unverified-original'
+  expected: SourceDetailsExpectation
 ): Promise<string | null> {
   const details = gallery.locator('[data-gallery-element="source-details"]');
-  if (expected === 'absent') {
+  if (expected.scope === 'complete' && expected.quality === 'verified') {
     assert.equal(await details.count(), 0, 'Verified full-scope media must not show a limitation');
     return null;
   }
   await details.waitFor({ state: 'visible' });
-  const summary = (await details.locator('summary').textContent())?.trim() ?? '';
-  const pattern = {
-    'visible-tile': /recovered from this tile only/u,
-    observed: /Video save quality is unverified/u,
-    'unverified-original': /Original image unavailable for saving/u,
-  }[expected];
-  assert.match(summary, pattern);
+  const parts = (await details.locator('summary span').allTextContents()).map((text) =>
+    text.trim()
+  );
+  assertSourceDetailsSummary(parts, expected);
+  const summary = parts.join(' · ');
   await details.locator('summary').click();
   assert.equal(await details.getAttribute('open'), '');
   assert.match((await details.textContent()) ?? '', /Media and save details/u);
+  if (expected.scope === 'unknown-total') {
+    assert.match(
+      (await details.textContent()) ?? '',
+      /Only currently available media was collected/u
+    );
+  }
   await details.locator('summary').click();
+  assert.equal(
+    await details.getAttribute('open'),
+    null,
+    'Source details must close after inspection'
+  );
   return summary;
 }
 
@@ -1125,6 +1174,7 @@ type InstallResult = {
   upgrade?: UpgradeReceipt;
   sameVersion?: Awaited<ReturnType<typeof runSameVersionAttribution>>;
   fixture?: Awaited<ReturnType<typeof exerciseInstalledExtension>>;
+  largePhotoFixture?: Awaited<ReturnType<typeof runInstalledLargePhotoFixture>>;
   openingFeedback?: unknown;
   mediaDownloadRecovery?: unknown;
   videoSaveFormat?: unknown;
@@ -1139,6 +1189,8 @@ type InstallResult = {
   liveBrowserScope?: string;
   live?: unknown;
   evidenceStatus?: string;
+  publicAcceptance?: 'not-run';
+  fixtureScope?: 'dom20';
   error?: string;
 };
 type TrustedDownloadInputEvidence = {
@@ -1168,6 +1220,8 @@ type TrustedDownloadInputEvidence = {
   bytes?: number;
   sourceUrl?: string;
   notificationScope?: string;
+  openingNotificationObservation?: IngressNotificationSnapshot;
+  recoveryNotification?: IngressNotificationCall;
   downloadScope?: string;
   precondition?: unknown;
   before?: unknown;
@@ -1238,7 +1292,9 @@ declare global {
     | Promise<{ status: string; response?: unknown; error?: string }>
     | undefined;
   var __xegInstalledNotificationObserver: NativeNotificationState | undefined;
-  var __xegIngressNotifications: { calls: number; original: ChromeNotificationCreate } | undefined;
+  var __xegIngressNotifications:
+    | { calls: IngressNotificationCall[]; overflow: boolean; original: ChromeNotificationCreate }
+    | undefined;
   var __xegIngressPause: IngressPauseControl | undefined;
   var __xegDirectRestartObserver:
     | { state: DirectRestartState; listener: (item: ChromeDownloadItem) => void }
@@ -1267,6 +1323,46 @@ type ChromeNotificationCreate = (
   id: string,
   options?: { title?: string; message?: string }
 ) => Promise<string>;
+
+type IngressNotificationCall = { id: string; title: string | null; message: string | null };
+type IngressNotificationSnapshot = {
+  calls: IngressNotificationCall[];
+  overflow: boolean;
+};
+
+const VISIBLE_ARTICLE_BODY =
+  'Only currently available media was collected. The post may contain more; bulk download includes only collected items.';
+const OBSERVED_QUALITY_BODY =
+  'Source quality could not be verified for some items. Images need a verified original before saving; recovered videos use the observed source.';
+
+/** Only the selected 403 article recovery may create one opening notification. */
+export function requireVisibleArticleRecoveryNotification(
+  snapshot: IngressNotificationSnapshot
+): IngressNotificationCall {
+  assert.equal(snapshot.overflow, false, 'Ingress notification history overflowed');
+  assert.equal(snapshot.calls.length, 1, 'Exactly one article recovery notice is required');
+  const notice = snapshot.calls[0]!;
+  assert.match(notice.id, /^xeg-\d+-\d+$/u);
+  assert.equal(notice.title, 'Visible media only');
+  assert(
+    notice.message === VISIBLE_ARTICLE_BODY ||
+      notice.message === `${VISIBLE_ARTICLE_BODY} ${OBSERVED_QUALITY_BODY}`,
+    'Opening notice differs from visible-article recovery'
+  );
+  return notice;
+}
+
+export function assertNoAdditionalIngressNotifications(
+  snapshot: IngressNotificationSnapshot,
+  opening: IngressNotificationCall
+): void {
+  assert.equal(snapshot.overflow, false, 'Ingress notification history overflowed');
+  assert.deepEqual(
+    snapshot.calls,
+    [opening],
+    'Help, synthetic input or cancellation created another native notification'
+  );
+}
 
 declare const chrome: {
   settingsPrivate: {
@@ -2043,7 +2139,7 @@ async function verifyTrustedDownloadInput({
     sourceUrl,
     syntheticInputs: [],
     notificationScope:
-      'Persistent help uses the rendered panel; synthetic input must not cross the native notification boundary; delivery is suppressed',
+      'One exact visible-article recovery notice on API 403; help, synthetic input and cancellation create none; delivery is suppressed',
     downloadScope:
       'Real direct URL download held by bounded fixture body and asynchronous native onDeterminingFilename listener',
     cleanup: {},
@@ -2053,14 +2149,34 @@ async function verifyTrustedDownloadInput({
     nativeLoopback.armHold('pbs.twimg.com', `/media/${QUALITY_IMAGE_PATHS[0]}`);
     await worker.evaluate(() => {
       const original = chrome.notifications.create;
-      const state = { calls: 0, original };
+      const state: {
+        calls: IngressNotificationCall[];
+        overflow: boolean;
+        original: ChromeNotificationCreate;
+      } = { calls: [], overflow: false, original };
       globalThis.__xegIngressNotifications = state;
-      chrome.notifications.create = async (id) => {
-        state.calls += 1;
+      chrome.notifications.create = async (id, options) => {
+        if (state.calls.length >= 8) {
+          state.overflow = true;
+          return id;
+        }
+        state.calls.push({
+          id,
+          title: options?.title ?? null,
+          message: options?.message ?? null,
+        });
         return id;
       };
     });
     notificationSeamInstalled = true;
+    const readIngressNotifications = () =>
+      worker.evaluate(() => {
+        const state = globalThis.__xegIngressNotifications;
+        if (!state) {
+          throw new Error('Notification seam disappeared');
+        }
+        return { calls: state.calls, overflow: state.overflow };
+      });
     await extensionPage.evaluate(
       ({ oldIds, sourceUrl }: { oldIds: number[]; sourceUrl: string }) => {
         const state: IngressPauseState = {
@@ -2138,6 +2254,14 @@ async function verifyTrustedDownloadInput({
     await trigger.click();
     const gallery = page.locator('[data-xeg-gallery-container]');
     await gallery.waitFor({ state: 'visible' });
+    const openingNotice = await waitForValue(async () => {
+      const snapshot = await readIngressNotifications();
+      evidence.openingNotificationObservation = snapshot;
+      return snapshot.calls.length
+        ? requireVisibleArticleRecoveryNotification(snapshot)
+        : undefined;
+    }, 'one identified visible-article recovery notice');
+    evidence.recoveryNotification = openingNotice;
     await page.keyboard.press('?');
     const helpPanel = gallery.locator('[data-gallery-element="keyboard-help-panel"]');
     await helpPanel.waitFor({ state: 'visible' });
@@ -2145,17 +2269,7 @@ async function verifyTrustedDownloadInput({
       await gallery.locator('#keyboard-help-button').getAttribute('aria-expanded'),
       'true'
     );
-    assert.equal(
-      await worker.evaluate(() => {
-        const state = globalThis.__xegIngressNotifications;
-        if (!state) {
-          throw new Error('Notification seam disappeared');
-        }
-        return state.calls;
-      }),
-      0,
-      'Rendered help must not create a native notification'
-    );
+    assertNoAdditionalIngressNotifications(await readIngressNotifications(), openingNotice);
     await page.keyboard.press('Escape');
     await helpPanel.waitFor({ state: 'hidden' });
     assert.equal(await gallery.isVisible(), true, 'Help Escape must retain the gallery');
@@ -2311,17 +2425,7 @@ async function verifyTrustedDownloadInput({
       });
       assert.deepEqual(filenameGate, { downloadId, status: 'held' });
       assert.deepEqual(current.record, before.record);
-      assert.equal(
-        await worker.evaluate(() => {
-          const state = globalThis.__xegIngressNotifications;
-          if (!state) {
-            throw new Error('Notification seam disappeared');
-          }
-          return state.calls;
-        }),
-        0,
-        `${input}: synthetic input must not induce a notification`
-      );
+      assertNoAdditionalIngressNotifications(await readIngressNotifications(), openingNotice);
       assert.equal(
         await helpPanel.isVisible(),
         false,
@@ -2379,6 +2483,8 @@ async function verifyTrustedDownloadInput({
         (await readdir(downloads)).every((entry) => initialFiles.has(entry)) ? true : undefined,
       'cancelled task files to disappear'
     );
+    const afterNotifications = await readIngressNotifications();
+    assertNoAdditionalIngressNotifications(afterNotifications, openingNotice);
     evidence.after = {
       downloadId,
       state: terminal.download.state,
@@ -2386,13 +2492,7 @@ async function verifyTrustedDownloadInput({
       requestBinding: terminal.record,
       filesAdded: [],
       galleryDetached: true,
-      notificationCalls: await worker.evaluate(() => {
-        const state = globalThis.__xegIngressNotifications;
-        if (!state) {
-          throw new Error('Notification seam disappeared');
-        }
-        return state.calls;
-      }),
+      notificationCalls: afterNotifications.calls.length - 1,
     };
     assert.equal(evidence.after.notificationCalls, 0);
     evidence.status = 'passed';
@@ -5176,7 +5276,7 @@ async function runPublicFixtureCycle({
     'Public fixture must request TweetResultByRestId once'
   );
   assert.equal(apiResponses.at(-1)?.status, 403, 'Public fixture API route must return 403');
-  await assertSourceDetails(gallery, 'absent');
+  await assertSourceDetails(gallery, { scope: 'unknown-total', quality: 'verified', count: 2 });
   await page.screenshot({ path: join(output, 'public-dom-gallery.png') });
 
   await page.keyboard.press('Escape');
@@ -13533,7 +13633,7 @@ async function runSourceQualityCycle({
     selectedSource.originalUrl,
     'A healthy API result must render its verified original source'
   );
-  await assertSourceDetails(gallery, 'absent');
+  await assertSourceDetails(gallery, { scope: 'complete', quality: 'verified' });
   const selectedImage = await gallery
     .locator('[data-gallery-element="item"][data-index="1"] img')
     .evaluate((element) => {
@@ -14930,7 +15030,7 @@ async function runOriginalAvailabilityCycles({
         path: `/media/${QUALITY_IMAGE_PATHS[1]}`,
       });
       assert.equal(selection.source, original);
-      await assertSourceDetails(gallery, 'absent');
+      await assertSourceDetails(gallery, { scope: 'complete', quality: 'verified' });
       await assertQuotedOriginLink(gallery, QUALITY_FIXTURE_URL);
       const selectedImage = gallery.locator('[data-gallery-element="item"][data-index="1"] img');
       const decodedImage = () =>
@@ -16277,8 +16377,11 @@ async function runMediaDownloadRecoveryProbe({
     await tileGallery.waitFor({ state: 'visible' });
     assert.equal(await tileGallery.locator('[data-gallery-element="item"]').count(), 1);
     await page.waitForTimeout(5_250);
-    const tileSummary = await assertSourceDetails(tileGallery, 'visible-tile');
-    await assertSourceDetails(tileGallery, 'unverified-original');
+    const tileSummary = await assertSourceDetails(tileGallery, {
+      scope: 'unknown-total',
+      quality: 'unavailable',
+      count: 1,
+    });
     const tileKnownDownloads = new Set((await queryDownloads(extensionPage)).map(({ id }) => id));
     await tileGallery
       .locator('[data-gallery-element="toolbar"] button[aria-label="Download"]')
@@ -16342,7 +16445,11 @@ async function runMediaDownloadRecoveryProbe({
       await videoGallery.waitFor({ state: 'visible' });
       assert.equal(await videoGallery.locator('[data-gallery-element="item"]').count(), 1);
       await page.waitForTimeout(5_250);
-      const observedSummary = await assertSourceDetails(videoGallery, 'observed');
+      const observedSummary = await assertSourceDetails(videoGallery, {
+        scope: 'unknown-total',
+        quality: 'observed',
+        count: 1,
+      });
       assert.equal(
         deniedVideoApi.length,
         1,
@@ -16363,8 +16470,11 @@ async function runMediaDownloadRecoveryProbe({
       const mixedGallery = page.locator('[data-xeg-gallery-container]');
       await mixedGallery.waitFor({ state: 'visible' });
       assert.equal(await mixedGallery.locator('[data-gallery-element="item"]').count(), 2);
-      const mixedSummary = await assertSourceDetails(mixedGallery, 'observed');
-      assert(!mixedSummary?.includes('recovered from this tile only'));
+      await assertSourceDetails(mixedGallery, {
+        scope: 'unknown-total',
+        quality: 'observed',
+        count: 2,
+      });
       const videoPosition = Number(
         await mixedGallery.locator('#xeg-toolbar-counter').getAttribute('data-position')
       );
@@ -16376,16 +16486,24 @@ async function runMediaDownloadRecoveryProbe({
         type: 'image',
         path: '/media/QQuoteOnePhoto.jpg',
       });
-      await assertSourceDetails(mixedGallery, 'absent');
+      await assertSourceDetails(mixedGallery, {
+        scope: 'unknown-total',
+        quality: 'verified',
+        count: 2,
+      });
       await mixedGallery
         .locator(`button[aria-label="${towardImage === 'Next' ? 'Previous' : 'Next'}"]`)
         .click();
-      await assertSourceDetails(mixedGallery, 'observed');
+      await assertSourceDetails(mixedGallery, {
+        scope: 'unknown-total',
+        quality: 'observed',
+        count: 2,
+      });
       observations.x03MixedSaveQuality = {
         observedVideoPosition: videoPosition,
-        verifiedImageHasNoWarning: true,
+        verifiedImageHasNoQualityWarning: true,
         displayedItemDetailsUpdated: true,
-        noFalseTileScope: true,
+        unknownTotalScopeShown: true,
         deniedApi: deniedVideoApi.slice(1),
       };
       assert.equal(deniedVideoApi.length, 2, 'Each video fixture must make one provider request');
@@ -17655,8 +17773,11 @@ async function runUxDetailsProbe({
     await gallery.waitFor({ state: 'visible' });
     assert.equal(await gallery.locator('[data-gallery-element="item"]').count(), 1);
     await page.waitForTimeout(5_250);
-    await assertSourceDetails(gallery, 'visible-tile');
-    await assertSourceDetails(gallery, 'unverified-original');
+    await assertSourceDetails(gallery, {
+      scope: 'unknown-total',
+      quality: 'unavailable',
+      count: 1,
+    });
     const toolbar = gallery.locator('[data-gallery-element="toolbar"]');
     const settingsButton = toolbar.locator('#settings-button');
     await settingsButton.click();
@@ -21705,10 +21826,47 @@ export async function run({
     assert.equal(liveUrls.length, 0, 'Source image qualification uses only owned fixture URLs');
     assert.equal(liveObservation, null, 'Source image qualification cannot share live observation');
   }
+  const validatedLiveUrls = validateLiveUrls(liveUrls);
+  const photoCollectionSelectorText = await readFile(
+    join(root, 'validation/windows/inputs/live-photo-collection.json'),
+    'utf8'
+  ).catch((error: unknown) => {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  });
+  const photoCollection =
+    photoCollectionSelectorText === null
+      ? null
+      : parsePhotoCollectionSelector(
+          JSON.parse(photoCollectionSelectorText),
+          installation,
+          validatedLiveUrls
+        );
+  if (photoCollection) {
+    assert.equal(liveObservation, null);
+    assert(!reportedFilenameProbe && !liveSettingsProbe);
+    if (photoCollection.sourceKnownOnly) {
+      assert.equal(browserName, 'chrome', 'Source-known mode requires installed Chrome');
+      assert.equal(headless, false, 'Source-known mode requires desktop Chrome');
+      assert.equal(installation, 'extension', 'Source-known mode requires the extension');
+      assert.equal(validatedLiveUrls.length, 0, 'Source-known mode cannot visit public X');
+    }
+    const selectors = (await readdir(join(root, 'validation/windows/inputs')))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+    assert.deepEqual(
+      selectors,
+      ['live-photo-collection.json'],
+      'Photo collection needs an exclusive selector'
+    );
+  }
   if (installation === 'userscript') {
     assert.equal(acceptanceSelectorText, null, 'Actual-site acceptance requires an extension');
     assert(
-      liveUrls.length === 0 ||
+      photoCollection !== null ||
+        liveUrls.length === 0 ||
         (reportedFilenameTarget !== null &&
           liveUrls.length === 1 &&
           liveUrls[0] === reportedFilenameTarget.pageUrl),
@@ -21729,8 +21887,11 @@ export async function run({
       null,
       'Installed userscript fixture does not support duration observation'
     );
-    const { runUserscriptInstallation, runUserscriptLiveInstallation } =
-      await import('./userscript-install.ts');
+    const {
+      runUserscriptInstallation,
+      runUserscriptLiveInstallation,
+      runUserscriptPhotoCollectionInstallation,
+    } = await import('./userscript-install.ts');
     const fixture = await runUserscriptInstallation({
       chromium,
       root,
@@ -21738,23 +21899,36 @@ export async function run({
       browserName,
       headless,
       attachmentFilenameProbe,
+      photoCollectionFixture: photoCollection !== null,
     });
-    if (reportedFilenameTarget === null) {
+    if (reportedFilenameTarget === null && photoCollection === null) {
       return fixture;
     }
     const stage = await mkdtemp(join(root, 'xeg-userscript-live-stage-'));
-    let live: Awaited<ReturnType<typeof runUserscriptLiveInstallation>> | undefined;
+    let live:
+      | Awaited<ReturnType<typeof runUserscriptLiveInstallation>>
+      | Awaited<ReturnType<typeof runUserscriptPhotoCollectionInstallation>>
+      | undefined;
     let liveError: unknown;
     let liveFailed = false;
     try {
-      live = await runUserscriptLiveInstallation({
-        chromium,
-        root,
-        output: stage,
-        browserName,
-        headless,
-        target: reportedFilenameTarget,
-      });
+      live = photoCollection
+        ? await runUserscriptPhotoCollectionInstallation({
+            chromium,
+            root,
+            output: stage,
+            browserName,
+            headless,
+            contract: photoCollection,
+          })
+        : await runUserscriptLiveInstallation({
+            chromium,
+            root,
+            output: stage,
+            browserName,
+            headless,
+            target: reportedFilenameTarget!,
+          });
     } catch (error) {
       liveFailed = true;
       liveError = error;
@@ -21785,7 +21959,7 @@ export async function run({
       throw liveError;
     }
     assert(live, 'Live userscript phase produced no result');
-    return { ...fixture, live, liveEvidence, liveUrls: [reportedFilenameTarget.pageUrl] };
+    return { ...fixture, live, liveEvidence, liveUrls: validatedLiveUrls };
   }
   const upgradeInput = await readUpgradeInput(root);
   const sameVersionInput = await readSameVersionInput(root);
@@ -21981,7 +22155,7 @@ export async function run({
     assert.equal(liveUrls.length, 0, 'Same-version attribution does not observe live URLs');
     assert.equal(liveObservation, null);
   }
-  const validatedLiveUrls = validateLiveUrls(liveUrls);
+  assert(!photoCollection || (!upgradeInput && !sameVersionInput));
   assert(
     !liveSettingsProbe ||
       (!settingsProbe &&
@@ -22012,7 +22186,8 @@ export async function run({
         settingsProbe ||
         nativeUiProbe ||
         uxDetailsProbe ||
-        videoFormatProbe,
+        videoFormatProbe ||
+        photoCollection !== null,
     }
   );
   if (reportedFilenameProbe) {
@@ -22057,38 +22232,47 @@ export async function run({
     installationMethod: 'cdp-unpacked-extension',
     liveUrls: validatedLiveUrls,
     liveObservation,
-    scope:
-      reportedFilenameText !== null
-        ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
-        : liveSettingsProbe
-          ? 'focused installed language/theme settings acceptance; no full prior live campaign'
-          : videoFormatProbe
-            ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
-            : sourceImageProbe
-              ? 'focused installed-Edge source image 404, empty and corrupt recovery; owned X fixture only'
-              : mediaApiProbe
-                ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
-                : uxDetailsProbe
-                  ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
-                  : settingsProbe
-                    ? 'installed-extension settings persistence fixture; no live X observation'
-                    : failedEntryProbe
-                      ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
-                      : experienceProbe
-                        ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
-                        : recoveryProbe
-                          ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
-                          : openingProbe
-                            ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
-                            : validatedLiveUrls.length
-                              ? actualSiteAcceptance
-                                ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
-                                : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
-                              : sameVersionInput
-                                ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
-                                : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
+    scope: photoCollection?.transportProbe
+      ? 'diagnostic only: installed-extension B ZIP transport; no native ZIP or public X acceptance'
+      : photoCollection !== null
+        ? 'focused installed-extension 20/40 photo collection and native saved-byte proof; no full actual-site/video/settings campaign'
+        : reportedFilenameText !== null
+          ? 'reported live photo native filename and original-byte qualification; original user-profile cause unverified'
+          : liveSettingsProbe
+            ? 'focused installed language/theme settings acceptance; no full prior live campaign'
+            : videoFormatProbe
+              ? 'issue 484 installed video save format and rejected source fixture; no live X observation'
+              : sourceImageProbe
+                ? 'focused installed-Edge source image 404, empty and corrupt recovery; owned X fixture only'
+                : mediaApiProbe
+                  ? 'focused installed-extension media API reuse and response accounting; no full fixture or live X observation'
+                  : uxDetailsProbe
+                    ? 'focused installed-extension opened details and terminal-video exit; owned X fixture only'
+                    : settingsProbe
+                      ? 'installed-extension settings persistence fixture; no live X observation'
+                      : failedEntryProbe
+                        ? 'issue 392 installed-extension failed-entry ZIP recovery fixture; no live X observation'
+                        : experienceProbe
+                          ? 'installed gallery experience and expanded-panel ownership fixtures; no live X observation'
+                          : recoveryProbe
+                            ? 'issue 382 installed-extension media/download recovery fixture; no live X observation'
+                            : openingProbe
+                              ? 'issue 381 installed-extension opening feedback fixture; no live X observation'
+                              : validatedLiveUrls.length
+                                ? actualSiteAcceptance
+                                  ? 'deterministic fixture followed by explicit actual-site gallery acceptance with bounded retained downloads; no auth, consent, CAPTCHA, native Save As, Explorer, or performance claim'
+                                  : 'deterministic fixture followed by opt-in public X status diagnostics; no auth, consent, CAPTCHA, live download, native Save As, Explorer, or performance claim'
+                                : sameVersionInput
+                                  ? 'one declared v2.3.8 artifact in a fresh installed extension profile; three deterministic quoted-video controls'
+                                  : 'deterministic fixture; no live or authenticated X.com, native Save As, Explorer, or performance claim',
     status: 'failed',
   };
+  if (photoCollection?.sourceKnownOnly) {
+    result.scope =
+      photoCollection.sourceKnownScope === 'dom20'
+        ? 'source-known installed-extension DOM 20 fixture only; API 20/40 and public X not run'
+        : 'source-known installed-extension API 20/40 and DOM 20 fixtures only; no public X acceptance';
+  }
   try {
     if (upgradeInput) {
       await cp(upgradeInput.previousExtensionPath, installedExtensionPath, { recursive: true });
@@ -22118,7 +22302,8 @@ export async function run({
       })
     );
     nativeLoopback = await startExtensionNativeFixtureLoopback(
-      join(root, 'validation/windows/userscript-fixture-certificate.ps1')
+      join(root, 'validation/windows/userscript-fixture-certificate.ps1'),
+      photoCollection?.transportProbe === true
     );
     result.fixtureTransport = {
       kind: 'task-owned-https-loopback',
@@ -22329,6 +22514,33 @@ export async function run({
           browserCdp,
           nativeLoopback
         );
+        if (photoCollection) {
+          result.largePhotoFixture = await runInstalledLargePhotoFixture({
+            context,
+            extensionId,
+            downloads,
+            output,
+            root,
+            installNative: ({ originals, pages, dom }) => {
+              if (photoCollection.sourceKnownScope === 'dom20') {
+                nativeLoopback!.setLargeDomPhotos(dom.originals, true);
+                nativeLoopback!.setLargePhotoDocuments(dom.pages, 'dom20');
+              } else {
+                nativeLoopback!.setLargePhotos(originals);
+                if (photoCollection.sourceKnownOnly) {
+                  nativeLoopback!.setLargePhotoDocuments(new Map([...pages, ...dom.pages]));
+                }
+              }
+            },
+            installDomNative: ({ dom }) => nativeLoopback!.setLargeDomPhotos(dom.originals),
+            nativeSnapshot: () => nativeLoopback!.snapshot(),
+            transportProbe: photoCollection.transportProbe === true,
+            sourceKnownOnly: photoCollection.sourceKnownOnly === true,
+            ...(photoCollection.sourceKnownScope
+              ? { sourceKnownScope: photoCollection.sourceKnownScope }
+              : {}),
+          });
+        }
       }
     }
     await context.unrouteAll({ behavior: 'wait' });
@@ -22372,30 +22584,51 @@ export async function run({
       result.liveBrowserScope =
         'fresh browser process without fixture host mapping or SPKI exception';
     }
-    if (!sameVersionInput) {
-      const live = liveSettingsProbe
-        ? await runLiveSettingsAcceptance({
+    if (photoCollection?.transportProbe) {
+      assert.equal(result.largePhotoFixture?.status, 'diagnostic');
+      result.evidenceStatus = 'diagnostic-only';
+    } else if (photoCollection?.sourceKnownOnly) {
+      assert.equal(result.largePhotoFixture?.status, 'passed');
+      result.evidenceStatus =
+        photoCollection.sourceKnownScope === 'dom20'
+          ? 'source-known-dom20-fixture-only'
+          : 'source-known-fixture-only';
+      result.publicAcceptance = 'not-run';
+      if (photoCollection.sourceKnownScope === 'dom20') {
+        result.fixtureScope = 'dom20';
+      }
+    } else if (!sameVersionInput) {
+      const live = photoCollection
+        ? await runLivePhotoCollection({
             context,
             extensionId,
-            liveUrls: validatedLiveUrls,
+            contract: photoCollection,
+            downloads,
             output,
           })
-        : await observeLiveUrls({
-            context,
-            extensionId,
-            liveUrls: validatedLiveUrls,
-            output,
-            actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
-            reportedFilename:
-              reportedFilenameTarget === null
-                ? null
-                : {
-                    root,
-                    downloads,
-                    target: reportedFilenameTarget,
-                    browserName: browserName as 'chrome' | 'msedge',
-                  },
-          });
+        : liveSettingsProbe
+          ? await runLiveSettingsAcceptance({
+              context,
+              extensionId,
+              liveUrls: validatedLiveUrls,
+              output,
+            })
+          : await observeLiveUrls({
+              context,
+              extensionId,
+              liveUrls: validatedLiveUrls,
+              output,
+              actualSiteAcceptance: actualSiteAcceptance ? { downloads } : null,
+              reportedFilename:
+                reportedFilenameTarget === null
+                  ? null
+                  : {
+                      root,
+                      downloads,
+                      target: reportedFilenameTarget,
+                      browserName: browserName as 'chrome' | 'msedge',
+                    },
+            });
       if (liveSettingsProbe) {
         assert.equal(
           live.evidenceStatus,
@@ -22403,14 +22636,25 @@ export async function run({
           'Required current X language/settings acceptance is blocked or failed'
         );
       }
+      if (photoCollection) {
+        assert.equal(
+          live.status,
+          'observed',
+          'Focused photo collection or saved-byte proof is incomplete'
+        );
+      }
       result.live = live;
-      result.evidenceStatus = validatedLiveUrls.length
-        ? live.evidenceStatus
-        : mediaApiProbe
-          ? 'media-api-reuse-fixture-observed'
-          : sourceImageProbe
-            ? 'source-image-failures-fixture-observed'
-            : 'fixture-observed';
+      result.evidenceStatus = photoCollection
+        ? 'photo-collection-observed'
+        : validatedLiveUrls.length
+          ? typeof live.evidenceStatus === 'string'
+            ? live.evidenceStatus
+            : 'unverified'
+          : mediaApiProbe
+            ? 'media-api-reuse-fixture-observed'
+            : sourceImageProbe
+              ? 'source-image-failures-fixture-observed'
+              : 'fixture-observed';
       if (reportedFilenameText !== null) {
         assert(Array.isArray(live.pages) && live.pages.length === 1);
         const page: unknown = live.pages[0];
@@ -22428,7 +22672,7 @@ export async function run({
     } else {
       result.evidenceStatus = 'same-version-fixture-observed';
     }
-    result.status = 'passed';
+    result.status = photoCollection?.transportProbe ? 'diagnostic' : 'passed';
   } catch (error) {
     primarySeen = true;
     primaryError = error;

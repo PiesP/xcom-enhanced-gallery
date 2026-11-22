@@ -82,27 +82,32 @@ it('selects confirmed same-photo JPEG before single and ZIP source naming', asyn
   expect(mock.request).toHaveBeenCalledTimes(2);
 });
 
-it('prioritizes the clicked attachment and bounds distinct source probes', async () => {
-  document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a>${Array.from({ length: 6 }, (_, index) => `<a href="/author/status/222/photo/${index + 1}"><img id="photo-${index}" src="https://pbs.twimg.com/media/PHOTO${index}?format=webp&name=small"></a>`).join('')}</article>`;
-  mock.request.mockImplementation((details) => {
-    queueMicrotask(() => details.onload?.(successfulWebp(details)));
-    return { abort: vi.fn() };
-  });
-  const result = await new DOMFallbackExtractor().extract(
-    owner,
-    document.getElementById('photo-5')!,
-    {},
-    'probe-limit'
-  );
-  expect(result.success).toBe(true);
-  expect(result.clickedIndex).toBe(5);
-  expect(result.mediaItems.map((media) => media.attachmentOrdinal)).toEqual([0, 1, 2, 3, 4, 5]);
-  expect(result.mediaItems[5]?.downloadSource?.quality).toBe('cdn-original');
-  expect(result.mediaItems[3]?.downloadSource?.quality).toBe('unverified-original');
-  expect(result.mediaItems[4]?.downloadSource?.quality).toBe('unverified-original');
-  expect(mock.request).toHaveBeenCalledTimes(4);
-  expect(mock.request.mock.calls[0]?.[0].url).toContain('/media/PHOTO5?');
-});
+it.each([6, 20])(
+  'prioritizes the clicked attachment among %i photos and bounds distinct source probes',
+  async (count) => {
+    document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a>${Array.from({ length: count }, (_, index) => `<a href="/author/status/222/photo/${index + 1}"><img id="photo-${index}" src="https://pbs.twimg.com/media/PHOTO${index}?format=webp&name=small"></a>`).join('')}</article>`;
+    mock.request.mockImplementation((details) => {
+      queueMicrotask(() => details.onload?.(successfulWebp(details)));
+      return { abort: vi.fn() };
+    });
+    const result = await new DOMFallbackExtractor().extract(
+      owner,
+      document.getElementById(`photo-${count - 1}`)!,
+      {},
+      'probe-limit'
+    );
+    expect(result.success).toBe(true);
+    expect(result.clickedIndex).toBe(count - 1);
+    expect(result.mediaItems.map((media) => media.attachmentOrdinal)).toEqual(
+      Array.from({ length: count }, (_, index) => index)
+    );
+    expect(result.mediaItems[count - 1]?.downloadSource?.quality).toBe('cdn-original');
+    expect(result.mediaItems[3]?.downloadSource?.quality).toBe('unverified-original');
+    expect(result.mediaItems[4]?.downloadSource?.quality).toBe('unverified-original');
+    expect(mock.request).toHaveBeenCalledTimes(4);
+    expect(mock.request.mock.calls[0]?.[0].url).toContain(`/media/PHOTO${count - 1}?`);
+  }
+);
 
 it('shares one original probe across display variants with conflicting positions left unknown', async () => {
   document.body.innerHTML = `<article><a href="/author/status/222"><time>Now</time></a><a href="/author/status/222/photo/1"><img id="target" src="${display}"></a><a href="/author/status/222/photo/2"><img src="${display.replace('name=small', 'name=large')}"></a></article>`;
