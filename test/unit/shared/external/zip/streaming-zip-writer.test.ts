@@ -46,6 +46,69 @@ describe('StreamingZipWriter cooperative CRC32', () => {
     expect(toHex(bytes)).toBe(BASELINE_ZIP_HEX);
   });
 
+  it.each([
+    [15, 0x5e7c4095],
+    [31, 0xefd50db4],
+  ])('publishes the live length and CRC after a shrink to a %i-byte tail', async (tail, crc) => {
+    const stripe = 1024 * 1024;
+    const offset = 7;
+    const backing = new ArrayBuffer(offset + 2 * stripe + 257, { maxByteLength: 4 * stripe });
+    const source = new Uint8Array(backing, offset);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const size = stripe + tail;
+    const yieldOnce = vi.fn(async () => backing.resize(offset + size));
+    vi.stubGlobal('scheduler', { yield: yieldOnce });
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(yieldOnce).toHaveBeenCalledOnce();
+    expect(header.getUint32(18, true)).toBe(size);
+    expect(header.getUint32(14, true)).toBe(crc);
+    expect(header.getUint32(31 + size, true)).toBe(0x02014b50);
+    expect(header.getUint32(31 + size + 16, true)).toBe(crc);
+    expect(header.getUint32(31 + size + 24, true)).toBe(size);
+    expect(header.getUint32(bytes.length - 6, true)).toBe(31 + size);
+  });
+
+  it('uses only the declared bytes of a fixed subview with a larger backing', async () => {
+    const data = new Uint8Array(1024 * 1024 + 79);
+    data.fill(247);
+    const source = data.subarray(7, 1024 * 1024 + 38);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(header.getUint32(18, true)).toBe(source.length);
+    expect(header.getUint32(14, true)).toBe(0xefd50db4);
+    expect(header.getUint32(31 + source.length + 16, true)).toBe(0xefd50db4);
+  });
+
+  it.each(['grow', 'truncate'])(
+    'releases the reservation after a disallowed %s at yield',
+    async (change) => {
+      const stripe = 1024 * 1024;
+      const backing = new ArrayBuffer(stripe + 16, { maxByteLength: 2 * stripe });
+      const data = new Uint8Array(backing);
+      vi.stubGlobal('scheduler', {
+        yield: async () => backing.resize(change === 'grow' ? stripe + 17 : stripe - 1),
+      });
+      const writer = new StreamingZipWriter();
+      await expect(writer.addFile('invalid.bin', data)).rejects.toThrow(
+        change === 'grow' ? /reservation/u : /truncated/u
+      );
+      await writer.addFile('next.bin', new Uint8Array([42]));
+      const bytes = await archiveBytes(writer);
+      expect(findBytes(bytes, new TextEncoder().encode('invalid.bin'))).toBe(-1);
+      expect(findBytes(bytes, new TextEncoder().encode('next.bin'))).toBe(30);
+    }
+  );
+
   it('produces the same archive across Blob checksum boundaries', async () => {
     const data = new Uint8Array(1024 * 1024 + 1);
     data[0] = 3;

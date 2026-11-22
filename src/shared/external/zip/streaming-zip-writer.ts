@@ -199,20 +199,25 @@ async function calculateStreamCRC32(
 }
 
 /** Consume one bounded range at a time and yield between checksum ranges. */
-async function calculateCRC32(data: EntryBody, signal?: AbortSignal): Promise<number> {
+async function calculateCRC32(
+  data: EntryBody,
+  maxDataBytes: number,
+  signal?: AbortSignal
+): Promise<{ crc32: number; size: number }> {
   const table = ensureCRC32Table();
   const size = data.byteLength;
   if (!ArrayBuffer.isView(data) && size > CRC32_CHUNK_SIZE) {
     signal?.throwIfAborted();
     const reader = await data.openByteReader();
     if (reader) {
-      return calculateStreamCRC32(reader, size, table, signal);
+      return { crc32: await calculateStreamCRC32(reader, size, table, signal), size };
     }
   }
   let crc = 0xffffffff;
-  for (let start = 0; start < size; start += CRC32_CHUNK_SIZE) {
+  let consumed = 0;
+  for (let start = 0; start < data.byteLength; start += CRC32_CHUNK_SIZE) {
     signal?.throwIfAborted();
-    const end = Math.min(start + CRC32_CHUNK_SIZE, size);
+    const end = Math.min(start + CRC32_CHUNK_SIZE, data.byteLength);
     if (ArrayBuffer.isView(data)) {
       crc = updateCRC32(crc, data, start, end, table);
     } else {
@@ -220,11 +225,21 @@ async function calculateCRC32(data: EntryBody, signal?: AbortSignal): Promise<nu
       signal?.throwIfAborted();
       crc = updateCRC32(crc, bytes, 0, bytes.length, table);
     }
-    if (end < size) {
+    consumed = end;
+    if (end < data.byteLength) {
       await schedulerYield();
+      signal?.throwIfAborted();
+      if (data.byteLength > maxDataBytes) {
+        throw new ZipResourceLimitError(
+          'Bulk ZIP limit exceeded: member grew beyond its reservation'
+        );
+      }
+      if (data.byteLength < consumed) {
+        throw new RangeError('ZIP member was truncated within bytes already checksummed');
+      }
     }
   }
-  return (crc ^ 0xffffffff) >>> 0;
+  return { crc32: (crc ^ 0xffffffff) >>> 0, size: consumed };
 }
 
 /**
@@ -424,9 +439,9 @@ export class StreamingZipWriter {
           // member can enter the ordered writer with its checksum already computed.
           const checksum = ArrayBuffer.isView(data)
             ? undefined
-            : await calculateCRC32(data, options.signal);
+            : await calculateCRC32(data, maxDataBytes, options.signal);
           const operation = this.pendingAdd.then(() =>
-            this.addFileInOrder(filename, data, options.signal, checksum)
+            this.addFileInOrder(filename, data, maxDataBytes, options.signal, checksum)
           );
           this.pendingAdd = operation.catch(() => undefined);
           await operation;
@@ -441,10 +456,10 @@ export class StreamingZipWriter {
   private async addFileInOrder(
     filename: string,
     data: EntryBody,
+    maxDataBytes: number,
     signal?: AbortSignal,
-    checksum?: number
+    checksum?: { crc32: number; size: number }
   ): Promise<void> {
-    const size = data.byteLength;
     signal?.throwIfAborted();
     // Zip32-only: entry count fits in 16-bit EOCD fields, sizes in 32-bit fields
     assertZip32(
@@ -452,7 +467,7 @@ export class StreamingZipWriter {
       `too many entries (count=${this.entries.length + 1})`
     );
 
-    assertZip32(size < ZIP_CONST.MAX_UINT32, `file too large (size=${size})`);
+    assertZip32(data.byteLength < ZIP_CONST.MAX_UINT32, `file too large (size=${data.byteLength})`);
     assertZip32(
       this.currentOffset < ZIP_CONST.MAX_UINT32,
       `offset overflow (offset=${this.currentOffset})`
@@ -461,20 +476,25 @@ export class StreamingZipWriter {
     const filenameBytes = encodeUtf8(filename);
     const localHeaderSize = LOCAL_FILE_HEADER_BYTES + filenameBytes.length;
     const centralDirectoryEntrySize = CENTRAL_DIRECTORY_ENTRY_BYTES + filenameBytes.length;
-    const finalArchiveSize =
-      this.currentOffset +
-      localHeaderSize +
-      size +
-      this.centralDirectorySize +
-      centralDirectoryEntrySize +
-      END_OF_CENTRAL_DIRECTORY_BYTES;
-    if (finalArchiveSize > this.maxArchiveBytes) {
+    const available = Math.min(
+      maxDataBytes,
+      this.maxArchiveBytes -
+        this.currentOffset -
+        localHeaderSize -
+        this.centralDirectorySize -
+        centralDirectoryEntrySize -
+        END_OF_CENTRAL_DIRECTORY_BYTES
+    );
+    if (data.byteLength > available) {
       throw new ZipResourceLimitError(
         `Bulk ZIP limit exceeded: archive would exceed ${this.maxArchiveBytes} bytes`
       );
     }
-    const crc32 = checksum ?? (await calculateCRC32(data, signal));
+    const { crc32, size } = checksum ?? (await calculateCRC32(data, available, signal));
     signal?.throwIfAborted();
+    if (size !== data.byteLength) {
+      throw new RangeError('ZIP member size changed after its checksum');
+    }
 
     // Local File Header (30 bytes + filename length)
     const localHeader = concat([
