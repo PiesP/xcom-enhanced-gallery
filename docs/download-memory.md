@@ -24,9 +24,10 @@ A response chunk rejected on arrival is not accepted into retained storage.
 | Userscript anchor | An anchor click has no native completion observer. Its Blob URL and owner remain until genuine page teardown; synthetic lifecycle events and entering the back/forward cache do not release them. This preserves the existing filename behavior. |
 
 `OwnedBlob` input promises and providers must reserve storage before starting
-their producer. A cached input keeps its own lease; ZIP workers borrow it and
-reserve the separate `arrayBuffer()` copy. Releasing a lease means its owner
-has stopped using that backing storage. Sharing an existing lease does not
+their producer. A cached input keeps its own lease. The ZIP worker borrows the
+immutable Blob for the archive and reserves scratch for one CRC slice at a time.
+The archive keeps that lease until it creates the final Blob or discards the
+entry data. Releasing a lease means its owner has stopped using that storage. Sharing an existing lease does not
 charge the same backing allocation twice.
 
 Download caching and ZIP planning use the preferred save URL from the

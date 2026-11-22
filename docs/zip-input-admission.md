@@ -10,14 +10,14 @@ starting a fetch or creating a Blob.
 
 The ZIP worker infers `owned-blob`, `blob-provider`, or `direct-url` from its
 actual `blob` and `getBlob` fields. The optional `inputKind` label is diagnostic
-and cannot reduce the worker's memory charge. An owned Blob retains its input
-lease while the worker reserves a separate `arrayBuffer()` copy. A provider
-needs that copy capacity plus room for its response; a direct URL does not
-reserve the Blob-to-buffer copy. Every accepted entry also reserves filename,
-header and directory overhead, a response/body allocation, and a future final
-ZIP Blob copy. The worker checks known sizes before invoking the provider or
-transport. `onEntryAdmission` exposes only the entry index, inferred input
-kind, admitted response cap and optional known size for bounded diagnostics.
+and cannot reduce the worker's memory charge. For Blob inputs the worker
+reserves CRC scratch before calling the provider or reading the cached Blob.
+A provider also needs capacity for its response. Direct URL entries retain the
+fetched buffer. Every entry reserves filename, header and directory overhead
+and capacity for its share of the final ZIP Blob. The worker checks known
+sizes before invoking the provider or transport. For bounded diagnostics,
+`onEntryAdmission` exposes the entry index, inferred input kind, admitted
+response cap and optional known size.
 
 Unknown-size providers and direct responses take the full worker reservation
 and are serialized so their whole responses cannot overlap. A provider that
