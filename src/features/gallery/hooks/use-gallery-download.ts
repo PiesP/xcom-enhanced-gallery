@@ -5,6 +5,7 @@
  * @fileoverview Gallery download hook - manages single and batch download.
  */
 
+import { DOWNLOAD_CACHE_MAX_ENTRIES } from '@constants/performance';
 import { getNotificationAdapter, notifySafely } from '@platform/index';
 import { dismissBulkDownloadOutcome } from '@features/gallery/hooks/dismiss-bulk-download-outcome';
 import { normalizeErrorMessage } from '@shared/error/app-error-reporter';
@@ -317,10 +318,20 @@ export function createDownloadHandler() {
         }
         applyObservedDownloadSources(mediaItems, resolvedMediaItems, sessionRevision);
         const snapshot = resolvedMediaItems.map(snapshotMedia);
+        const largePhotoScan =
+          resolvedMediaItems.length > DOWNLOAD_CACHE_MAX_ENTRIES &&
+          resolvedMediaItems.every((item) => item.type === 'image');
         const result = await downloadService.downloadBulk(resolvedMediaItems, {
           mediaBlobProvider: Object.assign(
             (item: MediaInfo, requestSignal?: AbortSignal, maxResponseBytes?: number) =>
-              mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
+              largePhotoScan
+                ? mediaService.getDownloadMedia(
+                    item,
+                    requestSignal,
+                    maxResponseBytes,
+                    'large-photo-scan'
+                  )
+                : mediaService.getDownloadMedia(item, requestSignal, maxResponseBytes),
             { supports: (item: MediaInfo) => item.type === 'image' }
           ),
           signal,
