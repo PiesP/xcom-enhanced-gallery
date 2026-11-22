@@ -240,7 +240,7 @@ export class DownloadMediaCache {
 
   private evictCompletedEntry(largePhotoScan = false): void {
     // In a scan longer than the cache, the earliest photos will be requested
-    // again before the newest photos. Keep pending downloads undisturbed.
+    // again before the newest photos. Prefer evicting a completed entry.
     let node = largePhotoScan ? this.tail : this.head;
     while (node) {
       if (!this.activeRequests.has(node.url)) {
