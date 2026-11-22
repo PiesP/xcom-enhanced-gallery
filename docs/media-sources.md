@@ -74,12 +74,13 @@ unavailable earlier attachment does not renumber B's attachments. A mixed-owner
 ZIP keeps each entry's owner and attachment identity. Entry names are assigned
 in input order before asynchronous work; the ZIP archive name follows the first
 item in gallery order, independently of the active selection. Physical ZIP member
-order is not an input-order service guarantee: known-size, already-owned or
-cached Blobs may be read concurrently, and local headers and central-directory
-entries follow their commit order. The ordinary gallery currently supplies a
-Blob provider whose unknown-size work is admitted serially; no reordering has
-been demonstrated in that path. Completion order does not change assigned names
-or filename-to-byte pairing.
+order can differ from input order when known-size, already-owned or cached
+Blobs are read concurrently. The writer queues materialized byte arrays when
+their commit calls begin. A large borrowed Blob joins that queue after its
+read and checksum finish, so a later ready member can be written first. Local
+headers and central-directory entries use the same order. The ordinary gallery
+provider admits unknown-size work serially. Each filename stays paired with
+the selected source's bytes.
 
 If DOM recovery sees only part of a post and has no unambiguous position link,
 the filename uses `source-` plus a 16-digit hexadecimal key derived from the

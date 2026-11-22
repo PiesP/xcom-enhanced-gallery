@@ -2,6 +2,7 @@
 // Copyright (c) 2024-2026 PiesP
 
 import {
+  BorrowedZipBlob,
   StreamingZipWriter,
   ZipResourceLimitError,
 } from '@shared/external/zip/streaming-zip-writer';
@@ -32,6 +33,7 @@ function findBytes(haystack: Uint8Array, needle: Uint8Array): number {
 
 describe('StreamingZipWriter cooperative CRC32', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 
@@ -42,6 +44,312 @@ describe('StreamingZipWriter cooperative CRC32', () => {
 
     const bytes = await archiveBytes(writer);
     expect(toHex(bytes)).toBe(BASELINE_ZIP_HEX);
+  });
+
+  it.each([
+    [15, 0x5e7c4095],
+    [31, 0xefd50db4],
+  ])('publishes the live length and CRC after a shrink to a %i-byte tail', async (tail, crc) => {
+    const stripe = 1024 * 1024;
+    const offset = 7;
+    const backing = new ArrayBuffer(offset + 2 * stripe + 257, { maxByteLength: 4 * stripe });
+    const source = new Uint8Array(backing, offset);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const size = stripe + tail;
+    const yieldOnce = vi.fn(async () => backing.resize(offset + size));
+    vi.stubGlobal('scheduler', { yield: yieldOnce });
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(yieldOnce).toHaveBeenCalledOnce();
+    expect(header.getUint32(18, true)).toBe(size);
+    expect(header.getUint32(14, true)).toBe(crc);
+    expect(header.getUint32(31 + size, true)).toBe(0x02014b50);
+    expect(header.getUint32(31 + size + 16, true)).toBe(crc);
+    expect(header.getUint32(31 + size + 24, true)).toBe(size);
+    expect(header.getUint32(bytes.length - 6, true)).toBe(31 + size);
+  });
+
+  it('uses only the declared bytes of a fixed subview with a larger backing', async () => {
+    const data = new Uint8Array(1024 * 1024 + 79);
+    data.fill(247);
+    const source = data.subarray(7, 1024 * 1024 + 38);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(header.getUint32(18, true)).toBe(source.length);
+    expect(header.getUint32(14, true)).toBe(0xefd50db4);
+    expect(header.getUint32(31 + source.length + 16, true)).toBe(0xefd50db4);
+  });
+
+  it('can grow an added view using only unreserved archive capacity', async () => {
+    const stripe = 1024 * 1024;
+    const offset = 7;
+    const initial = stripe + 33;
+    const length = 2 * stripe + 31;
+    const backing = new ArrayBuffer(offset + initial, { maxByteLength: 4 * stripe });
+    const source = new Uint8Array(backing, offset);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const yieldToBrowser = vi.fn(async () => {
+      if (source.length === initial) {
+        backing.resize(offset + length);
+        source.fill(0x4d, initial);
+      }
+    });
+    vi.stubGlobal('scheduler', { yield: yieldToBrowser });
+    const writer = new StreamingZipWriter(512 * stripe);
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(yieldToBrowser).toHaveBeenCalledTimes(2);
+    expect(bytes.length).toBe(length + 100);
+    expect(header.getUint32(18, true)).toBe(length);
+    expect(header.getUint32(14, true)).toBe(0x0bbce28b);
+    expect(header.getUint32(31 + length + 16, true)).toBe(0x0bbce28b);
+  });
+
+  it.each([
+    [1024 * 1024 - 1, 0xca03d70e],
+    [0, 0],
+  ])('rechecks a truncated prefix of %i bytes before publication', async (length, crc) => {
+    const stripe = 1024 * 1024;
+    const backing = new ArrayBuffer(2 * stripe + 38, { maxByteLength: 4 * stripe });
+    const source = new Uint8Array(backing, 7);
+    for (let i = 0; i < source.length; i++) {
+      source[i] = (i * 13 + (i >>> 9)) & 0xff;
+    }
+    const truncate = vi.fn(async () => backing.resize(7 + length));
+    vi.stubGlobal('scheduler', { yield: truncate });
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    const bytes = await archiveBytes(writer);
+    const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect(truncate).toHaveBeenCalledOnce();
+    expect(header.getUint32(18, true)).toBe(length);
+    expect(header.getUint32(14, true)).toBe(crc);
+    expect(header.getUint32(31 + length + 16, true)).toBe(crc);
+  });
+
+  it.each(['explicit', 'reserved'])(
+    'preserves the %s capacity when the view grows',
+    async (limit) => {
+      const stripe = 1024 * 1024;
+      const backing = new ArrayBuffer(stripe + 16, { maxByteLength: 2 * stripe });
+      const data = new Uint8Array(backing);
+      vi.stubGlobal('scheduler', { yield: async () => backing.resize(stripe + 17) });
+      const writer = new StreamingZipWriter(stripe + 195);
+      // Two one-character entries, 22 EOCD bytes, and one byte reserved for the peer.
+      const peer = writer.reserveEntry('p', 1);
+      const rejected =
+        limit === 'explicit'
+          ? writer.reserveEntry('v', data.length).commit(data)
+          : writer.addFile('v', data);
+      await expect(rejected).rejects.toBeInstanceOf(ZipResourceLimitError);
+      await peer.commit(new Uint8Array([42]));
+      const bytes = await archiveBytes(writer);
+      expect(bytes.length).toBe(101);
+      expect(bytes[30]).toBe('p'.charCodeAt(0));
+    }
+  );
+
+  it('keeps a completed resizable member within its committed length', async () => {
+    const backing = new ArrayBuffer(4, { maxByteLength: 8 });
+    const source = new Uint8Array(backing);
+    source.set([1, 2, 3, 4]);
+    const writer = new StreamingZipWriter();
+    await writer.addFile('v', source);
+    backing.resize(8);
+    const bytes = await archiveBytes(writer);
+    expect(bytes.length).toBe(104);
+    expect(Array.from(bytes.subarray(31, 35))).toEqual([1, 2, 3, 4]);
+    backing.resize(3);
+    expect(() => writer.finalize()).toThrow(/truncated/u);
+  });
+
+  it('can cancel a repeated checksum pass after a truncated prefix', async () => {
+    const stripe = 1024 * 1024;
+    const backing = new ArrayBuffer(4 * stripe, { maxByteLength: 5 * stripe });
+    const source = new Uint8Array(backing);
+    const controller = new AbortController();
+    let yieldCount = 0;
+    vi.stubGlobal('scheduler', {
+      yield: async () => {
+        if (++yieldCount === 3) {
+          backing.resize(stripe + 3);
+        } else if (yieldCount === 4) {
+          controller.abort();
+        }
+      },
+    });
+    const writer = new StreamingZipWriter();
+    await expect(
+      writer.addFile('invalid.bin', source, { signal: controller.signal })
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    await writer.addFile('next.bin', new Uint8Array([42]));
+    const bytes = await archiveBytes(writer);
+    expect(findBytes(bytes, new TextEncoder().encode('invalid.bin'))).toBe(-1);
+    expect(findBytes(bytes, new TextEncoder().encode('next.bin'))).toBe(30);
+  });
+
+  it('produces the same archive across Blob checksum boundaries', async () => {
+    const data = new Uint8Array(1024 * 1024 + 1);
+    data[0] = 3;
+    data[data.length - 2] = 127;
+    data[data.length - 1] = 251;
+    const control = new StreamingZipWriter();
+    const candidate = new StreamingZipWriter();
+    const source = new Blob([data]);
+    await control.addFile('boundary.bin', data);
+    const retained = BorrowedZipBlob.from(source);
+    expect(retained).toBeDefined();
+    if (!retained) {
+      throw new Error('Expected a native Blob');
+    }
+    // A later replacement cannot substitute bytes for the already admitted native body.
+    const shadowedStream = vi.spyOn(source, 'stream').mockImplementation(() => {
+      throw new Error('custom stream called');
+    });
+    vi.spyOn(source, 'slice').mockReturnValue(new Blob(['changed']));
+    vi.spyOn(source, 'arrayBuffer').mockResolvedValue(new Uint8Array([99]).buffer);
+    const reads = vi.spyOn(BorrowedZipBlob.prototype, 'read');
+    await candidate.reserveEntry('boundary.bin', data.length).commit(retained);
+    expect(reads.mock.calls).toEqual([
+      [0, 1024 * 1024],
+      [1024 * 1024, data.length],
+    ]);
+    expect(shadowedStream).not.toHaveBeenCalled();
+    expect(candidate.finalize()).toContain(source);
+    expect(Buffer.compare(await archiveBytes(candidate), await archiveBytes(control))).toBe(0);
+  });
+
+  it('reads a native Blob through one bounded byte stream and preserves exact tail bytes', async () => {
+    const chunk = 1024 * 1024;
+    const data = new Uint8Array(2 * chunk + 17);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = i % 251;
+    }
+    const source = new Blob([data]);
+    const retained = BorrowedZipBlob.from(source);
+    if (!retained) {
+      throw new Error('Expected a native Blob');
+    }
+    const slices = vi.spyOn(BorrowedZipBlob.prototype, 'read');
+    slices.mockClear();
+    const read = vi.spyOn(ReadableStreamBYOBReader.prototype, 'read');
+    const control = new StreamingZipWriter();
+    await control.addFile('body.bin', data);
+    const archive = new StreamingZipWriter();
+    await archive.reserveEntry('body.bin', data.length).commit(retained);
+    const argumentsSeen = read.mock.calls.map(([view, options]) => [view.byteOffset, options?.min]);
+    expect(argumentsSeen).toEqual([
+      [0, chunk],
+      [0, chunk],
+      [0, 17],
+      [0, undefined],
+    ]);
+    expect(slices).not.toHaveBeenCalled();
+    expect(archive.finalize()).toContain(source);
+    expect(Buffer.compare(await archiveBytes(archive), await archiveBytes(control))).toBe(0);
+    read.mockRestore();
+  });
+
+  it('settles an unsupported byte reader before falling back to bounded native slices', async () => {
+    const size = 1024 * 1024 + 3;
+    const source = new Blob([new Uint8Array(size)]);
+    const body = BorrowedZipBlob.from(source);
+    if (!body) {
+      throw new Error('Expected a native Blob');
+    }
+    vi.spyOn(ReadableStream.prototype, 'getReader').mockImplementationOnce(() => {
+      throw new TypeError('BYOB unavailable');
+    });
+    const canceled = vi.spyOn(ReadableStream.prototype, 'cancel');
+    const slices = vi.spyOn(BorrowedZipBlob.prototype, 'read');
+    const writer = new StreamingZipWriter();
+    await writer.reserveEntry('fallback.bin', size).commit(body);
+    expect(canceled).toHaveBeenCalledOnce();
+    expect(slices.mock.calls).toEqual([
+      [0, 1024 * 1024],
+      [1024 * 1024, size],
+    ]);
+    expect(writer.finalize()).toContain(source);
+  });
+
+  it('rejects premature stream end and extra bytes before publishing an entry', async () => {
+    const size = 1024 * 1024 + 3;
+    const source = new Blob([new Uint8Array(size)]);
+    const body = BorrowedZipBlob.from(source);
+    if (!body) {
+      throw new Error('Expected a native Blob');
+    }
+    for (const actual of [size - 1, size + 1]) {
+      const stream = new ReadableStream<Uint8Array>({
+        type: 'bytes',
+        start(controller) {
+          controller.enqueue(new Uint8Array(actual));
+          controller.close();
+        },
+      });
+      const reader = stream.getReader({ mode: 'byob' });
+      vi.spyOn(BorrowedZipBlob.prototype, 'openByteReader').mockResolvedValueOnce(reader);
+      const writer = new StreamingZipWriter();
+      // Engines may reject the read themselves when EOF arrives below its requested minimum.
+      await expect(writer.reserveEntry('bad.bin', size).commit(body)).rejects.toThrow(
+        actual < size ? Error : /source size/u
+      );
+      expect(stream.locked).toBe(false);
+      expect(writer.finalize()).not.toContain(source);
+    }
+  });
+
+  it('settles stream cancellation before releasing the active reservation', async () => {
+    const size = 1024 * 1024 + 3;
+    const source = new Blob([new Uint8Array(size)]);
+    const body = BorrowedZipBlob.from(source);
+    if (!body) {
+      throw new Error('Expected a native Blob');
+    }
+    const reading = Promise.withResolvers<void>();
+    const cancelled = Promise.withResolvers<void>();
+    const settled = Promise.withResolvers<void>();
+    const stream = new ReadableStream<Uint8Array>({
+      type: 'bytes',
+      pull() {
+        reading.resolve();
+      },
+      async cancel() {
+        cancelled.resolve();
+        await settled.promise;
+      },
+    });
+    const reader = stream.getReader({ mode: 'byob' });
+    vi.spyOn(BorrowedZipBlob.prototype, 'openByteReader').mockResolvedValueOnce(reader);
+    const writer = new StreamingZipWriter();
+    const controller = new AbortController();
+    const pending = writer
+      .reserveEntry('cancelled.bin', size)
+      .commit(body, { signal: controller.signal });
+    const result = pending.then(
+      () => false,
+      (error) => error instanceof DOMException && error.name === 'AbortError'
+    );
+    await reading.promise;
+    controller.abort();
+    await cancelled.promise;
+    expect(stream.locked).toBe(true);
+    settled.resolve();
+    expect(await result).toBe(true);
+    expect(stream.locked).toBe(false);
+    expect(writer.finalize()).not.toContain(source);
   });
 
   it('yields during a large single file and preserves overlapping call order', async () => {

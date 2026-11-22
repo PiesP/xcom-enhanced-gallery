@@ -75,6 +75,40 @@ describe('user-facing bulk ZIP download', () => {
     vi.unstubAllGlobals();
   });
 
+  it('saves the actual read from a foreign-realm Blob below one checksum range', async () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    try {
+      const foreign = frame.contentWindow as (Window & { Blob: typeof Blob }) | null;
+      if (!foreign) {
+        throw new Error('Expected the owned iframe realm');
+      }
+      const blob = new foreign.Blob(['abcd']);
+      expect(blob).not.toBeInstanceOf(Blob);
+      const read = vi
+        .spyOn(blob, 'arrayBuffer')
+        .mockResolvedValue(new Uint8Array([0xde, 0xad]).buffer);
+      const result = await downloadAsZip([
+        { url: 'https://pbs.twimg.com/media/a.jpg', desiredName: 'a.jpg', blob: ownedBlob(blob) },
+      ]);
+      expect(result.failures).toEqual([]);
+      expect(read).toHaveBeenCalledOnce();
+      expect(result.zipData).not.toContain(blob);
+      const output = result.createBlob();
+      try {
+        const bytes = new Uint8Array(await output.value.arrayBuffer());
+        const header = new DataView(bytes.buffer);
+        expect(header.getUint32(14, true)).toBe(0xf605253b);
+        expect(header.getUint32(18, true)).toBe(2);
+        expect(Array.from(bytes.subarray(35, 37))).toEqual([0xde, 0xad]);
+      } finally {
+        output.lease.release();
+      }
+    } finally {
+      frame.remove();
+    }
+  });
+
   it('archives all selected media, keeps duplicate names unique, and reports completion', async () => {
     const progress: Array<{ phase: string; current: number; total: number; percentage: number }> =
       [];

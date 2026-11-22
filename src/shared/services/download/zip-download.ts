@@ -22,6 +22,8 @@ import { getUserCancelledAbortErrorFromSignal } from '@shared/error/cancellation
 import { DownloadSourceUnavailableError } from '@shared/error/download-source-unavailable-error';
 import { isHttpResponseSizeLimitError } from '@shared/error/http-response-size-limit-error';
 import {
+  BorrowedZipBlob,
+  CRC32_CHUNK_SIZE,
   StreamingZipWriter,
   type ZipEntryReservation,
   ZipResourceLimitError,
@@ -253,6 +255,7 @@ export async function downloadAsZip(
       let blobOverhead: LiveByteLease | undefined;
       let futureBlob: LiveByteLease | undefined;
       let body: LiveByteLease | undefined;
+      let crcScratch: LiveByteLease | undefined;
       let borrowed: OwnedBlob | undefined;
       try {
         if (item.sourceUnavailable && !item.blob) {
@@ -275,7 +278,7 @@ export async function downloadAsZip(
         blobOverhead = liveBudget.reserve(256 + filename.length * 8);
         const inputKind = getZipInputKind(item);
         const usesBlob = inputKind !== 'direct-url';
-        // Chunks + response copy + final archive copy (and Blob-to-buffer copy for providers).
+        // Preserve conservative transport, CRC scratch and archive-copy admission.
         const liveEntryCap = Math.min(
           maxEntryBytes,
           supplied
@@ -307,19 +310,16 @@ export async function downloadAsZip(
           ...(knownSize !== undefined ? { knownSize } : {}),
         });
         futureBlob = liveBudget.reserve(remainingEntryBytes);
-        let data: Uint8Array;
+        let data: Uint8Array | BorrowedZipBlob;
         if (usesBlob) {
-          // Reserve arrayBuffer's distinct storage before invoking a provider or copying a Blob.
-          body = liveBudget.reserve(remainingEntryBytes);
-          let blob: Blob | undefined;
+          // Admit the largest outstanding slice before invoking the provider.
+          crcScratch = liveBudget.reserve(Math.min(remainingEntryBytes, CRC32_CHUNK_SIZE));
           try {
             if (item.blob) {
               const owner = item.blob instanceof Promise ? await item.blob : item.blob;
               borrowed = { value: owner.value, lease: owner.lease.fork() };
-              blob = borrowed.value;
             } else {
               borrowed = (await item.getBlob?.(abortSignal, remainingEntryBytes)) ?? undefined;
-              blob = borrowed?.value;
             }
           } catch (error) {
             throwIfAborted(abortSignal);
@@ -327,18 +327,35 @@ export async function downloadAsZip(
             // rejected request may already be denied, rate-limited or active.
             throw error;
           }
-          if (blob) {
+          if (borrowed) {
+            const blob = borrowed.value;
             throwIfAborted(abortSignal);
             if (blob.size > remainingEntryBytes) {
               throw new ZipResourceLimitError(
                 `Bulk ZIP limit exceeded: ${filename} is ${blob.size} bytes (remaining ${remainingEntryBytes})`
               );
             }
-            data = new Uint8Array(await blob.arrayBuffer());
-            body.shrink(data.byteLength);
+            const retained = BorrowedZipBlob.from(blob);
+            if (retained && retained.byteLength <= CRC32_CHUNK_SIZE) {
+              // A single read can supply the stored typed member and its checksum.
+              body = crcScratch;
+              crcScratch = undefined;
+              data = await retained.read(0, retained.byteLength);
+            } else if (retained) {
+              data = retained;
+              body = borrowed.lease;
+              borrowed = undefined;
+              crcScratch.shrink(Math.min(retained.byteLength, CRC32_CHUNK_SIZE));
+            } else {
+              // A provider may implement its own read. Publish precisely the bytes it returns.
+              crcScratch.release();
+              crcScratch = undefined;
+              body = liveBudget.reserve(remainingEntryBytes);
+              data = new Uint8Array(await blob.arrayBuffer());
+            }
           } else {
-            body.release();
-            body = undefined;
+            crcScratch.release();
+            crcScratch = undefined;
             const fetched = await fetchOwnedArrayBufferWithRetry(
               item.url,
               retries,
@@ -363,12 +380,16 @@ export async function downloadAsZip(
           body = fetched.lease;
         }
         throwIfAborted(abortSignal);
-        if (data.byteLength > remainingEntryBytes) {
+        const size = data.byteLength;
+        if (size > remainingEntryBytes) {
           throw new ZipResourceLimitError(
-            `Bulk ZIP limit exceeded: ${filename} is ${data.byteLength} bytes (remaining ${remainingEntryBytes})`
+            `Bulk ZIP limit exceeded: ${filename} is ${size} bytes (remaining ${remainingEntryBytes})`
           );
         }
-        futureBlob.shrink(data.byteLength);
+        if (borrowed) {
+          body.shrink(size);
+        }
+        futureBlob.shrink(size);
         if (index > 0) {
           await schedulerYield();
         }
@@ -405,6 +426,7 @@ export async function downloadAsZip(
         failures.push({ url: item.url, error: message });
         failedEntries.push({ index, url: item.url, filename, error: message });
       } finally {
+        crcScratch?.release();
         borrowed?.lease.release();
         body?.release();
         futureBlob?.release();
