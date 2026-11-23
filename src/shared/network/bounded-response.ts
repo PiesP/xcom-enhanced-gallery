@@ -163,5 +163,9 @@ export async function readResponseBody(
   if (responseType === 'blob') {
     return new Blob(chunks, { type: mimeType });
   }
+  const first = chunks[0];
+  if (first && chunks.length === 1 && responseType !== 'arraybuffer') {
+    return decodeBytes(first, responseType);
+  }
   return decodeBytes(joinChunks(chunks, receivedBytes), responseType);
 }

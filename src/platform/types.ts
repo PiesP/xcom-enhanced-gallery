@@ -67,6 +67,8 @@ export interface HttpRequestDetails {
   headers?: Record<string, string>;
   data?: string | FormData | Blob | ArrayBuffer | URLSearchParams | ReadableStream;
   responseType?: 'text' | 'json' | 'blob' | 'arraybuffer' | 'stream';
+  /** Skip the MV3 text snapshot when the caller consumes only the parsed JSON. */
+  parsedJsonOnly?: boolean;
   /** Maximum bytes that may be buffered from the response body. */
   maxResponseBytes?: number;
   timeout?: number;

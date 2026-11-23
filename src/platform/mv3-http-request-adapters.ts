@@ -222,9 +222,8 @@ export class MV3HttpRequestAdapter implements HttpRequestAdapter {
       response: responseBody,
       readable: true,
       ...(retryAfterMs !== undefined ? { retryAfterMs } : {}),
-      // L1: Only stringify for text responses; return empty string for binary types
       responseText:
-        responseType === 'text' || responseType === 'json' || responseType === undefined
+        responseType === 'text' || (responseType === 'json' && !details.parsedJsonOnly)
           ? typeof responseBody === 'string'
             ? responseBody
             : JSON.stringify(responseBody)

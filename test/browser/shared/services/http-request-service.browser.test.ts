@@ -144,6 +144,7 @@ describe('HttpRequestService', () => {
         maxResponseBytes: 64,
         signal: controller.signal,
       });
+      expect(mocks.request).toHaveBeenCalledWith(expect.objectContaining({ parsedJsonOnly: true }));
       const progress = {
         finalUrl: url,
         readyState: 3,
