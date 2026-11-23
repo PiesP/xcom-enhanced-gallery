@@ -36,7 +36,10 @@ interface UseGalleryFocusTrackerReturn {
   registerItem: (index: number, element: HTMLElement | null) => void;
   /** Handle manual focus (user click/interaction) */
   handleItemFocus: (index: number) => void;
-  /** Force immediate recomputation (bypasses debounce) */
+  /**
+   * Request a focus update on the next animation frame even when tracking is disabled.
+   * Repeated calls before that frame share one update.
+   */
   forceSync: () => void;
 }
 
