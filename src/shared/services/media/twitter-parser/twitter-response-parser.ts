@@ -151,6 +151,7 @@ export function getHighQualityMediaUrl(media: TwitterMedia): string | null {
 function createMediaEntry(
   media: TwitterMedia,
   mediaUrl: string,
+  videoVariants: readonly VideoSourceVariant[] | undefined,
   screenName: string,
   tweetId: string,
   tweetText: string,
@@ -162,7 +163,6 @@ function createMediaEntry(
   const mediaType = media.type === 'animated_gif' ? 'video' : media.type;
   const dims = resolveDimensions(media, mediaUrl);
   const aspectRatio = resolveAspectRatio(media, dims);
-  const videoVariants = mediaType === 'video' ? getVideoVariants(media) : undefined;
 
   return {
     screen_name: screenName,
@@ -293,17 +293,19 @@ export function extractMediaFromTweet(
       // Navigation URLs are presentation hints, including repeated /photo/1
       // and per-kind /video/1 links; none may override this source position.
       const attachmentOrdinal = i;
-      const mediaUrl = getHighQualityMediaUrl(media);
+      const videoVariants =
+        media.type === 'video' || media.type === 'animated_gif'
+          ? getVideoVariants(media)
+          : undefined;
+      const mediaUrl = videoVariants ? videoVariants[0]?.url : getHighQualityMediaUrl(media);
       if (!mediaUrl || !isValidMediaUrl(mediaUrl)) {
         const unsupportedVariantUrls = getUnsupportedHlsUrls(media);
-        if (
-          (media.type === 'video' || media.type === 'animated_gif') &&
-          unsupportedVariantUrls.length > 0
-        ) {
+        if (videoVariants && unsupportedVariantUrls.length > 0) {
           mediaItems.push({
             ...createMediaEntry(
               media,
               '',
+              videoVariants,
               screenName,
               tweetId,
               normalizedTweetText,
@@ -323,6 +325,7 @@ export function extractMediaFromTweet(
         createMediaEntry(
           media,
           mediaUrl,
+          videoVariants,
           screenName,
           tweetId,
           normalizedTweetText,
