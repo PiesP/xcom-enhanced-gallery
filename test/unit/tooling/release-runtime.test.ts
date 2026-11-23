@@ -19,7 +19,7 @@ describe('release runtime selection', () => {
     expect(pin.trim()).toBe('26.13.1');
     expect(manifest.volta).toBeUndefined();
     expect(manifest.engines.node).toContain('>=26.13.1');
-    expect(manifest.packageManager).toBe('pnpm@12.22.0');
+    expect(manifest.packageManager).toBe('pnpm@12.23.0');
   });
 
   it('verifies the protected tag before installing its dependency graph', () => {
