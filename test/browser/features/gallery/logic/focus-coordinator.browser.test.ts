@@ -27,12 +27,12 @@ describe('FocusCoordinator for mixed-size media', () => {
     vi.spyOn(container, 'getBoundingClientRect').mockImplementation(
       () => ({ top: 0, height: 800 }) as DOMRect
     );
-    vi.spyOn(photo, 'getBoundingClientRect').mockImplementation(
-      () => ({ top: 0, height: 330 }) as DOMRect
-    );
-    vi.spyOn(video, 'getBoundingClientRect').mockImplementation(
-      () => ({ top: videoTop, height: 180 }) as DOMRect
-    );
+    const photoGeometry = vi
+      .spyOn(photo, 'getBoundingClientRect')
+      .mockImplementation(() => ({ top: 0, height: 330 }) as DOMRect);
+    const videoGeometry = vi
+      .spyOn(video, 'getBoundingClientRect')
+      .mockImplementation(() => ({ top: videoTop, height: 180 }) as DOMRect);
 
     const onFocusChange = vi.fn();
     const coordinator = new FocusCoordinator({
@@ -47,10 +47,15 @@ describe('FocusCoordinator for mixed-size media', () => {
     frames.shift()?.(0);
     expect(onFocusChange).toHaveBeenLastCalledWith(1, 'auto');
 
+    expect(photoGeometry).not.toHaveBeenCalled();
+    expect(videoGeometry).toHaveBeenCalledTimes(1);
+
     videoTop = 770;
     coordinator.updateFocus(true);
     frames.shift()?.(0);
     expect(onFocusChange).toHaveBeenLastCalledWith(0, 'auto');
+    expect(photoGeometry).toHaveBeenCalledTimes(1);
+    expect(videoGeometry).toHaveBeenCalledTimes(2);
     coordinator.cleanup();
   });
 
