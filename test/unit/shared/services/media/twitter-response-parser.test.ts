@@ -8,7 +8,7 @@ import {
   normalizeLegacyUser,
 } from '@shared/services/media/twitter-parser/twitter-response-parser';
 import type { TwitterMedia, TwitterTweet, TwitterUser } from '@shared/services/media/types';
-import { describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 describe('twitter-response-parser (pure functions)', () => {
   describe('media URL text normalization', () => {
@@ -526,6 +526,36 @@ describe('twitter-response-parser (pure functions)', () => {
       expect(
         extractMediaFromTweet(quote as unknown as TwitterTweet, { screen_name: 'quote' }, 'quoted')
       ).toMatchObject([{ tweet_id: '222', media_id: 'quote', sourceLocation: 'quoted' }]);
+    });
+
+    it('uses one variant scan for the selected URL and the retained sources', () => {
+      const high = 'https://video.twimg.com/ext_tw_video/222/high.mp4';
+      const tied = 'https://video.twimg.com/ext_tw_video/222/tied.mp4';
+      const low = 'https://video.twimg.com/ext_tw_video/222/low.mp4';
+      const variants = [
+        { content_type: 'video/mp4', bitrate: 1, url: low },
+        { content_type: 'video/mp4', bitrate: 3, url: high },
+        { content_type: 'video/mp4', bitrate: 3, url: tied },
+        { content_type: 'video/mp4', bitrate: 9, url: low },
+      ];
+      const scan = vi.spyOn(variants, Symbol.iterator);
+      const media: TwitterMedia = {
+        id_str: '222',
+        type: 'animated_gif',
+        media_url_https: 'https://pbs.twimg.com/ext_tw_video_thumb/222/preview.jpg',
+        video_info: { variants },
+      };
+
+      const [entry] = extractMediaFromTweet(
+        { rest_id: '222', extended_entities: { media: [media] } },
+        { screen_name: 'owner' }
+      );
+
+      expect(scan).toHaveBeenCalledTimes(1);
+      expect(entry?.download_url).toBe(high);
+      expect(entry?.videoVariantUrls).toEqual([high, tied, low]);
+      expect(Object.isFrozen(entry?.videoVariants)).toBe(true);
+      expect(Object.isFrozen(entry?.videoVariantUrls)).toBe(true);
     });
 
     it('omits unsafe MP4 variants and retains at most 32 playable source identities', () => {
