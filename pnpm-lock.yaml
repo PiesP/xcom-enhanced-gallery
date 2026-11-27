@@ -65,8 +65,8 @@ importers:
         specifier: 1.65.1
         version: 1.65.1
       selenium-webdriver:
-        specifier: 4.53.0
-        version: 4.53.0
+        specifier: 4.54.0
+        version: 4.54.0
       vite:
         specifier: 'catalog:'
         version: '@voidzero-dev/vite-plus-core@1.6.0(@types/node@26.6.6)'
@@ -1698,8 +1698,8 @@ packages:
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  selenium-webdriver@4.53.0:
-    resolution: {integrity: sha512-ALleUcuuTm+olxZLEVqSkE+kW4V3MWy6GuiPEP+RUAT9B4omCRgGgOvrqD0S7iZeWuzyZ1bvydd+HfluIvJJ0A==}
+  selenium-webdriver@4.54.0:
+    resolution: {integrity: sha512-3bj6apWpjpdc6rpovyJ3Tj5CHYAAyt3XE/us3FS0Ea0mUqPV8c2JCZLUfcAjESxJUbtxdKu7IxpG5TrioNsHww==}
     engines: {node: ^22.23.4 || ^24.22.1 || >= 26.12.1}
 
   semver@6.3.2:
@@ -3426,7 +3426,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  selenium-webdriver@4.53.0:
+  selenium-webdriver@4.54.0:
     dependencies:
       '@bazel/runfiles': 6.5.0
       jszip: 3.10.2
