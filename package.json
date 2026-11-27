@@ -84,7 +84,7 @@
     "acorn-walk": "8.3.5",
     "addons-linter": "10.16.0",
     "playwright": "1.65.1",
-    "selenium-webdriver": "4.53.0",
+    "selenium-webdriver": "4.54.0",
     "vite": "catalog:",
     "vite-plugin-solid": "^2.11.17",
     "vite-plus": "catalog:",
