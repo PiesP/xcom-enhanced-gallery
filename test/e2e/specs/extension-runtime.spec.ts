@@ -747,6 +747,21 @@ test('loads the Chrome extension and routes playing and paused inline video clic
           await expect(gallery).toHaveCount(0);
           expect(owners).toHaveLength(before);
 
+          if (playing) {
+            await play.evaluate((element) => element.setAttribute('aria-label', 'Pause'));
+            await play.click();
+            await expectTrustedTarget('play');
+            await expect(surface).toHaveJSProperty('paused', true);
+            await expect(gallery).toHaveCount(0);
+            expect(owners).toHaveLength(before);
+            await play.evaluate((element) => {
+              element.removeAttribute('aria-label');
+              element.removeAttribute('data-host-clicks');
+            });
+            await surface.evaluate((element: HTMLVideoElement) => element.play());
+            await expect(surface).toHaveJSProperty('paused', false);
+          }
+
           await play.click();
           await expectTrustedTarget('play');
           if (mode === 'allow-all') {
