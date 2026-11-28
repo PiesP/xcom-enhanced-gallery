@@ -599,6 +599,175 @@ test('loads the Chrome extension and scopes article-less tile recovery with tear
   }
 });
 
+test('loads the Chrome extension and routes playing and paused inline video clicks', async ({
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Chrome extension loading requires Chromium');
+  const userDataDir = mkdtempSync(join(tmpdir(), 'xeg-inline-video-extension-'));
+  let context: Awaited<ReturnType<typeof chromium.launchPersistentContext>> | undefined;
+  try {
+    context = await chromium.launchPersistentContext(userDataDir, {
+      channel: 'chromium',
+      headless: true,
+      args: [
+        `--disable-extensions-except=${CHROME_EXTENSION_DIR}`,
+        `--load-extension=${CHROME_EXTENSION_DIR}`,
+      ],
+    });
+    const fixture = resolve(import.meta.dirname, '../fixtures');
+    const html = readFileSync(join(fixture, 'installed-inline-video-click-page.html'), 'utf8');
+    const videoBytes = readFileSync(join(fixture, 'installed-native-controls-av.mp4'));
+    const owner = '8888888888888888882';
+    const postUrl = `https://x.com/video_clicks/status/${owner}`;
+    const source = `https://video.twimg.com/ext_tw_video/${owner}/pu/vid/320x180/inline.mp4`;
+    const owners: string[] = [];
+    await context.route('https://x.com/**', (route) => {
+      const url = new URL(route.request().url());
+      if (url.pathname.endsWith('/TweetResultByRestId')) {
+        owners.push(JSON.parse(url.searchParams.get('variables') ?? '{}').tweetId);
+        return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+      }
+      return route.fulfill({ status: 200, contentType: 'text/html', body: html });
+    });
+    await context.route(source, (route) =>
+      route.fulfill({ status: 200, contentType: 'video/mp4', body: videoBytes })
+    );
+
+    const background = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+    const page = await context.newPage();
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    const gallery = page.locator('[data-xeg-gallery-container]');
+    const surface = page.locator('#surface');
+    const mediaState = () =>
+      surface.evaluate((element: HTMLVideoElement) => ({
+        paused: element.paused,
+        currentTime: element.currentTime,
+        width: element.videoWidth,
+      }));
+    const expectTrustedTarget = (id: string) =>
+      expect(page.locator('body')).toHaveAttribute('data-trusted-target', id);
+    const openPost = async (scenario: string, playing: boolean) => {
+      const url = `${postUrl}?test=${scenario}`;
+      await page.goto(url);
+      await expect(page.locator('html')).toHaveAttribute('data-xeg-gallery-ready', 'true');
+      await expect.poll(mediaState).toMatchObject({ paused: true, width: 320 });
+      if (playing) {
+        await surface.evaluate((element: HTMLVideoElement) => element.play());
+        await expect.poll(async () => (await mediaState()).currentTime).toBeGreaterThan(0.1);
+      }
+      await expect(surface).toHaveJSProperty('paused', !playing);
+      return url;
+    };
+    const expectGallerySelection = async (before: number) => {
+      const selected = gallery.locator('video');
+      await expect(gallery).toBeVisible();
+      await expect(selected).toHaveAttribute('src', source);
+      await expect(selected).toHaveJSProperty('paused', true);
+      await expect(selected).toHaveJSProperty('currentTime', 0);
+      await expect(surface).toHaveJSProperty('paused', true);
+      expect(owners.slice(before)).toEqual([owner]);
+      await page.keyboard.press('Escape');
+      await expect(gallery).toHaveCount(0);
+      await expect(surface).toHaveJSProperty('paused', true);
+    };
+
+    for (const mode of ['block-controls-only', 'block-all', 'allow-all'] as const) {
+      // The first pass uses the real default in the fresh profile.
+      if (mode !== 'block-controls-only') {
+        await background.evaluate(
+          (value) =>
+            chrome.storage.local.set({
+              'xeg-app-settings:field:gallery.videoClickMode': {
+                __xegStorageEnvelope: 1,
+                updatedAt: Date.now(),
+                value,
+              },
+            }),
+          mode
+        );
+      }
+      for (const playing of [false, true]) {
+        await test.step(`${mode}, ${playing ? 'playing' : 'paused'}`, async () => {
+          const before = owners.length;
+          const url = await openPost(`${mode}-${playing ? 'playing' : 'paused'}`, playing);
+
+          await page.locator('#mute-icon').click();
+          await expectTrustedTarget('mute-icon');
+          await expect(surface).toHaveJSProperty('muted', false);
+          const seek = page.locator('#seek');
+          await seek.click({ position: { x: 97, y: 6 } });
+          await expectTrustedTarget('seek');
+          await expect(seek).toHaveValue('2');
+          await expect(surface).toHaveAttribute('data-native-seeked', 'true');
+          await expect(surface).toHaveJSProperty('paused', !playing);
+          await page.locator('#share').click();
+          await expectTrustedTarget('share');
+          await expect(page.locator('#share')).toHaveAttribute('aria-expanded', 'true');
+          await page.locator('#details').click();
+          await expectTrustedTarget('details');
+          await expect(page).toHaveURL(`${url}#post-details`);
+          const play = page.locator('#play');
+          await play.click();
+          await expectTrustedTarget('play');
+          await expect(surface).toHaveJSProperty('paused', playing);
+          await play.click();
+          await expect(surface).toHaveJSProperty('paused', !playing);
+          await expect(gallery).toHaveCount(0);
+          expect(owners).toHaveLength(before);
+
+          await surface.click();
+          await expectTrustedTarget('surface');
+          if (mode === 'block-all') {
+            await expect(surface).toHaveAttribute('data-native-surface', 'true');
+            await expect(surface).toHaveJSProperty('paused', playing);
+            await expect(gallery).toHaveCount(0);
+            expect(owners).toHaveLength(before);
+            return;
+          }
+
+          await expect(surface).not.toHaveAttribute('data-native-surface');
+          await expectGallerySelection(before);
+        });
+      }
+      for (const playing of [false, true]) {
+        const state = playing ? 'playing' : 'paused';
+        await test.step(`${mode}, ${state} with unmarked controls`, async () => {
+          const before = owners.length;
+          await openPost(`${mode}-${state}-unmarked`, playing);
+          const play = page.locator('#play');
+          await play.evaluate((element) => {
+            element.closest('[data-testid="videoPlayer"]')?.removeAttribute('data-testid');
+            element.removeAttribute('data-testid');
+          });
+          await page.locator('#mute-icon').click();
+          await expectTrustedTarget('mute-icon');
+          await expect(surface).toHaveJSProperty('muted', false);
+          await expect(surface).toHaveJSProperty('paused', !playing);
+          await expect(gallery).toHaveCount(0);
+          expect(owners).toHaveLength(before);
+
+          await play.click();
+          await expectTrustedTarget('play');
+          if (mode === 'allow-all') {
+            await expectGallerySelection(before);
+            await expect(play).not.toHaveAttribute('data-host-clicks');
+          } else {
+            await expect(play).toHaveAttribute('data-host-clicks', '1');
+            await expect(surface).toHaveJSProperty('paused', playing);
+            await expect(gallery).toHaveCount(0);
+            expect(owners).toHaveLength(before);
+          }
+        });
+      }
+    }
+    expect(errors).toEqual([]);
+  } finally {
+    await context?.close();
+    rmSync(userDataDir, { recursive: true, force: true });
+  }
+});
+
 for (const replaceSource of [false, true]) {
   test(`loads the Chrome extension and preserves image identity after delayed HTTP failure: replaced=${replaceSource}`, async ({
     browserName,

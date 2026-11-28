@@ -61,8 +61,7 @@ const WORD_SEPARATORS: readonly string[] = ['-', '_', ' '];
  * Uses word-boundary matching to avoid false positives
  * (e.g., "display" will NOT match token "play").
  *
- * Optimized: pre-tokenizes the input value into a Set of word-boundary-delimited
- * tokens, then checks membership in O(1) per token instead of O(n*m) scanning.
+ * Checks split tokens first and falls back to boundary-checked substring matching.
  */
 function containsControlToken(value: string | null, tokens: readonly string[]): boolean {
   if (!value) {
@@ -85,9 +84,7 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
     }
   }
 
-  // Also add the full normalized string and substrings between separators
-  // to handle cases like "fullscreenwrapper" (no separators) — fall back to
-  // checking if any token is a substring at a word boundary
+  // Match the full value or a token delimited by the configured separators.
   return tokens.some((token) => {
     const tokenLower = token.toLowerCase();
     // O(1) Set lookup for exact token match
@@ -95,8 +92,7 @@ function containsControlToken(value: string | null, tokens: readonly string[]): 
       return true;
     }
 
-    // Fallback: check word-boundary substring match for compound identifiers
-    // without separators (e.g., "volumeslider" should match "volume")
+    // A matching substring must have a boundary on both sides.
     let searchIndex = 0;
     while (searchIndex < normalized.length) {
       const foundIndex = normalized.indexOf(tokenLower, searchIndex);
@@ -175,7 +171,7 @@ export function isGalleryRecoveryActive(): boolean {
  * - Generic elements inside the video player context without control tokens
  *   (these are typically overlay areas, poster images, or dead space)
  */
-function isVideoControlElement(element: HTMLElement | null): boolean {
+export function isVideoControlElement(element: HTMLElement | null): boolean {
   if (!isHTMLElement(element)) {
     return false;
   }
