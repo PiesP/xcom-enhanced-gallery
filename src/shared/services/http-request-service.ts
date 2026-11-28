@@ -301,6 +301,7 @@ export class HttpRequestService {
       timeout: options?.timeout ?? this.defaultTimeout,
       ...(options?.headers ? { headers: options.headers } : {}),
       responseType: options?.responseType as Exclude<HttpRequestDetails['responseType'], undefined>,
+      ...(options?.responseType === 'json' ? { parsedJsonOnly: true } : {}),
       ...(options?.data !== undefined ? { data: options.data } : {}),
       ...(options?.maxResponseBytes !== undefined
         ? { maxResponseBytes: options.maxResponseBytes }

@@ -552,6 +552,99 @@ describe('MV3HttpRequestAdapter', () => {
     );
   });
 
+  it.each([
+    ['{"id":19}', { id: 19 }, '{"id":19}'],
+    ['"title"', 'title', 'title'],
+    ['null', null, 'null'],
+    ['\uFEFF"한글"', '한글', '한글'],
+  ] as const)(
+    'preserves the raw JSON snapshot and supports parsed-only requests for %s',
+    async (json, parsed, snapshot) => {
+      const padded = new TextEncoder().encode('!' + json + '!');
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(
+          () =>
+            new Response(
+              new ReadableStream<Uint8Array>({
+                start(controller) {
+                  controller.enqueue(padded.subarray(1, -1));
+                  controller.close();
+                },
+              })
+            )
+        )
+      );
+      for (const parsedJsonOnly of [false, true]) {
+        const result = await new Promise<HttpRequestResponse>((resolve, reject) => {
+          new MV3HttpRequestAdapter().request({
+            url: ALLOWED_URL,
+            responseType: 'json',
+            maxResponseBytes: padded.length - 2,
+            parsedJsonOnly,
+            onload: resolve,
+            onerror: reject,
+          });
+        });
+        expect(result.response).toEqual(parsed);
+        expect(result.responseText).toBe(parsedJsonOnly ? '' : snapshot);
+        expect(result.readable).toBe(true);
+      }
+    }
+  );
+
+  it.each(['', '{"ok":true}!', '{"incomplete"'])(
+    'rejects malformed bounded JSON %j',
+    async (body) => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => new Response(body))
+      );
+      const result = await new Promise<HttpRequestResponse>((resolve, reject) => {
+        new MV3HttpRequestAdapter().request({
+          url: ALLOWED_URL,
+          responseType: 'json',
+          parsedJsonOnly: true,
+          maxResponseBytes: 64,
+          onload: reject,
+          onerror: resolve,
+        });
+      });
+      expect(result.errorCategory).toBe('unreadable');
+    }
+  );
+
+  it('decodes JSON containing a multibyte character across chunk boundaries', async () => {
+    const bytes = new TextEncoder().encode('"한"');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        () =>
+          new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                controller.enqueue(bytes.subarray(0, 2));
+                controller.enqueue(bytes.subarray(2));
+                controller.close();
+              },
+            })
+          )
+      )
+    );
+    const result = await new Promise<HttpRequestResponse>((resolve, reject) => {
+      new MV3HttpRequestAdapter().request({
+        url: ALLOWED_URL,
+        responseType: 'json',
+        parsedJsonOnly: true,
+        maxResponseBytes: bytes.length,
+        onload: resolve,
+        onerror: reject,
+      });
+    });
+    expect(result.response).toBe('한');
+    expect(result.responseText).toBe('');
+  });
+
   it('returns a stream without buffering it as text', async () => {
     const stream = new ReadableStream<Uint8Array<ArrayBuffer>>();
     const text = vi.fn();
