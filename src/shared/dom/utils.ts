@@ -34,6 +34,7 @@ const VIDEO_CONTROL_DATASET_PREFIXES = [
 const VIDEO_CONTROL_ROLES = ['slider', 'progressbar'] as const;
 
 const VIDEO_CONTROL_ARIA_TOKENS = [
+  'pause',
   'volume',
   'mute',
   'unmute',
