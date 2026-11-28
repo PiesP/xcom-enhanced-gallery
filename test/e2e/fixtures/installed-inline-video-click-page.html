@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Installed inline video click fixture</title>
+  </head>
+  <body>
+    <article data-testid="tweet">
+      <a href="/video_clicks/status/8888888888888888882"><time>Video post</time></a>
+      <div data-testid="videoPlayer">
+        <video
+          id="surface"
+          muted
+          loop
+          width="320"
+          height="180"
+          src="https://video.twimg.com/ext_tw_video/8888888888888888882/pu/vid/320x180/inline.mp4"
+        ></video>
+        <div>
+          <button type="button" id="play" data-testid="playButton">Play or pause</button>
+          <button type="button" id="mute" aria-label="Mute or unmute">
+            <svg width="24" height="24" aria-hidden="true">
+              <path id="mute-icon" d="M2 2h20v20H2z" />
+            </svg>
+          </button>
+          <input
+            id="seek"
+            aria-label="Seek"
+            type="range"
+            min="0"
+            max="3"
+            value="0"
+            style="width: 140px"
+          />
+        </div>
+      </div>
+      <button type="button" id="share" data-testid="share" aria-expanded="false">Share</button>
+      <a id="details" href="#post-details">Post details</a>
+      <p id="post-details">More about this post</p>
+    </article>
+    <script>
+      const video = document.querySelector('#surface');
+      const toggle = () => (video.paused ? video.play() : video.pause());
+      document.querySelector('#play').addEventListener('click', (event) => {
+        const button = event.currentTarget;
+        button.dataset.hostClicks = String(Number(button.dataset.hostClicks ?? 0) + 1);
+        return toggle();
+      });
+      document.querySelector('#mute').addEventListener('click', () => {
+        video.muted = !video.muted;
+      });
+      document.querySelector('#seek').addEventListener('input', (event) => {
+        video.currentTime = Number(event.target.value);
+      });
+      video.addEventListener('seeked', () => {
+        video.dataset.nativeSeeked = 'true';
+      });
+      document.querySelector('#share').addEventListener('click', (event) => {
+        event.currentTarget.setAttribute('aria-expanded', 'true');
+      });
+      window.addEventListener(
+        'click',
+        (event) => {
+          if (event.isTrusted && event.target instanceof Element) {
+            document.body.dataset.trustedTarget = event.target.id;
+          }
+        },
+        true
+      );
+      video.addEventListener('click', () => {
+        video.dataset.nativeSurface = 'true';
+        toggle();
+      });
+    </script>
+  </body>
+</html>

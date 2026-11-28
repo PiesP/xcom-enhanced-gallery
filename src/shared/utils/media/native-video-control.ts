@@ -3,6 +3,7 @@
 
 /** Bounded media proof for an unmarked native video button on X. */
 
+import { isVideoControlElement } from '@shared/dom/utils';
 import { isVideoThumbnailUrl } from '@shared/utils/media/video-preview';
 import { isValidMediaUrl } from '@shared/utils/url/validator';
 
@@ -123,7 +124,11 @@ export function findNativeVideoControlMedia(target: HTMLElement): NativeVideoCon
   if (!(button instanceof HTMLButtonElement)) {
     return null;
   }
-  if (button.hasAttribute('data-testid') || button.closest(FORBIDDEN_CONTROL_CONTEXT)) {
+  if (
+    button.hasAttribute('data-testid') ||
+    button.closest(FORBIDDEN_CONTROL_CONTEXT) ||
+    isVideoControlElement(button)
+  ) {
     return null;
   }
   const article = button.closest('article');
