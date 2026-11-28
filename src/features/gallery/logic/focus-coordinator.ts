@@ -5,6 +5,7 @@
 
 import {
   type FocusItemRect,
+  isFullyVisibleFocusItem,
   selectBestFocusCandidate,
 } from '@features/gallery/logic/focus-candidate-selection';
 import type { Accessor } from 'solid-js';
@@ -54,10 +55,19 @@ export class FocusCoordinator {
         return;
       }
       const containerRect = container.getBoundingClientRect();
+      const activeIndex = this.options.activeIndex();
+      const activeElement = this.items.get(activeIndex)?.element;
+      const activeRect = activeElement?.isConnected
+        ? activeElement.getBoundingClientRect()
+        : undefined;
+      if (activeRect && isFullyVisibleFocusItem(activeRect, containerRect)) {
+        this.options.onFocusChange(activeIndex, 'auto');
+        return;
+      }
       const selection = selectBestFocusCandidate(
-        { top: containerRect.top, height: containerRect.height },
-        this.collectItemRects(),
-        this.options.activeIndex()
+        containerRect,
+        this.collectItemRects(activeIndex, activeElement, activeRect),
+        activeIndex
       );
       if (!selection) {
         return;
@@ -78,7 +88,11 @@ export class FocusCoordinator {
   }
 
   /** Batch DOM reads before passing immutable measurements to the pure ranker. */
-  private collectItemRects(): FocusItemRect[] {
+  private collectItemRects(
+    activeIndex: number,
+    activeElement: HTMLElement | undefined,
+    activeRect: DOMRect | undefined
+  ): FocusItemRect[] {
     const itemRects: FocusItemRect[] = [];
     for (const [index, item] of this.items) {
       // Observer entries can lag the final position at scrollend. Measure the
@@ -86,7 +100,10 @@ export class FocusCoordinator {
       if (!item.element.isConnected) {
         continue;
       }
-      const rect = item.element.getBoundingClientRect();
+      const rect =
+        index === activeIndex && item.element === activeElement && activeRect
+          ? activeRect
+          : item.element.getBoundingClientRect();
       itemRects.push({ index, top: rect.top, height: rect.height });
     }
     return itemRects;

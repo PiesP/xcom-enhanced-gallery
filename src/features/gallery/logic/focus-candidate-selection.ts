@@ -20,6 +20,17 @@ export interface FocusCandidate {
   readonly distance: number;
 }
 
+export function isFullyVisibleFocusItem(
+  item: Pick<FocusItemRect, 'top' | 'height'>,
+  viewport: FocusViewportRect
+): boolean {
+  return (
+    item.height > 0 &&
+    item.top >= viewport.top &&
+    item.top + item.height <= viewport.top + Math.max(viewport.height, 1)
+  );
+}
+
 /** Rank premeasured visible items without reading or mutating DOM state. */
 export function selectBestFocusCandidate(
   viewportRect: FocusViewportRect,
@@ -35,12 +46,7 @@ export function selectBestFocusCandidate(
   // full. In that ambiguous geometry, keep explicit navigation instead of
   // letting a preceding top-aligned item retarget current-item actions.
   const activeRect = itemRects.find((item) => item.index === activeIndex);
-  if (
-    activeRect &&
-    activeRect.height > 0 &&
-    activeRect.top >= viewportTop &&
-    activeRect.top + activeRect.height <= viewportBottom
-  ) {
+  if (activeRect && isFullyVisibleFocusItem(activeRect, viewportRect)) {
     return { index: activeRect.index, distance: 0 };
   }
 
